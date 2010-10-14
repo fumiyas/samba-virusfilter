@@ -1,0 +1,13 @@
+Samba Anti-Virus VFS modules
+Copyright (C) 2010 SATOH Fumiyasu @ OSS Technology, Inc.
+
+
+  $ ./configure --with-samba-source=/path/to/samba-3.2.x/source
+  ...
+  $ make
+  ...
+  # su -
+  Password: xxxxxxxx
+  # make install
+  ...
+

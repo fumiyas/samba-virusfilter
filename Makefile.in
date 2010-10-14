@@ -1,0 +1,15 @@
+SOURCE_DIR=	.
+SOURCE_BUILD=	$(SOURCE_DIR)/build
+
+## ======================================================================
+
+DIRS= utils clamav f-secure example
+
+BUILD_TARGETS=
+BUILD_TARGETS_POST=
+
+## ======================================================================
+
+include $(SOURCE_BUILD)/Makefile.common
+include $(SOURCE_BUILD)/Makefile.top
+

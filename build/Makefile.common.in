@@ -1,0 +1,168 @@
+## Makefile.common
+## ======================================================================
+
+PACKAGE_NAME=		@PACKAGE_NAME@
+PACKAGE_VERSION=	@PACKAGE_VERSION@
+
+## Path
+## ----------------------------------------------------------------------
+
+INSTALL_ROOT=		$(DESTDIR)
+
+package_subdir=		@package_subdir@
+
+prefix=			@prefix@
+exec_prefix=		@exec_prefix@
+bindir=			@bindir@
+sbindir=		@sbindir@
+libdir=			@libdir@
+libexecdir=		@libexecdir@$(package_subdir)
+sysconfdir=		@sysconfdir@$(package_subdir)
+localstatedir=		@localstatedir@
+datadir=		@datadir@$(package_subdir)
+datarootdir=		@datarootdir@$(package_subdir)
+mandir=			@mandir@
+infodir=		@infodir@
+docdir=			@docdir@
+
+vardir=			$(localstatedir)/lib$(package_subdir)
+rundir=			$(localstatedir)/run$(package_subdir)
+logdir=			$(localstatedir)/log$(package_subdir)
+
+## Commands, Flags and so on
+## ----------------------------------------------------------------------
+
+CC=			@CC@
+CPPFLAGS=		@CPPFLAGS@
+CFLAGS=			@CFLAGS@
+
+CP=			cp -p
+RM=			rm -rf
+LN_S=			ln -s
+INSTALL=		$(SOURCE_BUILD)/install-sh -c
+CHMOD_FILES=		chmod 0644
+CHMOD_EXES=		chmod 0755
+
+## Package local
+## ----------------------------------------------------------------------
+
+include $(SOURCE_BUILD)/Makefile.package
+
+## Suffix rules
+## ======================================================================
+
+.SUFFIXES: .subst .substed
+.SUFFIXES: .sh .ksh .rb .rbt .pl .php .pm .exe .cgi .tmpl .default .example
+
+.subst.substed:
+	@echo "Building $@ from $< ..."
+	@$(RM) $@ $@.tmp
+	@$(SOURCE_BUILD)/subst <$< >$@.tmp
+	@$(CHMOD_FILES) $@.tmp
+	@mv $@.tmp $@
+
+.sh.exe:
+	@echo "Building $@ from $< ..."
+	@$(RM) $@ $@.tmp
+	@$(SOURCE_BUILD)/subst <$< >$@.tmp
+	@$(CHMOD_EXES) $@.tmp
+	@mv $@.tmp $@
+
+.ksh.exe:
+	@echo "Building $@ from $< ..."
+	@$(RM) $@ $@.tmp
+	@$(SOURCE_BUILD)/subst <$< >$@.tmp
+	@$(CHMOD_EXES) $@.tmp
+	@mv $@.tmp $@
+
+.rb.exe:
+	@echo "Building $@ from $< ..."
+	@$(RM) $@ $@.tmp
+	@$(SOURCE_BUILD)/subst <$< >$@.tmp
+	@$(CHMOD_EXES) $@.tmp
+	@mv $@.tmp $@
+
+.rbt.rb:
+	@echo "Building $@ from $< ..."
+	@$(RM) $@ $@.tmp
+	@$(SOURCE_BUILD)/subst <$< >$@.tmp
+	@$(CHMOD_EXES) $@.tmp
+	@mv $@.tmp $@
+
+.pl.exe:
+	@echo "Building $@ from $< ..."
+	@$(RM) $@ $@.tmp
+	@$(SOURCE_BUILD)/subst <$< >$@.tmp
+	@$(CHMOD_EXES) $@.tmp
+	@mv $@.tmp $@
+
+.pl.cgi:
+	@echo "Building $@ from $< ..."
+	@$(RM) $@ $@.tmp
+	@$(SOURCE_BUILD)/subst <$< >$@.tmp
+	@$(CHMOD_EXES) $@.tmp
+	@mv $@.tmp $@
+
+.pl.pm:
+	@echo "Building $@ from $< ..."
+	@$(RM) $@ $@.tmp
+	@$(SOURCE_BUILD)/subst <$< >$@.tmp
+	@$(CHMOD_FILES) $@.tmp
+	@mv $@.tmp $@
+
+.tmpl.default:
+	@echo "Building $@ from $< ..."
+	@$(RM) $@ $@.tmp
+	@$(SOURCE_BUILD)/subst <$< >$@.tmp
+	@$(CHMOD_FILES) $@.tmp
+	@mv $@.tmp $@
+
+.tmpl.example:
+	@echo "Building $@ from $< ..."
+	@$(RM) $@ $@.tmp
+	@$(SOURCE_BUILD)/subst <$< >$@.tmp
+	@$(CHMOD_FILES) $@.tmp
+	@mv $@.tmp $@
+
+## Target rules
+## ======================================================================
+
+default:: build
+
+build:: $(BUILD_TARGETS)
+
+install:: $(INSTALL_TARGETS)
+
+install-dir:
+	@echo "Creating directory $(INSTALL_ROOT)$(INSTALL_DIR) ..."
+	@$(INSTALL) -d $(INSTALL_ROOT)$(INSTALL_DIR)
+
+install-files: install-dir
+	@for f in $(INSTALL_FILES); do \
+	    echo "Installing file $$f into $(INSTALL_ROOT)$(INSTALL_DIR) ..."; \
+	    $(INSTALL) -m 0644 -t='s/\.substed$$//' $$f "$(INSTALL_ROOT)$(INSTALL_DIR)" \
+	      || exit 1; \
+	done
+
+install-exes: install-dir
+	@for f in $(INSTALL_EXES); do \
+	    echo "Installing file $$f into $(INSTALL_ROOT)$(INSTALL_DIR) ..."; \
+	    $(INSTALL) -m 0755 -t='s/\.exe$$//' $$f "$(INSTALL_ROOT)$(INSTALL_DIR)" \
+	      || exit 1; \
+	done
+
+clean::
+	$(RM) *.tmp $(BUILD_TARGETS) $(BUILD_TARGETS_POST)
+
+distclean:: clean
+
+build install clean distclean::
+	@if [ -n "$(DIRS)" ]; then \
+	    set - $(DIRS); \
+	    for subdir in "$$@"; do \
+		(cd $$subdir && $(MAKE) $@) || exit 1; \
+	    done \
+	fi
+
+build:: $(BUILD_TARGETS_POST)
+
