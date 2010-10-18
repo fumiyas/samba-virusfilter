@@ -332,8 +332,10 @@ static sav_action sav_do_infected_file_action(
 	TALLOC_CTX *mem_ctx = talloc_tos();
 	connection_struct *conn = vfs_h->conn;
 	*filepath_newp = NULL;
-	int q_fd;
+	char *q_dir;
+	char *q_prefix;
 	char *q_filepath;
+	int q_fd;
 
 	switch (sav_h->infected_file_action) {
 	case SAV_ACTION_QUARANTINE:
