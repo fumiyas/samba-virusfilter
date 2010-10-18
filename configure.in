@@ -82,6 +82,12 @@ if test -z "$SAMBA_SOURCE_DIR"; then
   AC_ERROR([You must specify --with-samba-source=PATH])
 fi
 
+if test -f "$SAMBA_SOURCE_DIR/include/config.h"; then
+  : OK
+else
+  AC_ERROR([Samba source has not been configured: $SAMBA_SOURCE_DIR])
+fi
+
 AC_GET_MAKEFILE_VAR(${SAMBA_SOURCE_DIR}/Makefile,prefix,SAMBA_)
 AC_GET_MAKEFILE_VAR(${SAMBA_SOURCE_DIR}/Makefile,exec_prefix,SAMBA_)
 AC_GET_MAKEFILE_VAR(${SAMBA_SOURCE_DIR}/Makefile,BINDIR,SAMBA_)
