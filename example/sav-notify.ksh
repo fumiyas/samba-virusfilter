@@ -186,7 +186,15 @@ subject="$subject_prefix$report"
 msg_header="\
 Subject: $subject
 Content-Type: $content_type; charset=$content_encoding
+X-SAV-Version: $SAV_VERSION
+X-SAV-Module-Name: $SAV_MODULE_NAME
 "
+
+if [ -n "${SAV_MODULE_VERSION-}" ]; then
+  msg_header="${msg_header}\
+X-SAV-Module-Version: $SAV_MODULE_VERSION
+"
+fi
 
 if [ -n "${from-}" ]; then
   msg_header="${msg_header}\

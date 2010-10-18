@@ -432,9 +432,17 @@ static sav_action sav_treat_infected_file(
 		DEBUG(0,("sav_env_new failed\n"));
 		goto done;
 	}
+	if (sav_env_set(env_h, "SAV_VERSION", SAV_VERSION) == -1) {
+		goto done;
+	}
 	if (sav_env_set(env_h, "SAV_MODULE_NAME", SAV_MODULE_NAME) == -1) {
 		goto done;
 	}
+#ifdef SAV_MODULE_VERSION
+	if (sav_env_set(env_h, "SAV_MODULE_VERSION", SAV_MODULE_VERSION) == -1) {
+		goto done;
+	}
+#endif
 	if (sav_env_set(env_h, "SAV_INFECTED_FILE_PATH", filepath) == -1) {
 		goto done;
 	}
