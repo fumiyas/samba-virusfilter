@@ -59,6 +59,7 @@ typedef enum {
 	SAV_RESULT_ERROR,
 	SAV_RESULT_INFECTED,
 	/* FIXME: SAV_RESULT_SUSPECTED, */
+	/* FIXME: SAV_RESULT_RISKWARE, */
 } sav_result;
 
 #endif /* _SAV_COMMON_H */

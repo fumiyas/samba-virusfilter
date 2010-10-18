@@ -323,7 +323,7 @@ static void sav_vfs_disconnect(vfs_handle_struct *vfs_h)
 	SMB_VFS_NEXT_DISCONNECT(vfs_h);
 }
 
-static sav_action sav_treat_infected_file_action(
+static sav_action sav_do_infected_file_action(
 	vfs_handle_struct *vfs_h,
 	sav_handle *sav_h,
 	const char *filepath,
@@ -412,7 +412,7 @@ static sav_action sav_treat_infected_file(
 	char *command = NULL;
 	int command_result;
 
-	action = sav_treat_infected_file_action(vfs_h, sav_h, filepath, &filepath_q);
+	action = sav_do_infected_file_action(vfs_h, sav_h, filepath, &filepath_q);
 	for (i=0; sav_actions[i].name; i++) {
 		if (sav_actions[i].value == action) {
 			action_name = sav_actions[i].name;
@@ -445,7 +445,7 @@ static sav_action sav_treat_infected_file(
 	if (filepath_q && sav_env_set(env_h, "SAV_QUARANTINED_FILE_PATH", filepath_q) == -1) {
 		goto done;
 	}
-	if (is_cache && sav_env_set(env_h, "SAV_RESULT_IS_CACHE", "1") == -1) {
+	if (is_cache && sav_env_set(env_h, "SAV_RESULT_IS_CACHE", "yes") == -1) {
 		goto done;
 	}
 
@@ -542,7 +542,7 @@ static sav_result sav_scan(
 		DEBUG(10, ("Searching cache entry: fname: %s\n", fname));
 		scan_cache_e = sav_cache_get(sav_h->cache, fname, -1);
 		if (scan_cache_e) {
-			DEBUG(10, ("Cache entry found: result: %d\n", scan_cache_e->result));
+			DEBUG(10, ("Cache entry found: cached result: %d\n", scan_cache_e->result));
 			is_cache = true;
 			scan_result = scan_cache_e->result;
 			scan_report = scan_cache_e->report;
@@ -604,7 +604,7 @@ sav_scan_result_eval:
 		break;
 	}
 
-	if (sav_h->cache && !scan_cache_e && add_scan_cache) {
+	if (sav_h->cache && !is_cache && add_scan_cache) {
 		DEBUG(10, ("Adding new cache entry: %s, %d\n", fname, scan_result));
 		scan_cache_e = sav_cache_entry_new(sav_h->cache);
 		if (!scan_cache_e) {
@@ -771,11 +771,14 @@ static int sav_vfs_close(
 
 	TALLOC_FREE(mem_ctx);
 	errno = close_errno;
+
 	return close_result;
 
 sav_vfs_close_fail:
+
 	TALLOC_FREE(mem_ctx);
 	errno = (scan_errno != 0) ? scan_errno : close_errno;
+
 	return close_result;
 }
 

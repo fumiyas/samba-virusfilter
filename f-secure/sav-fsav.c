@@ -1,5 +1,6 @@
 /*
    Samba Anti-Virus VFS modules
+   F-Secure Anti-Virus fsavd support
    Copyright (C) 2010 SATOH Fumiyasu @ OSS Technology, Inc.
 
    This program is free software; you can redistribute it and/or modify
@@ -225,7 +226,7 @@ static sav_result sav_fsav_scan(
 		if (str_eq(report_token, "OK") ) {
 			break;
 		} else if (str_eq(report_token, "CLEAN") ) {
-			/* CLEAN\t<FILEPATH>\n */
+			/* CLEAN\t<FILEPATH> */
 			result = SAV_RESULT_CLEAN;
 			report = "Clean";
 		} else if (str_eq(report_token, "INFECTED") ||
@@ -234,7 +235,7 @@ static sav_result sav_fsav_scan(
 			   str_eq(report_token, "RISKWARE") ||
 			   str_eq(report_token, "ARCHIVE_RISKWARE") ||
 			   str_eq(report_token, "MIME_RISKWARE")) {
-			/* INFECTED\t<FILEPATH>\t<DESCRIPTION>\t<ENGINE>\n */
+			/* INFECTED\t<FILEPATH>\t<REPORT>\t<ENGINE> */
 			result = SAV_RESULT_INFECTED;
 			report_token = strtok_r(NULL, "\t", &report_saveptr);
 			report_token = strtok_r(NULL, "\t", &report_saveptr);
@@ -250,14 +251,15 @@ static sav_result sav_fsav_scan(
 		} else if (str_eq(report_token, "SUSPECTED") ||
 			   str_eq(report_token, "ARCHIVE_SUSPECTED") ||
 			   str_eq(report_token, "MIME_SUSPECTED")) {
-			/* Ignore */
 #if 0
 			/* FIXME: Block if "block suspected file" option is true */
 			result = SAV_RESULT_SUSPECTED;
 			...
+#else
+			/* Ignore */
 #endif
 		} else if (str_eq(report_token, "SCAN_FAILURE")) {
-			/* SCAN_FAILURE\t<FILEPATH>\t0x<CODE>\t<DESCRIPTION> [<ENGINE>]\n */
+			/* SCAN_FAILURE\t<FILEPATH>\t0x<CODE>\t<REPORT> [<ENGINE>] */
 			result = SAV_RESULT_ERROR;
 			report_token = strtok_r(NULL, "\t", &report_saveptr);
 			report_token = strtok_r(NULL, "\t", &report_saveptr);
@@ -269,14 +271,14 @@ static sav_result sav_fsav_scan(
 		} else {
 			result = SAV_RESULT_ERROR;
 			report = talloc_asprintf(talloc_tos(),
-				"Invalid command reply from fsavd: %s\t", report_token);
+				"Invalid reply from fsavd: %s\t", report_token);
 			if (!report) {
 				DEBUG(0,("talloc_asprintf failed\n"));
 			}
 		}
 
 		if (sav_io_read(io_h) != SAV_RESULT_OK) {
-			DEBUG(0,("Reading command reply from fsavd failed: %s\n",
+			DEBUG(0,("Reading continued reply from fsavd failed: %s\n",
 				strerror(errno)));
 			break;
 		}

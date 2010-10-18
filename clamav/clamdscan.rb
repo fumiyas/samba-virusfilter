@@ -28,9 +28,6 @@ end
 file = ARGV.shift
 
 socket = clamd_socket
-clamd_command(socket, "zPING\0")
-clamd_command(socket, "zPING\0")
-clamd_scan(socket, file)
 clamd_scan(socket, file)
 exit(0)
 

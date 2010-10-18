@@ -48,6 +48,7 @@ sav_io_handle *sav_io_new(TALLOC_CTX *mem_ctx, int connect_timeout, int timeout)
 
 	io_h->socket = -1;
 	io_h->eol = '\n';
+	/* timeout <= 0 means infinite */
 	io_h->connect_timeout = (connect_timeout > 0) ? connect_timeout : -1;
 	io_h->timeout = (timeout > 0) ? timeout : -1;
 
@@ -112,7 +113,7 @@ sav_result sav_io_write(sav_io_handle *io_h)
 	pollfd.fd = io_h->socket;
 	pollfd.events = POLLOUT;
 
-	while (buffer_size) {
+	while (buffer_size > 0) {
 		switch (poll(&pollfd, 1, io_h->timeout)) {
 		case -1:
 			if (errno == EINTR) {
@@ -270,7 +271,7 @@ sav_cache_handle *sav_cache_new(TALLOC_CTX *ctx, int entry_limit, time_t time_li
 {
 	sav_cache_handle *cache_h = TALLOC_ZERO_P(ctx, sav_cache_handle);
 	if (!cache_h) {
-		DEBUG(0,("TALLOC_ZERO_P failed"));
+		DEBUG(0,("TALLOC_ZERO_P failed\n"));
 		return NULL;
 	}
 	cache_h->entry_limit = entry_limit;

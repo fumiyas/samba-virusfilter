@@ -28,9 +28,9 @@
 
 typedef struct sav_io_handle {
 	int		socket;
-	int		eol;
-	int		connect_timeout;
-	int		timeout;
+	int		eol;			/* end-of-line character */
+	int		connect_timeout;	/* msec */
+	int		timeout;		/* msec */
 	char		w_buffer[SAV_IO_BUFFER_SIZE+1];
 	ssize_t		w_size;
 	char		*r_buffer;

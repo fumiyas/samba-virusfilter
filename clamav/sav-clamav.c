@@ -1,5 +1,6 @@
 /*
    Samba Anti-Virus VFS modules
+   ClamAV clamd support
    Copyright (C) 2010 SATOH Fumiyasu @ OSS Technology, Inc.
 
    This program is free software; you can redistribute it and/or modify
@@ -19,7 +20,11 @@
 #define SAV_MODULE_ENGINE "clamav"
 
 /* Default values for standard "extra" configuration variables */
-#define SAV_DEFAULT_SOCKET_PATH			"/var/run/clamav/clamd.ctl"
+#ifdef CLAMAV_DEFAULT_SOCKET_PATH
+#  define SAV_DEFAULT_SOCKET_PATH		CLAMAV_DEFAULT_SOCKET_PATH
+#else
+#  define SAV_DEFAULT_SOCKET_PATH		"/var/run/clamav/clamd.ctl"
+#endif
 #define SAV_DEFAULT_CONNECT_TIMEOUT		30000 /* msec */
 #define SAV_DEFAULT_TIMEOUT			60000 /* msec */
 /* Default values for module-specific configuration variables */
@@ -44,6 +49,7 @@ static int sav_clamav_connect(
 	const char *svc,
 	const char *user)
 {
+	/* To use clamd "zXXXX" commands */
         sav_io_set_eol(sav_h->io_h, '\0');
 
 	return 0;
@@ -89,10 +95,10 @@ static sav_result sav_clamav_scan(
 	char *reply_status;
 
 	if (sav_io_writeread(io_h, "zSCAN %s", filepath) != SAV_RESULT_OK) {
-		DEBUG(0,("SCAN failed: %s\n", strerror(errno)));
+		DEBUG(0,("zSCAN failed: %s\n", strerror(errno)));
 		result = SAV_RESULT_ERROR;
 		report = talloc_asprintf(talloc_tos(),
-			"SCAN failed: %s\n", strerror(errno));
+			"zSCAN failed: %s\n", strerror(errno));
 		goto sav_clamav_scan_return;
 	}
 
@@ -105,7 +111,7 @@ static sav_result sav_clamav_scan(
 
 	reply_status = strrchr(io_h->r_buffer, ' ');
 	if (!reply_status) {
-		DEBUG(0,("Invalid command reply from clamd: %s\n", io_h->r_buffer));
+		DEBUG(0,("Invalid reply from clamd: %s\n", io_h->r_buffer));
 		result = SAV_RESULT_ERROR;
 		goto sav_clamav_scan_return;
 	}
@@ -113,16 +119,19 @@ static sav_result sav_clamav_scan(
 	reply_status++;
 
 	if (str_eq(reply_status, "OK") ) {
+		/* <FILEPATH>: OK */
 		result = SAV_RESULT_CLEAN;
 		report = "Clean";
 	} else if (str_eq(reply_status, "FOUND")) {
+		/* <FILEPATH>: <REPORT> FOUND */
 		result = SAV_RESULT_INFECTED;
 	} else if (str_eq(reply_status, "ERROR")) {
+		/* <FILEPATH>: <REPORT> ERROR */
 		result = SAV_RESULT_ERROR;
 	} else {
 		result = SAV_RESULT_ERROR;
 		report = talloc_asprintf(talloc_tos(),
-			"Invalid command reply from clamd: %s\t", reply_status);
+			"Invalid reply from clamd: %s\t", reply_status);
 		DEBUG(0,("talloc_asprintf failed\n"));
 	}
 
