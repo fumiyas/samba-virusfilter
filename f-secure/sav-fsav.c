@@ -54,6 +54,44 @@
 
 /* ====================================================================== */
 
+static int sav_fsav_connect(
+	vfs_handle_struct *vfs_h,
+	sav_handle *sav_h,
+	const char *svc,
+	const char *user)
+{
+	int snum = SNUM(vfs_h->conn);
+
+        sav_h->fsav_protocol = lp_parm_int(
+		snum, SAV_MODULE_NAME,
+		"fsav protocol",
+		SAV_DEFAULT_FSAV_PROTOCOL);
+
+        sav_h->scan_riskware = lp_parm_bool(
+		snum, SAV_MODULE_NAME,
+		"scan riskware",
+		SAV_DEFAULT_SCAN_RISKWARE);
+
+        sav_h->stop_scan_on_first = lp_parm_bool(
+		snum, SAV_MODULE_NAME,
+		"stop scan on first",
+		SAV_DEFAULT_STOP_SCAN_ON_FIRST);
+
+        sav_h->filter_filename = lp_parm_bool(
+		snum, SAV_MODULE_NAME,
+		"filter filename",
+		SAV_DEFAULT_FILTER_FILENAME);
+
+	return 0;
+}
+
+static int sav_fsav_destruct_config(sav_handle *sav_h)
+{
+	sav_fsav_scan_end(sav_h);
+
+	return 0;
+}
+
 static sav_result sav_fsav_scan_init(sav_handle *sav_h)
 {
 	sav_io_handle *io_h = sav_h->io_h;
@@ -289,43 +327,5 @@ sav_fsav_scan_return:
 	*reportp = report;
 
 	return result;
-}
-
-static int sav_fsav_connect(
-	vfs_handle_struct *vfs_h,
-	sav_handle *sav_h,
-	const char *svc,
-	const char *user)
-{
-	int snum = SNUM(vfs_h->conn);
-
-        sav_h->fsav_protocol = lp_parm_int(
-		snum, SAV_MODULE_NAME,
-		"fsav protocol",
-		SAV_DEFAULT_FSAV_PROTOCOL);
-
-        sav_h->scan_riskware = lp_parm_bool(
-		snum, SAV_MODULE_NAME,
-		"scan riskware",
-		SAV_DEFAULT_SCAN_RISKWARE);
-
-        sav_h->stop_scan_on_first = lp_parm_bool(
-		snum, SAV_MODULE_NAME,
-		"stop scan on first",
-		SAV_DEFAULT_STOP_SCAN_ON_FIRST);
-
-        sav_h->filter_filename = lp_parm_bool(
-		snum, SAV_MODULE_NAME,
-		"filter filename",
-		SAV_DEFAULT_FILTER_FILENAME);
-
-	return 0;
-}
-
-static int sav_fsav_destruct_config(sav_handle *sav_h)
-{
-	sav_fsav_scan_end(sav_h);
-
-	return 0;
 }
 
