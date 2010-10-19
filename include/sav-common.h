@@ -44,6 +44,8 @@ extern userdom_struct current_user_info;
 
 #include "sav-config.h"
 
+#define SAV_VERSION PACKAGE_VERSION
+
 /* ====================================================================== */
 
 typedef enum {
