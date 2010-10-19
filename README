@@ -14,7 +14,7 @@ For installation instructions, please refer to the INSTALL file.
 Supported Anti-Virus engines
 ======================================================================
 
-  * CalmAV (clamd daemon)
+  * ClamAV (clamd daemon)
   * F-Secure Anti-Virus (fsavd daemon)
 
 Source repository
