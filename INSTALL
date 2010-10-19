@@ -1,0 +1,21 @@
+Installation instructions for Samba Anti-Virus VFS modules
+======================================================================
+
+Basic install procedure
+======================================================================
+
+  $ ./configure --with-samba-source=/path/to/samba-3.2.x/source
+  ...
+  $ make
+  ...
+  # su -
+  Password: xxxxxxxx
+  # make install
+  ...
+
+Requirements
+======================================================================
+
+  * Samba 3.2 source tree
+  * Samba build environment
+

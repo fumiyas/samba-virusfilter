@@ -1,13 +1,31 @@
 Samba Anti-Virus VFS modules
 Copyright (C) 2010 SATOH Fumiyasu @ OSS Technology, Inc.
+======================================================================
 
+This is a set of various Samba VFS modules for Samba 3.2 to
+scan files on Samba file services with an anti-virus scanner.
 
-  $ ./configure --with-samba-source=/path/to/samba-3.2.x/source
-  ...
-  $ make
-  ...
-  # su -
-  Password: xxxxxxxx
-  # make install
-  ...
+This software is freely distributable under the GNU public license, a
+copy of which you should have received with this software (in a file
+called COPYING).
+
+For installation instructions, please refer to the INSTALL file.
+
+Supported Anti-Virus engines
+======================================================================
+
+  * CalmAV (clamd daemon)
+  * F-Secure Anti-Virus (fsavd daemon)
+
+Source repository
+======================================================================
+
+  http://github.com/fumiyas/samba-antivirus
+
+Commercial support for Samba & Samba Anti-Virus VFS modules
+======================================================================
+
+  Japan:
+    * Open Source Solution Technology, Inc.
+      http://www.OSSTech.co.jp/
 
