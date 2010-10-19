@@ -20,7 +20,7 @@
 #define SAV_MODULE_ENGINE "fsav"
 
 /* Default values for standard "extra" configuration variables */
-#define SAV_DEFAULT_SCAN_LIMIT			0
+#define SAV_DEFAULT_SCAN_REQUEST_LIMIT		0
 #define SAV_DEFAULT_SOCKET_PATH			"/tmp/.fsav-0"
 #define SAV_DEFAULT_CONNECT_TIMEOUT		30000 /* msec */
 #define SAV_DEFAULT_TIMEOUT			60000 /* msec */

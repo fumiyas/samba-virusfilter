@@ -62,9 +62,9 @@ static const struct enum_list sav_actions[] = {
 };
 
 typedef struct {
-#ifdef SAV_DEFAULT_SCAN_LIMIT
-	int				scan_count;
-	int				scan_limit;
+#ifdef SAV_DEFAULT_SCAN_REQUEST_LIMIT
+	int				scan_request_count;
+	int				scan_request_limit;
 #endif
 	/* Scan on file operations */
 	bool				scan_on_open;
@@ -182,11 +182,11 @@ static int sav_vfs_connect(
 		sav_handle *,
 		return -1);
 
-#ifdef SAV_DEFAULT_SCAN_LIMIT
-        sav_h->scan_limit = lp_parm_int(
+#ifdef SAV_DEFAULT_SCAN_REQUEST_LIMIT
+        sav_h->scan_request_limit = lp_parm_int(
 		snum, SAV_MODULE_NAME,
-		"scan limit",
-		SAV_DEFAULT_SCAN_LIMIT);
+		"scan request limit",
+		SAV_DEFAULT_SCAN_REQUEST_LIMIT);
 #endif
 
         sav_h->scan_on_open = lp_parm_bool(
@@ -574,12 +574,12 @@ static sav_result sav_scan(
 	scan_result = sav_module_scan(vfs_h, sav_h, filepath, &scan_report);
 
 #ifdef sav_module_scan_end
-#ifdef SAV_DEFAULT_SCAN_LIMIT
-	if (sav_h->scan_limit > 0) {
-		sav_h->scan_count++;
-		if (sav_h->scan_count >= sav_h->scan_limit) {
+#ifdef SAV_DEFAULT_SCAN_REQUEST_LIMIT
+	if (sav_h->scan_request_limit > 0) {
+		sav_h->scan_request_count++;
+		if (sav_h->scan_request_count >= sav_h->scan_request_limit) {
 			sav_module_scan_end(sav_h);
-			sav_h->scan_count = 0;
+			sav_h->scan_request_count = 0;
 		}
 	}
 #else
