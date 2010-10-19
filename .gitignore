@@ -1,4 +1,11 @@
+/*/*.o
+/*/*.so
+/*/*.exe
 /Makefile
+/build/Makefile.common
+/build/Makefile.package
+/build/Makefile.top
+/build/subst
 /build/subst.in
 /config.log
 /config.status
