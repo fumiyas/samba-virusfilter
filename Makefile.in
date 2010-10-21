@@ -3,7 +3,7 @@ SOURCE_BUILD=	$(SOURCE_DIR)/build
 
 ## ======================================================================
 
-DIRS= utils clamav f-secure example
+DIRS= utils clamav f-secure sophos bin etc
 
 BUILD_TARGETS=
 BUILD_TARGETS_POST=

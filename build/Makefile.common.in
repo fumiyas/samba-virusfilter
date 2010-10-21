@@ -52,7 +52,8 @@ include $(SOURCE_BUILD)/Makefile.package
 ## ======================================================================
 
 .SUFFIXES: .subst .substed
-.SUFFIXES: .sh .ksh .rb .rbt .pl .php .pm .exe .cgi .tmpl .default .example
+.SUFFIXES: .sh .ksh .rb .rbt .pl .php .tmpl
+.SUFFIXES: .pm .exe .cgi .conf .default .example
 
 .subst.substed:
 	@echo "Building $@ from $< ..."
@@ -104,6 +105,13 @@ include $(SOURCE_BUILD)/Makefile.package
 	@mv $@.tmp $@
 
 .pl.pm:
+	@echo "Building $@ from $< ..."
+	@$(RM) $@ $@.tmp
+	@$(SOURCE_BUILD)/subst <$< >$@.tmp
+	@$(CHMOD_FILES) $@.tmp
+	@mv $@.tmp $@
+
+.tmpl.conf:
 	@echo "Building $@ from $< ..."
 	@$(RM) $@ $@.tmp
 	@$(SOURCE_BUILD)/subst <$< >$@.tmp
