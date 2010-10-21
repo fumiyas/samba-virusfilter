@@ -248,7 +248,7 @@ static sav_result sav_fsav_scan(
 	sav_io_handle *io_h = sav_h->io_h;
 	sav_result result = SAV_RESULT_CLEAN;
 	const char *report = NULL;
-	char *report_token, *report_saveptr;
+	char *reply_token, *reply_saveptr;
 
 	if (sav_io_writeread(io_h, "SCAN\t%s", filepath) != SAV_RESULT_OK) {
 		DEBUG(0,("SCAN failed: %s\n", strerror(errno)));
@@ -259,36 +259,36 @@ static sav_result sav_fsav_scan(
 	}
 
 	while (true) {
-		report_token = strtok_r(io_h->r_buffer, "\t", &report_saveptr);
+		reply_token = strtok_r(io_h->r_buffer, "\t", &reply_saveptr);
 
-		if (str_eq(report_token, "OK") ) {
+		if (str_eq(reply_token, "OK") ) {
 			break;
-		} else if (str_eq(report_token, "CLEAN") ) {
+		} else if (str_eq(reply_token, "CLEAN") ) {
 			/* CLEAN\t<FILEPATH> */
 			result = SAV_RESULT_CLEAN;
 			report = "Clean";
-		} else if (str_eq(report_token, "INFECTED") ||
-			   str_eq(report_token, "ARCHIVE_INFECTED") ||
-		           str_eq(report_token, "MIME_INFECTED") ||
-			   str_eq(report_token, "RISKWARE") ||
-			   str_eq(report_token, "ARCHIVE_RISKWARE") ||
-			   str_eq(report_token, "MIME_RISKWARE")) {
+		} else if (str_eq(reply_token, "INFECTED") ||
+			   str_eq(reply_token, "ARCHIVE_INFECTED") ||
+		           str_eq(reply_token, "MIME_INFECTED") ||
+			   str_eq(reply_token, "RISKWARE") ||
+			   str_eq(reply_token, "ARCHIVE_RISKWARE") ||
+			   str_eq(reply_token, "MIME_RISKWARE")) {
 			/* INFECTED\t<FILEPATH>\t<REPORT>\t<ENGINE> */
 			result = SAV_RESULT_INFECTED;
-			report_token = strtok_r(NULL, "\t", &report_saveptr);
-			report_token = strtok_r(NULL, "\t", &report_saveptr);
-			if (report_token) {
-				  report = report_token;
+			reply_token = strtok_r(NULL, "\t", &reply_saveptr);
+			reply_token = strtok_r(NULL, "\t", &reply_saveptr);
+			if (reply_token) {
+				  report = reply_token;
 			} else {
 				  report = "UNKNOWN INFECTION";
 			}
-		} else if (str_eq(report_token, "OPEN_ARCHIVE")) {
+		} else if (str_eq(reply_token, "OPEN_ARCHIVE")) {
 			/* Ignore */
-		} else if (str_eq(report_token, "CLOSE_ARCHIVE")) {
+		} else if (str_eq(reply_token, "CLOSE_ARCHIVE")) {
 			/* Ignore */
-		} else if (str_eq(report_token, "SUSPECTED") ||
-			   str_eq(report_token, "ARCHIVE_SUSPECTED") ||
-			   str_eq(report_token, "MIME_SUSPECTED")) {
+		} else if (str_eq(reply_token, "SUSPECTED") ||
+			   str_eq(reply_token, "ARCHIVE_SUSPECTED") ||
+			   str_eq(reply_token, "MIME_SUSPECTED")) {
 #if 0
 			/* FIXME: Block if "block suspected file" option is true */
 			result = SAV_RESULT_SUSPECTED;
@@ -296,20 +296,20 @@ static sav_result sav_fsav_scan(
 #else
 			/* Ignore */
 #endif
-		} else if (str_eq(report_token, "SCAN_FAILURE")) {
+		} else if (str_eq(reply_token, "SCAN_FAILURE")) {
 			/* SCAN_FAILURE\t<FILEPATH>\t0x<CODE>\t<REPORT> [<ENGINE>] */
 			result = SAV_RESULT_ERROR;
-			report_token = strtok_r(NULL, "\t", &report_saveptr);
-			report_token = strtok_r(NULL, "\t", &report_saveptr);
-			if (report_token) {
-				  report = report_token;
+			reply_token = strtok_r(NULL, "\t", &reply_saveptr);
+			reply_token = strtok_r(NULL, "\t", &reply_saveptr);
+			if (reply_token) {
+				  report = reply_token;
 			} else {
 				  report = "UNKNOWN ERROR";
 			}
 		} else {
 			result = SAV_RESULT_ERROR;
 			report = talloc_asprintf(talloc_tos(),
-				"Invalid reply from fsavd: %s\t", report_token);
+				"Invalid reply from fsavd: %s\t", reply_token);
 			if (!report) {
 				DEBUG(0,("talloc_asprintf failed\n"));
 			}
