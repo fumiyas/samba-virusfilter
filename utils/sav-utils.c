@@ -72,7 +72,7 @@ sav_result sav_io_connect_path(sav_io_handle *io_h, const char *path)
 	addr.sun_family = AF_UNIX;
 	strncpy(addr.sun_path, path, sizeof(addr.sun_path));
 
-	io_h->socket = open_socket_out(addr.sun_family,
+	io_h->socket = open_socket_out(SOCK_STREAM,
 		(struct sockaddr_storage *)&addr, 0, io_h->connect_timeout);
 	if (io_h->socket == -1) {
 		return SAV_RESULT_ERROR;
