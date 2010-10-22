@@ -132,7 +132,9 @@ static sav_result sav_clamav_scan(
 		result = SAV_RESULT_ERROR;
 		report = talloc_asprintf(talloc_tos(),
 			"Invalid reply from clamd: %s\t", reply_status);
-		DEBUG(0,("talloc_asprintf failed\n"));
+		if (!report) {
+			DEBUG(0,("talloc_asprintf failed\n"));
+		}
 	}
 
 sav_clamav_scan_return:
