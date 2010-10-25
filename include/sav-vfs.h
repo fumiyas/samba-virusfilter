@@ -31,6 +31,7 @@
 #define SAV_DEFAULT_SCAN_ON_CLOSE		false
 #define SAV_DEFAULT_MAX_FILE_SIZE		100000000L /* 100MB */
 #define SAV_DEFAULT_MIN_FILE_SIZE		10
+#define SAV_DEFAULT_EXCLUDE_FILES		NULL
 
 #define SAV_DEFAULT_CACHE_ENTRY_LIMIT		100
 #define SAV_DEFAULT_CACHE_TIME_LIMIT		10
@@ -82,6 +83,8 @@ typedef struct {
 	/* Size limit */
 	ssize_t				max_file_size;
 	ssize_t				min_file_size;
+	/* Exclude files */
+	name_compare_entry		*exclude_files;
 	/* Scan result cache */
 	sav_cache_handle		*cache;
 	int				cache_entry_limit;
@@ -163,6 +166,7 @@ static int sav_vfs_connect(
 {
 	int snum = SNUM(vfs_h->conn);
 	sav_handle *sav_h;
+	char *exclude_files;
 #ifdef SAV_DEFAULT_SOCKET_PATH
 	int connect_timeout, timeout;
 #endif
@@ -224,6 +228,15 @@ static int sav_vfs_connect(
 		snum, SAV_MODULE_NAME,
 		"min file size",
 		SAV_DEFAULT_MIN_FILE_SIZE);
+
+        exclude_files = lp_parm_talloc_string(
+		snum, SAV_MODULE_NAME,
+		"exclude files",
+		SAV_DEFAULT_EXCLUDE_FILES);
+	if (exclude_files) {
+		set_namearray(&sav_h->exclude_files, exclude_files);
+		TALLOC_FREE(exclude_files);
+	}
 
         sav_h->cache_entry_limit = lp_parm_int(
 		snum, SAV_MODULE_NAME,
@@ -312,11 +325,12 @@ static void sav_vfs_disconnect(vfs_handle_struct *vfs_h)
 	sav_module_disconnect(vfs_h);
 #endif
 
-#ifdef SAV_DEFAULT_SOCKET_PATH
 	SMB_VFS_HANDLE_GET_DATA(vfs_h, sav_h,
 				sav_handle,
 				return);
 
+	free_namearray(sav_h->exclude_files);
+#ifdef SAV_DEFAULT_SOCKET_PATH
 	sav_io_disconnect(sav_h->io_h);
 #endif
 
@@ -685,6 +699,12 @@ static int sav_vfs_open(
 	}
 	if (sav_h->min_file_size > 0 && stat_buf.st_size < sav_h->min_file_size) {
                 DEBUG(5, ("Not scanned: file size < min file size: %s/%s\n",
+			vfs_h->conn->connectpath, fname));
+		goto sav_vfs_open_next;
+	}
+
+	if (sav_h->exclude_files && is_in_path(fname, sav_h->exclude_files, false)) {
+                DEBUG(5, ("Not scanned: exclude files: %s/%s\n",
 			vfs_h->conn->connectpath, fname));
 		goto sav_vfs_open_next;
 	}
