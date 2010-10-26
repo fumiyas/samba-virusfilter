@@ -16,8 +16,8 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _SAV_COMMON_H
-#define _SAV_COMMON_H
+#ifndef _SVF_COMMON_H
+#define _SVF_COMMON_H
 
 /* Samba common include file */
 #include "includes.h"
@@ -34,35 +34,35 @@
 #undef PACKAGE_URL
 #undef PACKAGE_VERSION
 
-/* Samba debug classs for SAV */
+/* Samba debug classs for SVF */
 #undef DBGC_CLASS
-#define DBGC_CLASS sav_debug_level
-extern int sav_debug_level;
+#define DBGC_CLASS svf_debug_level
+extern int svf_debug_level;
 
 /* Samba's global variable */
 extern userdom_struct current_user_info;
 
-#include "sav-config.h"
+#include "svf-config.h"
 
-#define SAV_VERSION PACKAGE_VERSION
+#define SVF_VERSION PACKAGE_VERSION
 
 /* ====================================================================== */
 
 typedef enum {
-	SAV_ACTION_DO_NOTHING,
-	SAV_ACTION_QUARANTINE,
-	SAV_ACTION_DELETE,
-	/* FIXME: SAV_ACTION_RENAME, */
-} sav_action;
+	SVF_ACTION_DO_NOTHING,
+	SVF_ACTION_QUARANTINE,
+	SVF_ACTION_DELETE,
+	/* FIXME: SVF_ACTION_RENAME, */
+} svf_action;
 
 typedef enum {
-	SAV_RESULT_OK,
-	SAV_RESULT_CLEAN,
-	SAV_RESULT_ERROR,
-	SAV_RESULT_INFECTED,
-	/* FIXME: SAV_RESULT_SUSPECTED, */
-	/* FIXME: SAV_RESULT_RISKWARE, */
-} sav_result;
+	SVF_RESULT_OK,
+	SVF_RESULT_CLEAN,
+	SVF_RESULT_ERROR,
+	SVF_RESULT_INFECTED,
+	/* FIXME: SVF_RESULT_SUSPECTED, */
+	/* FIXME: SVF_RESULT_RISKWARE, */
+} svf_result;
 
-#endif /* _SAV_COMMON_H */
+#endif /* _SVF_COMMON_H */
 

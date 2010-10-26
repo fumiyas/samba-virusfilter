@@ -41,8 +41,8 @@ SAV_CPPFLAGS=		@CPPFLAGS@ \
 			-DSAMBA_VERSION_NUMBER='$(SAMBA_VERSION_NUMBER)'
 SAV_CFLAGS=		@CFLAGS@
 
-SAV_COMMON_HEADERS=	$(SOURCE_DIR)/include/sav-common.h
-SAV_VFS_HEADERS=	$(SOURCE_DIR)/include/sav-vfs.h \
+SAV_COMMON_HEADERS=	$(SOURCE_DIR)/include/svf-common.h
+SAV_VFS_HEADERS=	$(SOURCE_DIR)/include/svf-vfs.h \
 			$(SAV_COMMON_HEADERS)
-SAV_VFS_OBJS=		$(SOURCE_DIR)/utils/sav-utils.o
+SAV_VFS_OBJS=		$(SOURCE_DIR)/utils/svf-utils.o
 

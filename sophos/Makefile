@@ -5,8 +5,8 @@ SOURCE_BUILD=	$(SOURCE_DIR)/build
 
 DIRS=
 
-BUILD_OBJS=		sav-sophos.o
-BUILD_VFS=		sav-sophos.so
+BUILD_OBJS=		svf-sophos.o
+BUILD_VFS=		svf-sophos.so
 BUILD_TARGETS=		$(BUILD_OBJS) $(BUILD_VFS)
 BUILD_TARGETS_POST=
 

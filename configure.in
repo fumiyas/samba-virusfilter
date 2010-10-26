@@ -4,9 +4,9 @@
 # FIXME
 AC_PREREQ(2.54)
 
-AC_INIT(samba-antivirus, 0.1.0)
+AC_INIT(samba-virusfilter, 0.1.0)
 
-AC_CONFIG_HEADER(include/sav-config.h)
+AC_CONFIG_HEADER(include/svf-config.h)
 AC_SUBST(CONFIG_HEADERS)
 CONFIG_HEADERS="$ac_config_headers"
 

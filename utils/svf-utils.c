@@ -16,16 +16,16 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "sav-common.h"
-#include "sav-utils.h"
+#include "svf-common.h"
+#include "svf-utils.h"
 
 #include <poll.h>
 
-#define SAV_ENV_SIZE_CHUNK 32
+#define SVF_ENV_SIZE_CHUNK 32
 
 /* ====================================================================== */
 
-char *sav_string_sub(TALLOC_CTX *mem_ctx, connection_struct *conn, const char *str)
+char *svf_string_sub(TALLOC_CTX *mem_ctx, connection_struct *conn, const char *str)
 {
 	return talloc_sub_advanced(mem_ctx, lp_servicename(SNUM(conn)),
 					conn->user,
@@ -38,9 +38,9 @@ char *sav_string_sub(TALLOC_CTX *mem_ctx, connection_struct *conn, const char *s
 /* Line-based socket I/O
  * ====================================================================== */
 
-sav_io_handle *sav_io_new(TALLOC_CTX *mem_ctx, int connect_timeout, int timeout)
+svf_io_handle *svf_io_new(TALLOC_CTX *mem_ctx, int connect_timeout, int timeout)
 {
-	sav_io_handle *io_h = TALLOC_ZERO_P(mem_ctx, sav_io_handle);
+	svf_io_handle *io_h = TALLOC_ZERO_P(mem_ctx, svf_io_handle);
 
 	if (!io_h) {
 		return NULL;
@@ -55,7 +55,7 @@ sav_io_handle *sav_io_new(TALLOC_CTX *mem_ctx, int connect_timeout, int timeout)
 	return io_h;
 }
 
-int sav_io_set_eol(sav_io_handle *io_h, int eol)
+int svf_io_set_eol(svf_io_handle *io_h, int eol)
 {
 	int eol_old = io_h->eol;
 
@@ -64,7 +64,7 @@ int sav_io_set_eol(sav_io_handle *io_h, int eol)
 	return eol_old;
 }
 
-sav_result sav_io_connect_path(sav_io_handle *io_h, const char *path)
+svf_result svf_io_connect_path(svf_io_handle *io_h, const char *path)
 {
 	struct sockaddr_un addr;
 
@@ -75,13 +75,13 @@ sav_result sav_io_connect_path(sav_io_handle *io_h, const char *path)
 	io_h->socket = open_socket_out(SOCK_STREAM,
 		(struct sockaddr_storage *)&addr, 0, io_h->connect_timeout);
 	if (io_h->socket == -1) {
-		return SAV_RESULT_ERROR;
+		return SVF_RESULT_ERROR;
 	}
 
-	return SAV_RESULT_OK;
+	return SVF_RESULT_OK;
 }
 
-sav_result sav_io_disconnect(sav_io_handle *io_h)
+svf_result svf_io_disconnect(svf_io_handle *io_h)
 {
 	if (io_h->socket != -1) {
 		close(io_h->socket);
@@ -91,10 +91,10 @@ sav_result sav_io_disconnect(sav_io_handle *io_h)
 	io_h->w_size = io_h->r_size = io_h->r_rest_size = 0;
 	io_h->r_rest_buffer = NULL;
 
-	return SAV_RESULT_OK;
+	return SVF_RESULT_OK;
 }
 
-sav_result sav_io_write(sav_io_handle *io_h)
+svf_result svf_io_write(svf_io_handle *io_h)
 {
 	char *buffer = io_h->w_buffer;
 	ssize_t buffer_size = io_h->w_size;
@@ -102,7 +102,7 @@ sav_result sav_io_write(sav_io_handle *io_h)
 	ssize_t wrote_size;
 
 	if (buffer_size == 0) {
-		return SAV_RESULT_OK;
+		return SVF_RESULT_OK;
 	}
 
 	if (buffer[buffer_size-1] != io_h->eol) {
@@ -120,10 +120,10 @@ sav_result sav_io_write(sav_io_handle *io_h)
 				errno = 0;
 				continue;
 			}
-			return SAV_RESULT_ERROR;
+			return SVF_RESULT_ERROR;
 		case 0:
 			errno = ETIMEDOUT;
-			return SAV_RESULT_ERROR;
+			return SVF_RESULT_ERROR;
 		}
 
 		wrote_size = write(io_h->socket, buffer, buffer_size);
@@ -132,20 +132,20 @@ sav_result sav_io_write(sav_io_handle *io_h)
 				errno = 0;
 				continue;
 			}
-			return SAV_RESULT_ERROR;
+			return SVF_RESULT_ERROR;
 		}
 
 		buffer += wrote_size;
 		buffer_size -= wrote_size;
 	}
 
-	return SAV_RESULT_OK;
+	return SVF_RESULT_OK;
 }
 
-sav_result sav_io_read(sav_io_handle *io_h)
+svf_result svf_io_read(svf_io_handle *io_h)
 {
 	char *buffer;
-	ssize_t buffer_size = SAV_IO_BUFFER_SIZE;
+	ssize_t buffer_size = SVF_IO_BUFFER_SIZE;
 	struct pollfd pollfd;
 	ssize_t read_size;
 	char *eol;
@@ -153,7 +153,7 @@ sav_result sav_io_read(sav_io_handle *io_h)
 	if (io_h->r_rest_buffer == NULL) {
 		DEBUG(10,("Rest data not found in read buffer\n"));
 		buffer = io_h->r_buffer = io_h->r_buffer_real;
-		buffer_size = SAV_IO_BUFFER_SIZE;
+		buffer_size = SVF_IO_BUFFER_SIZE;
 	} else {
 		DEBUG(10,("Rest data found in read buffer: %s, size=%ld\n",
 			io_h->r_rest_buffer, (long)io_h->r_rest_size));
@@ -167,14 +167,14 @@ sav_result sav_io_read(sav_io_handle *io_h)
 			io_h->r_rest_size -= io_h->r_size + 1;
 			io_h->r_rest_buffer = (io_h->r_rest_size > 0) ? (eol + 1) : NULL;
 
-			return SAV_RESULT_OK;
+			return SVF_RESULT_OK;
 		}
 
 		io_h->r_buffer = io_h->r_buffer_real;
 		memmove(io_h->r_buffer, io_h->r_rest_buffer, io_h->r_rest_size);
 
 		buffer = io_h->r_buffer + io_h->r_size;
-		buffer_size = SAV_IO_BUFFER_SIZE - io_h->r_rest_size;
+		buffer_size = SVF_IO_BUFFER_SIZE - io_h->r_rest_size;
 	}
 
 	io_h->r_rest_buffer = NULL;
@@ -190,10 +190,10 @@ sav_result sav_io_read(sav_io_handle *io_h)
 				errno = 0;
 				continue;
 			}
-			return SAV_RESULT_ERROR;
+			return SVF_RESULT_ERROR;
 		case 0:
 			errno = ETIMEDOUT;
-			return SAV_RESULT_ERROR;
+			return SVF_RESULT_ERROR;
 		}
 
 		read_size = read(io_h->socket, buffer, buffer_size);
@@ -202,13 +202,13 @@ sav_result sav_io_read(sav_io_handle *io_h)
 				errno = 0;
 				continue;
 			}
-			return SAV_RESULT_ERROR;
+			return SVF_RESULT_ERROR;
 		}
 
 		buffer[read_size] = '\0';
 
 		if (read_size == 0) { /* EOF */
-			return SAV_RESULT_OK;
+			return SVF_RESULT_OK;
 		}
 
 		io_h->r_size += read_size;
@@ -224,7 +224,7 @@ sav_result sav_io_read(sav_io_handle *io_h)
 				DEBUG(10,("Rest data in read buffer: %s, size=%ld\n",
 					io_h->r_rest_buffer, (long)io_h->r_rest_size));
 			}
-			return SAV_RESULT_OK;
+			return SVF_RESULT_OK;
 		}
 
 		buffer += read_size;
@@ -233,43 +233,43 @@ sav_result sav_io_read(sav_io_handle *io_h)
 
 	errno = E2BIG;
 
-	return SAV_RESULT_ERROR;
+	return SVF_RESULT_ERROR;
 }
 
-sav_result sav_io_writeread(sav_io_handle *io_h, const char *fmt, ...)
+svf_result svf_io_writeread(svf_io_handle *io_h, const char *fmt, ...)
 {
 	if (fmt) {
 		va_list ap;
 
 		va_start(ap, fmt);
-		io_h->w_size = vsnprintf(io_h->w_buffer, SAV_IO_BUFFER_SIZE, fmt, ap);
+		io_h->w_size = vsnprintf(io_h->w_buffer, SVF_IO_BUFFER_SIZE, fmt, ap);
 		va_end(ap);
 
 		DEBUG(10,("Write line data: %s\n", io_h->w_buffer));
 
-		if (sav_io_write(io_h) != SAV_RESULT_OK) {
-			return SAV_RESULT_ERROR;
+		if (svf_io_write(io_h) != SVF_RESULT_OK) {
+			return SVF_RESULT_ERROR;
 		}
 	}
 
-	if (sav_io_read(io_h) != SAV_RESULT_OK) {
-		return SAV_RESULT_ERROR;
+	if (svf_io_read(io_h) != SVF_RESULT_OK) {
+		return SVF_RESULT_ERROR;
 	}
 	if (io_h->r_size == 0) { /* EOF */
-		return SAV_RESULT_ERROR; /* FIXME: SAV_RESULT_EOF? */
+		return SVF_RESULT_ERROR; /* FIXME: SVF_RESULT_EOF? */
 	}
 
 	DEBUG(10,("Read line data: %s\n", io_h->r_buffer));
 
-	return SAV_RESULT_OK;
+	return SVF_RESULT_OK;
 }
 
 /* Generic "stupid" cache
  * ====================================================================== */
 
-sav_cache_handle *sav_cache_new(TALLOC_CTX *ctx, int entry_limit, time_t time_limit)
+svf_cache_handle *svf_cache_new(TALLOC_CTX *ctx, int entry_limit, time_t time_limit)
 {
-	sav_cache_handle *cache_h = TALLOC_ZERO_P(ctx, sav_cache_handle);
+	svf_cache_handle *cache_h = TALLOC_ZERO_P(ctx, svf_cache_handle);
 	if (!cache_h) {
 		DEBUG(0,("TALLOC_ZERO_P failed\n"));
 		return NULL;
@@ -280,9 +280,9 @@ sav_cache_handle *sav_cache_new(TALLOC_CTX *ctx, int entry_limit, time_t time_li
 	return cache_h;
 }
 
-void sav_cache_purge(sav_cache_handle *cache_h)
+void svf_cache_purge(svf_cache_handle *cache_h)
 {
-	sav_cache_entry *cache_e;
+	svf_cache_entry *cache_e;
 	time_t time_now = time(NULL);
 
 	DEBUG(10,("Purging cache entry\n"));
@@ -303,11 +303,11 @@ void sav_cache_purge(sav_cache_handle *cache_h)
 	}
 }
 
-sav_cache_entry *sav_cache_get(sav_cache_handle *cache_h, const char *fname, int fname_len)
+svf_cache_entry *svf_cache_get(svf_cache_handle *cache_h, const char *fname, int fname_len)
 {
-	sav_cache_entry *cache_e;
+	svf_cache_entry *cache_e;
 
-	sav_cache_purge(cache_h);
+	svf_cache_purge(cache_h);
 
 	if (fname_len <= 0) {
 		fname_len = strlen(fname);
@@ -325,7 +325,7 @@ sav_cache_entry *sav_cache_get(sav_cache_handle *cache_h, const char *fname, int
 	return cache_e;
 }
 
-void sav_cache_add(sav_cache_handle *cache_h, sav_cache_entry *cache_e)
+void svf_cache_add(svf_cache_handle *cache_h, svf_cache_entry *cache_e)
 {
 	cache_e->fname_len = strlen(cache_e->fname);
 	cache_e->time = time(NULL);
@@ -337,43 +337,43 @@ void sav_cache_add(sav_cache_handle *cache_h, sav_cache_entry *cache_e)
 		cache_h->end = cache_e;
 	}
 
-	sav_cache_purge(cache_h);
+	svf_cache_purge(cache_h);
 }
 
 /* Environment variable handling for execle(2)
  * ====================================================================== */
 
-sav_env_struct *sav_env_new(TALLOC_CTX *ctx)
+svf_env_struct *svf_env_new(TALLOC_CTX *ctx)
 {
-	sav_env_struct *env_h = TALLOC_ZERO_P(ctx, sav_env_struct);
+	svf_env_struct *env_h = TALLOC_ZERO_P(ctx, svf_env_struct);
 	if (!env_h) {
 		DEBUG(0, ("TALLOC_ZERO_P failed\n"));
-		goto sav_env_init_failed;
+		goto svf_env_init_failed;
 	}
 
 	env_h->env_num = 0;
-	env_h->env_size = SAV_ENV_SIZE_CHUNK;
+	env_h->env_size = SVF_ENV_SIZE_CHUNK;
 	env_h->env_list = TALLOC_ARRAY(env_h, char *, env_h->env_size);
 	if (!env_h->env_list) {
 		DEBUG(0, ("TALLOC_ARRAY failed\n"));
-		goto sav_env_init_failed;
+		goto svf_env_init_failed;
 	}
 
 	env_h->env_list[0] = NULL;
 
 	return env_h;
 
-sav_env_init_failed:
+svf_env_init_failed:
 	TALLOC_FREE(env_h);
 	return NULL;
 }
 
-char * const *sav_env_list(sav_env_struct *env_h)
+char * const *svf_env_list(svf_env_struct *env_h)
 {
 	return env_h->env_list;
 }
 
-int sav_env_set(sav_env_struct *env_h, const char *name, const char *value)
+int svf_env_set(svf_env_struct *env_h, const char *name, const char *value)
 {
 	size_t name_len = strlen(name);
 	size_t env_len = name_len + 1 + strlen(value); /* strlen("name=value") */
@@ -392,7 +392,7 @@ int sav_env_set(sav_env_struct *env_h, const char *name, const char *value)
 
 		if (env_h->env_size == env_h->env_num + 1) {
 			/* Enlarge env_h->env_list */
-			size_t env_size_new = env_h->env_size + SAV_ENV_SIZE_CHUNK;
+			size_t env_size_new = env_h->env_size + SVF_ENV_SIZE_CHUNK;
 			char **env_list_new = TALLOC_REALLOC_ARRAY(
 				env_h, env_h->env_list, char *, env_size_new);
 			if (!env_list_new) {
@@ -437,8 +437,8 @@ int sav_env_set(sav_env_struct *env_h, const char *name, const char *value)
 /* Shell scripting
  * ====================================================================== */
 
-/* sav_env version Samba's *_sub_advanced() in substitute.c */
-int sav_shell_set_conn_env(sav_env_struct *env_h, connection_struct *conn)
+/* svf_env version Samba's *_sub_advanced() in substitute.c */
+int svf_shell_set_conn_env(svf_env_struct *env_h, connection_struct *conn)
 {
 	int snum = SNUM(conn);
 	char addr[INET6_ADDRSTRLEN];
@@ -450,49 +450,49 @@ int sav_shell_set_conn_env(sav_env_struct *env_h, connection_struct *conn)
 	}
 
 	client_socket_addr(get_client_fd(), addr, sizeof(addr));
-	sav_env_set(env_h, "SAV_COMMAND_SERVER_IP", addr + (strnequal(addr,"::ffff:",7) ? 7 : 0));
-	sav_env_set(env_h, "SAV_COMMAND_SERVER_NAME", myhostname());
-	sav_env_set(env_h, "SAV_COMMAND_SERVER_NETBIOS_NAME", local_machine_name);
+	svf_env_set(env_h, "SVF_COMMAND_SERVER_IP", addr + (strnequal(addr,"::ffff:",7) ? 7 : 0));
+	svf_env_set(env_h, "SVF_COMMAND_SERVER_NAME", myhostname());
+	svf_env_set(env_h, "SVF_COMMAND_SERVER_NETBIOS_NAME", local_machine_name);
 	slprintf(pidstr,sizeof(pidstr)-1, "%ld", (long)sys_getpid());
-	sav_env_set(env_h, "SAV_COMMAND_SERVER_PID", pidstr);
+	svf_env_set(env_h, "SVF_COMMAND_SERVER_PID", pidstr);
 
-	sav_env_set(env_h, "SAV_COMMAND_SERVICE_NAME", lp_servicename(snum));
-	sav_env_set(env_h, "SAV_COMMAND_SERVICE_PATH", conn->connectpath);
+	svf_env_set(env_h, "SVF_COMMAND_SERVICE_NAME", lp_servicename(snum));
+	svf_env_set(env_h, "SVF_COMMAND_SERVICE_PATH", conn->connectpath);
 
 	client_addr(get_client_fd(), addr, sizeof(addr));
-	sav_env_set(env_h, "SAV_COMMAND_CLIENT_IP", addr + (strnequal(addr,"::ffff:",7) ? 7 : 0));
-	sav_env_set(env_h, "SAV_COMMAND_CLIENT_NAME", client_name(get_client_fd()));
-	sav_env_set(env_h, "SAV_COMMAND_CLIENT_NETBIOS_NAME", get_remote_machine_name());
+	svf_env_set(env_h, "SVF_COMMAND_CLIENT_IP", addr + (strnequal(addr,"::ffff:",7) ? 7 : 0));
+	svf_env_set(env_h, "SVF_COMMAND_CLIENT_NAME", client_name(get_client_fd()));
+	svf_env_set(env_h, "SVF_COMMAND_CLIENT_NETBIOS_NAME", get_remote_machine_name());
 
-	sav_env_set(env_h, "SAV_COMMAND_USER_NAME", get_current_username());
-	sav_env_set(env_h, "SAV_COMMAND_USER_DOMAIN", current_user_info.domain);
+	svf_env_set(env_h, "SVF_COMMAND_USER_NAME", get_current_username());
+	svf_env_set(env_h, "SVF_COMMAND_USER_DOMAIN", current_user_info.domain);
 
 	return 0;
 }
 
 /* Modified version of Samba's smbrun() in smbrun.c */
-int sav_shell_run(
+int svf_shell_run(
 	const char *cmd,
 	uid_t uid,
 	gid_t gid,
-	sav_env_struct *env_h,
+	svf_env_struct *env_h,
 	connection_struct *conn,
 	bool sanitize)
 {
 	pid_t pid;
 
 	if (!env_h) {
-		env_h = sav_env_new(talloc_tos());
+		env_h = svf_env_new(talloc_tos());
 		if (!env_h) {
 			return -1;
 		}
 	}
 
-	if (conn && sav_shell_set_conn_env(env_h, conn) == -1) {
+	if (conn && svf_shell_set_conn_env(env_h, conn) == -1) {
 		return -1;
 	}
 
-#ifdef SAV_RUN_OUTFD_SUPPORT
+#ifdef SVF_RUN_OUTFD_SUPPORT
 	/* point our stdout at the file we want output to go into */
 	if (outfd && ((*outfd = setup_out_fd()) == -1)) {
 		return -1;
@@ -510,9 +510,9 @@ int sav_shell_run(
 	CatchChildLeaveStatus();
 
 	if ((pid=sys_fork()) < 0) {
-		DEBUG(0,("sav_run: fork failed with error %s\n", strerror(errno)));
+		DEBUG(0,("svf_run: fork failed with error %s\n", strerror(errno)));
 		CatchChild();
-#ifdef SAV_RUN_OUTFD_SUPPORT
+#ifdef SVF_RUN_OUTFD_SUPPORT
 		if (outfd) {
 			close(*outfd);
 			*outfd = -1;
@@ -541,7 +541,7 @@ int sav_shell_run(
 
 		if (wpid != pid) {
 			DEBUG(2,("waitpid(%d) : %s\n",(int)pid,strerror(errno)));
-#ifdef SAV_RUN_OUTFD_SUPPORT
+#ifdef SVF_RUN_OUTFD_SUPPORT
 			if (outfd) {
 				close(*outfd);
 				*outfd = -1;
@@ -550,7 +550,7 @@ int sav_shell_run(
 			return -1;
 		}
 
-#ifdef SAV_RUN_OUTFD_SUPPORT
+#ifdef SVF_RUN_OUTFD_SUPPORT
 		/* Reset the seek pointer. */
 		if (outfd) {
 			sys_lseek(*outfd, 0, SEEK_SET);
@@ -572,7 +572,7 @@ int sav_shell_run(
 	   don't directly exec the command we want because it may be a
 	   pipeline or anything else the config file specifies */
 
-#ifdef SAV_RUN_OUTFD_SUPPORT
+#ifdef SVF_RUN_OUTFD_SUPPORT
 	/* point our stdout at the file we want output to go into */
 	if (outfd) {
 		close(1);
@@ -617,7 +617,7 @@ int sav_shell_run(
 		}
 
 		execle("/bin/sh","sh","-c",
-		    newcmd ? (const char *)newcmd : cmd, NULL, sav_env_list(env_h));
+		    newcmd ? (const char *)newcmd : cmd, NULL, svf_env_list(env_h));
 
 		SAFE_FREE(newcmd);
 	}

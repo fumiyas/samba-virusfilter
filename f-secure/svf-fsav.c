@@ -17,255 +17,255 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define SAV_MODULE_ENGINE "fsav"
+#define SVF_MODULE_ENGINE "fsav"
 
 /* Default values for standard "extra" configuration variables */
-#define SAV_DEFAULT_SCAN_REQUEST_LIMIT		0
-#define SAV_DEFAULT_SOCKET_PATH			"/tmp/.fsav-0"
-#define SAV_DEFAULT_CONNECT_TIMEOUT		30000 /* msec */
-#define SAV_DEFAULT_TIMEOUT			60000 /* msec */
-#define SAV_DEFAULT_SCAN_ARCHIVE		false
-#define SAV_DEFAULT_MAX_NESTED_SCAN_ARCHIVE	1
-#define SAV_DEFAULT_SCAN_MIME			false
+#define SVF_DEFAULT_SCAN_REQUEST_LIMIT		0
+#define SVF_DEFAULT_SOCKET_PATH			"/tmp/.fsav-0"
+#define SVF_DEFAULT_CONNECT_TIMEOUT		30000 /* msec */
+#define SVF_DEFAULT_TIMEOUT			60000 /* msec */
+#define SVF_DEFAULT_SCAN_ARCHIVE		false
+#define SVF_DEFAULT_MAX_NESTED_SCAN_ARCHIVE	1
+#define SVF_DEFAULT_SCAN_MIME			false
 /* Default values for module-specific configuration variables */
-#define SAV_DEFAULT_FSAV_PROTOCOL		5 /* F-Secure Linux 7 or later? */
-#define SAV_DEFAULT_SCAN_RISKWARE		false
-#define SAV_DEFAULT_STOP_SCAN_ON_FIRST		true
-#define SAV_DEFAULT_FILTER_FILENAME		false
+#define SVF_DEFAULT_FSAV_PROTOCOL		5 /* F-Secure Linux 7 or later? */
+#define SVF_DEFAULT_SCAN_RISKWARE		false
+#define SVF_DEFAULT_STOP_SCAN_ON_FIRST		true
+#define SVF_DEFAULT_FILTER_FILENAME		false
 
-#define SAV_MODULE_CONFIG_MEMBERS \
+#define SVF_MODULE_CONFIG_MEMBERS \
 	int fsav_protocol; \
 	bool scan_riskware; \
 	bool stop_scan_on_first; \
 	bool filter_filename; \
-	/* End of SAV_MODULE_CONFIG_MEMBERS */
+	/* End of SVF_MODULE_CONFIG_MEMBERS */
 
-#define sav_module_connect			sav_fsav_connect
-#define sav_module_destruct_config		sav_fsav_destruct_config
-#define sav_module_scan_init			sav_fsav_scan_init
-#define sav_module_scan_end			sav_fsav_scan_end
-#define sav_module_scan				sav_fsav_scan
+#define svf_module_connect			svf_fsav_connect
+#define svf_module_destruct_config		svf_fsav_destruct_config
+#define svf_module_scan_init			svf_fsav_scan_init
+#define svf_module_scan_end			svf_fsav_scan_end
+#define svf_module_scan				svf_fsav_scan
 
-#include "sav-vfs.h"
-
-/* ====================================================================== */
-
-#include "sav-utils.h"
+#include "svf-vfs.h"
 
 /* ====================================================================== */
 
-static int sav_fsav_connect(
+#include "svf-utils.h"
+
+/* ====================================================================== */
+
+static int svf_fsav_connect(
 	vfs_handle_struct *vfs_h,
-	sav_handle *sav_h,
+	svf_handle *svf_h,
 	const char *svc,
 	const char *user)
 {
 	int snum = SNUM(vfs_h->conn);
 
-        sav_h->fsav_protocol = lp_parm_int(
-		snum, SAV_MODULE_NAME,
+        svf_h->fsav_protocol = lp_parm_int(
+		snum, SVF_MODULE_NAME,
 		"fsav protocol",
-		SAV_DEFAULT_FSAV_PROTOCOL);
+		SVF_DEFAULT_FSAV_PROTOCOL);
 
-        sav_h->scan_riskware = lp_parm_bool(
-		snum, SAV_MODULE_NAME,
+        svf_h->scan_riskware = lp_parm_bool(
+		snum, SVF_MODULE_NAME,
 		"scan riskware",
-		SAV_DEFAULT_SCAN_RISKWARE);
+		SVF_DEFAULT_SCAN_RISKWARE);
 
-        sav_h->stop_scan_on_first = lp_parm_bool(
-		snum, SAV_MODULE_NAME,
+        svf_h->stop_scan_on_first = lp_parm_bool(
+		snum, SVF_MODULE_NAME,
 		"stop scan on first",
-		SAV_DEFAULT_STOP_SCAN_ON_FIRST);
+		SVF_DEFAULT_STOP_SCAN_ON_FIRST);
 
-        sav_h->filter_filename = lp_parm_bool(
-		snum, SAV_MODULE_NAME,
+        svf_h->filter_filename = lp_parm_bool(
+		snum, SVF_MODULE_NAME,
 		"filter filename",
-		SAV_DEFAULT_FILTER_FILENAME);
+		SVF_DEFAULT_FILTER_FILENAME);
 
 	return 0;
 }
 
-static int sav_fsav_destruct_config(sav_handle *sav_h)
+static int svf_fsav_destruct_config(svf_handle *svf_h)
 {
-	sav_fsav_scan_end(sav_h);
+	svf_fsav_scan_end(svf_h);
 
 	return 0;
 }
 
-static sav_result sav_fsav_scan_init(sav_handle *sav_h)
+static svf_result svf_fsav_scan_init(svf_handle *svf_h)
 {
-	sav_io_handle *io_h = sav_h->io_h;
-	sav_result result;
+	svf_io_handle *io_h = svf_h->io_h;
+	svf_result result;
 
 	if (io_h->socket != -1) {
 		/* Check if the currect connection is available */
 		/* FIXME: I don't know the correct PING command format... */
-		if (sav_io_writeread(io_h, "PING") == SAV_RESULT_OK) {
+		if (svf_io_writeread(io_h, "PING") == SVF_RESULT_OK) {
 			if (strn_eq(io_h->r_buffer, "ERROR\t", 6)) {
 				DEBUG(10,("Re-using existent fsavd connection\n"));
-				return SAV_RESULT_OK;
+				return SVF_RESULT_OK;
 			}
 		}
 
 		DEBUG(10,("Closing unavailable fsavd connection\n"));
 
-		sav_fsav_scan_end(sav_h);
+		svf_fsav_scan_end(svf_h);
 	}
 
-	DEBUG(10,("Connecting to fsavd socket: %s\n", sav_h->socket_path));
+	DEBUG(10,("Connecting to fsavd socket: %s\n", svf_h->socket_path));
 
 	become_root();
-	result = sav_io_connect_path(io_h, sav_h->socket_path);
+	result = svf_io_connect_path(io_h, svf_h->socket_path);
 	unbecome_root();
 
-	if (result != SAV_RESULT_OK) {
+	if (result != SVF_RESULT_OK) {
 		DEBUG(0,("Connecting to fsavd socket failed: %s: %s\n",
-			sav_h->socket_path, strerror(errno)));
-		return SAV_RESULT_ERROR;
+			svf_h->socket_path, strerror(errno)));
+		return SVF_RESULT_ERROR;
 	}
 
-	if (sav_io_read(io_h) != SAV_RESULT_OK) {
+	if (svf_io_read(io_h) != SVF_RESULT_OK) {
 		DEBUG(0,("Reading fsavd greeting message failed: %s\n", strerror(errno)));
-		goto sav_fsav_init_failed;
+		goto svf_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "DBVERSION\t", 10)) {
 		DEBUG(0,("Invalid fsavd greeting message: %s\n", io_h->r_buffer));
-		goto sav_fsav_init_failed;
+		goto svf_fsav_init_failed;
 	}
 
-	if (sav_io_writeread(io_h,
-	    "PROTOCOL\t%d", sav_h->fsav_protocol)
-	    != SAV_RESULT_OK) {
+	if (svf_io_writeread(io_h,
+	    "PROTOCOL\t%d", svf_h->fsav_protocol)
+	    != SVF_RESULT_OK) {
 		DEBUG(0,("PROTOCOL failed: %s\n", strerror(errno)));
-		goto sav_fsav_init_failed;
+		goto svf_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK\t", 3)) {
 		DEBUG(0,("PROTOCOL failed: %s\n", io_h->r_buffer));
-		goto sav_fsav_init_failed;
+		goto svf_fsav_init_failed;
 	}
 
 #if 0 /* FIXME */
-	if (sav_io_writeread(io_h,
-	    "CONFIGURE\tTIMEOUT\t%d", sav_h->timeout / 1000)
-	    != SAV_RESULT_OK) {
+	if (svf_io_writeread(io_h,
+	    "CONFIGURE\tTIMEOUT\t%d", svf_h->timeout / 1000)
+	    != SVF_RESULT_OK) {
 		DEBUG(0,("CONFIGURE TIMEOUT failed: %s\n", strerror(errno)));
-		goto sav_fsav_init_failed;
+		goto svf_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK\t", 3)) {
 		DEBUG(0,("CONFIGURE TIMEOUT failed: %s\n", io_h->r_buffer));
-		goto sav_fsav_init_failed;
+		goto svf_fsav_init_failed;
 	}
 #endif
 
-	if (sav_io_writeread(io_h,
-	    "CONFIGURE\tSTOPONFIRST\t%d", sav_h->stop_scan_on_first ? 1 : 0)
-	    != SAV_RESULT_OK) {
+	if (svf_io_writeread(io_h,
+	    "CONFIGURE\tSTOPONFIRST\t%d", svf_h->stop_scan_on_first ? 1 : 0)
+	    != SVF_RESULT_OK) {
 		DEBUG(0,("CONFIGURE STOPONFIRST failed: %s\n", strerror(errno)));
-		goto sav_fsav_init_failed;
+		goto svf_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK\t", 3)) {
 		DEBUG(0,("CONFIGURE STOPONFIRST failed: %s\n", io_h->r_buffer));
-		goto sav_fsav_init_failed;
+		goto svf_fsav_init_failed;
 	}
 
-	if (sav_io_writeread(io_h,
-	    "CONFIGURE\tFILTER\t%d", sav_h->filter_filename ? 1 : 0)
-	    != SAV_RESULT_OK) {
+	if (svf_io_writeread(io_h,
+	    "CONFIGURE\tFILTER\t%d", svf_h->filter_filename ? 1 : 0)
+	    != SVF_RESULT_OK) {
 		DEBUG(0,("CONFIGURE FILTER failed: %s\n", strerror(errno)));
-		goto sav_fsav_init_failed;
+		goto svf_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK\t", 3)) {
 		DEBUG(0,("CONFIGURE FILTER failed: %s\n", io_h->r_buffer));
-		goto sav_fsav_init_failed;
+		goto svf_fsav_init_failed;
 	}
 
-	if (sav_io_writeread(io_h,
-	    "CONFIGURE\tARCHIVE\t%d", sav_h->scan_archive ? 1 : 0)
-	    != SAV_RESULT_OK) {
+	if (svf_io_writeread(io_h,
+	    "CONFIGURE\tARCHIVE\t%d", svf_h->scan_archive ? 1 : 0)
+	    != SVF_RESULT_OK) {
 		DEBUG(0,("CONFIGURE ARCHIVE failed: %s\n", strerror(errno)));
-		goto sav_fsav_init_failed;
+		goto svf_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK\t", 3)) {
 		DEBUG(0,("CONFIGURE ARCHIVE failed: %s\n", io_h->r_buffer));
-		goto sav_fsav_init_failed;
+		goto svf_fsav_init_failed;
 	}
 
-	if (sav_io_writeread(io_h,
-	    "CONFIGURE\tMAXARCH\t%d", sav_h->max_nested_scan_archive)
-	    != SAV_RESULT_OK) {
+	if (svf_io_writeread(io_h,
+	    "CONFIGURE\tMAXARCH\t%d", svf_h->max_nested_scan_archive)
+	    != SVF_RESULT_OK) {
 		DEBUG(0,("CONFIGURE MAXARCH failed: %s\n", strerror(errno)));
-		goto sav_fsav_init_failed;
+		goto svf_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK\t", 3)) {
 		DEBUG(0,("CONFIGURE MAXARCH failed: %s\n", io_h->r_buffer));
-		goto sav_fsav_init_failed;
+		goto svf_fsav_init_failed;
 	}
 
-	if (sav_io_writeread(io_h,
-	    "CONFIGURE\tMIME\t%d", sav_h->scan_mime ? 1 : 0)
-	    != SAV_RESULT_OK) {
+	if (svf_io_writeread(io_h,
+	    "CONFIGURE\tMIME\t%d", svf_h->scan_mime ? 1 : 0)
+	    != SVF_RESULT_OK) {
 		DEBUG(0,("CONFIGURE MIME failed: %s\n", strerror(errno)));
-		goto sav_fsav_init_failed;
+		goto svf_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK\t", 3)) {
 		DEBUG(0,("CONFIGURE MIME failed: %s\n", io_h->r_buffer));
-		goto sav_fsav_init_failed;
+		goto svf_fsav_init_failed;
 	}
 
-	if (sav_io_writeread(io_h,
-	    "CONFIGURE\tRISKWARE\t%d", sav_h->scan_riskware ? 1 : 0)
-	    != SAV_RESULT_OK) {
+	if (svf_io_writeread(io_h,
+	    "CONFIGURE\tRISKWARE\t%d", svf_h->scan_riskware ? 1 : 0)
+	    != SVF_RESULT_OK) {
 		DEBUG(0,("CONFIGURE RISKWARE failed: %s\n", strerror(errno)));
-		goto sav_fsav_init_failed;
+		goto svf_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK\t", 3)) {
 		DEBUG(0,("CONFIGURE RISKWARE failed: %s\n", io_h->r_buffer));
-		goto sav_fsav_init_failed;
+		goto svf_fsav_init_failed;
 	}
 
-	return SAV_RESULT_OK;
+	return SVF_RESULT_OK;
 
-sav_fsav_init_failed:
+svf_fsav_init_failed:
 
-	sav_fsav_scan_end(sav_h);
+	svf_fsav_scan_end(svf_h);
 
-	return SAV_RESULT_ERROR;
+	return SVF_RESULT_ERROR;
 }
 
-static void sav_fsav_scan_end(sav_handle *sav_h)
+static void svf_fsav_scan_end(svf_handle *svf_h)
 {
-	sav_io_handle *io_h = sav_h->io_h;
+	svf_io_handle *io_h = svf_h->io_h;
 
-	sav_io_disconnect(io_h);
+	svf_io_disconnect(io_h);
 }
 
-static sav_result sav_fsav_scan(
+static svf_result svf_fsav_scan(
 	vfs_handle_struct *vfs_h,
-	sav_handle *sav_h,
+	svf_handle *svf_h,
 	const char *filepath,
 	const char **reportp)
 {
-	sav_io_handle *io_h = sav_h->io_h;
-	sav_result result = SAV_RESULT_CLEAN;
+	svf_io_handle *io_h = svf_h->io_h;
+	svf_result result = SVF_RESULT_CLEAN;
 	const char *report = NULL;
-	char *reply_token, *reply_saveptr;
+	char *reply_token, *reply_svfeptr;
 
-	if (sav_io_writeread(io_h, "SCAN\t%s", filepath) != SAV_RESULT_OK) {
+	if (svf_io_writeread(io_h, "SCAN\t%s", filepath) != SVF_RESULT_OK) {
 		DEBUG(0,("SCAN failed: %s\n", strerror(errno)));
-		result = SAV_RESULT_ERROR;
+		result = SVF_RESULT_ERROR;
 		report = talloc_asprintf(talloc_tos(),
 			"SCAN failed: %s\n", strerror(errno));
-		goto sav_fsav_scan_return;
+		goto svf_fsav_scan_return;
 	}
 
 	while (true) {
-		reply_token = strtok_r(io_h->r_buffer, "\t", &reply_saveptr);
+		reply_token = strtok_r(io_h->r_buffer, "\t", &reply_svfeptr);
 
 		if (str_eq(reply_token, "OK") ) {
 			break;
 		} else if (str_eq(reply_token, "CLEAN") ) {
 			/* CLEAN\t<FILEPATH> */
-			result = SAV_RESULT_CLEAN;
+			result = SVF_RESULT_CLEAN;
 			report = "Clean";
 		} else if (str_eq(reply_token, "INFECTED") ||
 			   str_eq(reply_token, "ARCHIVE_INFECTED") ||
@@ -274,9 +274,9 @@ static sav_result sav_fsav_scan(
 			   str_eq(reply_token, "ARCHIVE_RISKWARE") ||
 			   str_eq(reply_token, "MIME_RISKWARE")) {
 			/* INFECTED\t<FILEPATH>\t<REPORT>\t<ENGINE> */
-			result = SAV_RESULT_INFECTED;
-			reply_token = strtok_r(NULL, "\t", &reply_saveptr);
-			reply_token = strtok_r(NULL, "\t", &reply_saveptr);
+			result = SVF_RESULT_INFECTED;
+			reply_token = strtok_r(NULL, "\t", &reply_svfeptr);
+			reply_token = strtok_r(NULL, "\t", &reply_svfeptr);
 			if (reply_token) {
 				  report = reply_token;
 			} else {
@@ -291,23 +291,23 @@ static sav_result sav_fsav_scan(
 			   str_eq(reply_token, "MIME_SUSPECTED")) {
 #if 0
 			/* FIXME: Block if "block suspected file" option is true */
-			result = SAV_RESULT_SUSPECTED;
+			result = SVF_RESULT_SUSPECTED;
 			...
 #else
 			/* Ignore */
 #endif
 		} else if (str_eq(reply_token, "SCAN_FAILURE")) {
 			/* SCAN_FAILURE\t<FILEPATH>\t0x<CODE>\t<REPORT> [<ENGINE>] */
-			result = SAV_RESULT_ERROR;
-			reply_token = strtok_r(NULL, "\t", &reply_saveptr);
-			reply_token = strtok_r(NULL, "\t", &reply_saveptr);
+			result = SVF_RESULT_ERROR;
+			reply_token = strtok_r(NULL, "\t", &reply_svfeptr);
+			reply_token = strtok_r(NULL, "\t", &reply_svfeptr);
 			if (reply_token) {
 				  report = reply_token;
 			} else {
 				  report = "UNKNOWN ERROR";
 			}
 		} else {
-			result = SAV_RESULT_ERROR;
+			result = SVF_RESULT_ERROR;
 			report = talloc_asprintf(talloc_tos(),
 				"Invalid reply from fsavd: %s\t", reply_token);
 			if (!report) {
@@ -315,14 +315,14 @@ static sav_result sav_fsav_scan(
 			}
 		}
 
-		if (sav_io_read(io_h) != SAV_RESULT_OK) {
+		if (svf_io_read(io_h) != SVF_RESULT_OK) {
 			DEBUG(0,("Reading continued reply from fsavd failed: %s\n",
 				strerror(errno)));
 			break;
 		}
 	}
 
-sav_fsav_scan_return:
+svf_fsav_scan_return:
 
 	*reportp = report;
 

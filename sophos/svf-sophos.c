@@ -1,6 +1,6 @@
 /*
    Samba Anti-Virus VFS modules
-   Sophos Anti-Virus savdid (Sophie protocol) support
+   Sophos Anti-Virus svfdid (Sophie protocol) support
    Copyright (C) 2010 SATOH Fumiyasu @ OSS Technology, Inc.
 
    This program is free software; you can redistribute it and/or modify
@@ -17,75 +17,75 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define SAV_MODULE_ENGINE "sophos"
+#define SVF_MODULE_ENGINE "sophos"
 
 /* Default values for standard "extra" configuration variables */
 #ifdef SOPHOS_DEFAULT_SOCKET_PATH
-#  define SAV_DEFAULT_SOCKET_PATH		SOPHOS_DEFAULT_SOCKET_PATH
+#  define SVF_DEFAULT_SOCKET_PATH		SOPHOS_DEFAULT_SOCKET_PATH
 #else
-#  define SAV_DEFAULT_SOCKET_PATH		"/var/tmp/savid/sophie.sock"
+#  define SVF_DEFAULT_SOCKET_PATH		"/var/tmp/svfid/sophie.sock"
 #endif
-#define SAV_DEFAULT_CONNECT_TIMEOUT		30000 /* msec */
-#define SAV_DEFAULT_TIMEOUT			60000 /* msec */
+#define SVF_DEFAULT_CONNECT_TIMEOUT		30000 /* msec */
+#define SVF_DEFAULT_TIMEOUT			60000 /* msec */
 /* Default values for module-specific configuration variables */
 /* None */
 
-#define sav_module_scan_init			sav_sophos_scan_init
-#define sav_module_scan_end			sav_sophos_scan_end
-#define sav_module_scan				sav_sophos_scan
+#define svf_module_scan_init			svf_sophos_scan_init
+#define svf_module_scan_end			svf_sophos_scan_end
+#define svf_module_scan				svf_sophos_scan
 
-#include "sav-vfs.h"
-
-/* ====================================================================== */
-
-#include "sav-utils.h"
+#include "svf-vfs.h"
 
 /* ====================================================================== */
 
-static sav_result sav_sophos_scan_init(sav_handle *sav_h)
+#include "svf-utils.h"
+
+/* ====================================================================== */
+
+static svf_result svf_sophos_scan_init(svf_handle *svf_h)
 {
-	sav_io_handle *io_h = sav_h->io_h;
-	sav_result result;
+	svf_io_handle *io_h = svf_h->io_h;
+	svf_result result;
 
-	DEBUG(0,("Connecting to savdid (sophie) socket: %s\n", sav_h->socket_path));
+	DEBUG(0,("Connecting to svfdid (sophie) socket: %s\n", svf_h->socket_path));
 
 	become_root();
-	result = sav_io_connect_path(io_h, sav_h->socket_path);
+	result = svf_io_connect_path(io_h, svf_h->socket_path);
 	unbecome_root();
 
-	if (result != SAV_RESULT_OK) {
-		DEBUG(0,("Connecting to savdid (sophie) socket failed: %s: %s\n",
-			sav_h->socket_path, strerror(errno)));
-		return SAV_RESULT_ERROR;
+	if (result != SVF_RESULT_OK) {
+		DEBUG(0,("Connecting to svfdid (sophie) socket failed: %s: %s\n",
+			svf_h->socket_path, strerror(errno)));
+		return SVF_RESULT_ERROR;
 	}
 
-	return SAV_RESULT_OK;
+	return SVF_RESULT_OK;
 }
 
-static void sav_sophos_scan_end(sav_handle *sav_h)
+static void svf_sophos_scan_end(svf_handle *svf_h)
 {
-	sav_io_handle *io_h = sav_h->io_h;
+	svf_io_handle *io_h = svf_h->io_h;
 
-	sav_io_disconnect(io_h);
+	svf_io_disconnect(io_h);
 }
 
-static sav_result sav_sophos_scan(
+static svf_result svf_sophos_scan(
 	vfs_handle_struct *vfs_h,
-	sav_handle *sav_h,
+	svf_handle *svf_h,
 	const char *filepath,
 	const char **reportp)
 {
-	sav_io_handle *io_h = sav_h->io_h;
-	sav_result result = SAV_RESULT_CLEAN;
+	svf_io_handle *io_h = svf_h->io_h;
+	svf_result result = SVF_RESULT_CLEAN;
 	const char *report = NULL;
 	char *colon;
 
-	if (sav_io_writeread(io_h, "%s", filepath) != SAV_RESULT_OK) {
+	if (svf_io_writeread(io_h, "%s", filepath) != SVF_RESULT_OK) {
 		DEBUG(0,("Scan failed: %s\n", strerror(errno)));
-		result = SAV_RESULT_ERROR;
+		result = SVF_RESULT_ERROR;
 		report = talloc_asprintf(talloc_tos(),
 			"Scan failed: %s\n", strerror(errno));
-		goto sav_sophos_scan_return;
+		goto svf_sophos_scan_return;
 	}
 
 	colon = strchr(io_h->r_buffer, ':');
@@ -98,24 +98,24 @@ static sav_result sav_sophos_scan(
 
 	if (str_eq(io_h->r_buffer, "0") ) {
 		/* 0 */
-		result = SAV_RESULT_CLEAN;
+		result = SVF_RESULT_CLEAN;
 		report = "Clean";
 	} else if (str_eq(io_h->r_buffer, "1")) {
 		/* 1:<REPORT> */
-		result = SAV_RESULT_INFECTED;
+		result = SVF_RESULT_INFECTED;
 	} else if (str_eq(io_h->r_buffer, "-1")) {
 		/* -1:<REPORT> */
-		result = SAV_RESULT_ERROR;
+		result = SVF_RESULT_ERROR;
 	} else {
-		result = SAV_RESULT_ERROR;
+		result = SVF_RESULT_ERROR;
 		report = talloc_asprintf(talloc_tos(),
-			"Invalid reply from savdid (sophie): %s\t", io_h->r_buffer);
+			"Invalid reply from svfdid (sophie): %s\t", io_h->r_buffer);
 		if (!report) {
 			DEBUG(0,("talloc_asprintf failed\n"));
 		}
 	}
 
-sav_sophos_scan_return:
+svf_sophos_scan_return:
 
 	*reportp = report;
 

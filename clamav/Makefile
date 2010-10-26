@@ -5,8 +5,8 @@ SOURCE_BUILD=	$(SOURCE_DIR)/build
 
 DIRS=
 
-BUILD_OBJS=		sav-clamav.o
-BUILD_VFS=		sav-clamav.so
+BUILD_OBJS=		svf-clamav.o
+BUILD_VFS=		svf-clamav.so
 BUILD_TARGETS=		$(BUILD_OBJS) $(BUILD_VFS)
 BUILD_TARGETS_POST=
 

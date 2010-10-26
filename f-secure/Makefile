@@ -5,8 +5,8 @@ SOURCE_BUILD=	$(SOURCE_DIR)/build
 
 DIRS=
 
-BUILD_OBJS=		sav-fsav.o
-BUILD_VFS=		sav-fsav.so
+BUILD_OBJS=		svf-fsav.o
+BUILD_VFS=		svf-fsav.so
 BUILD_TARGETS=		$(BUILD_OBJS) $(BUILD_VFS)
 BUILD_TARGETS_POST=
 
