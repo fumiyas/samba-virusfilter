@@ -2,8 +2,8 @@ Samba-VirusFilter - On-access anti-virus filter for Samba
 Copyright (C) 2010 SATOH Fumiyasu @ OSS Technology, Inc.
 ======================================================================
 
-This is a set of various Samba VFS modules for Samba to scan and
-filter virus files on Samba file services with an anti-virus scanner.
+This is a set of various Samba VFS modules to scan and filter virus
+files on Samba file services with an anti-virus scanner.
 
 This software is freely distributable under the GNU public license, a
 copy of which you should have received with this software (in a file
