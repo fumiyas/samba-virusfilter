@@ -1,5 +1,5 @@
 /*
-   Samba Anti-Virus VFS modules
+   Samba-VirusFilter VFS modules
    ClamAV clamd support
    Copyright (C) 2010 SATOH Fumiyasu @ OSS Technology, Inc.
 

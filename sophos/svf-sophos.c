@@ -1,5 +1,5 @@
 /*
-   Samba Anti-Virus VFS modules
+   Samba-VirusFilter VFS modules
    Sophos Anti-Virus svfdid (Sophie protocol) support
    Copyright (C) 2010 SATOH Fumiyasu @ OSS Technology, Inc.
 
