@@ -86,7 +86,7 @@ typedef struct {
 	/* Exclude files */
 	name_compare_entry		*exclude_files;
 	/* Scan result cache */
-	svf_cache_handle		*cache;
+	svf_cache_handle		*cache_h;
 	int				cache_entry_limit;
 	int				cache_time_limit;
 	/* Infected file options */
@@ -301,9 +301,9 @@ static int svf_vfs_connect(
 #endif
 
 	if (svf_h->cache_entry_limit >= 0) {
-		svf_h->cache = svf_cache_new(svf_h,
+		svf_h->cache_h = svf_cache_new(vfs_h,
 			svf_h->cache_entry_limit, svf_h->cache_time_limit);
-		if (!svf_h->cache) {
+		if (!svf_h->cache_h) {
 			DEBUG(0,("Initializing cache failed: Cache disabled"));
 		}
 	}
@@ -562,9 +562,9 @@ static svf_result svf_scan(
 		return SVF_RESULT_ERROR;
 	}
 
-	if (svf_h->cache) {
+	if (svf_h->cache_h) {
 		DEBUG(10, ("Searching cache entry: fname: %s\n", fname));
-		scan_cache_e = svf_cache_get(svf_h->cache, fname, -1);
+		scan_cache_e = svf_cache_get(svf_h->cache_h, fname, -1);
 		if (scan_cache_e) {
 			DEBUG(10, ("Cache entry found: cached result: %d\n", scan_cache_e->result));
 			is_cache = true;
@@ -628,9 +628,9 @@ svf_scan_result_eval:
 		break;
 	}
 
-	if (svf_h->cache && !is_cache && add_scan_cache) {
+	if (svf_h->cache_h && !is_cache && add_scan_cache) {
 		DEBUG(10, ("Adding new cache entry: %s, %d\n", fname, scan_result));
-		scan_cache_e = svf_cache_entry_new(svf_h->cache);
+		scan_cache_e = svf_cache_entry_new(svf_h->cache_h);
 		if (!scan_cache_e) {
 			DEBUG(0,("Cannot create cache entry: svf_cache_entry_new failed"));
 			goto svf_scan_return;
@@ -648,7 +648,7 @@ svf_scan_result_eval:
 			TALLOC_FREE(scan_cache_e);
 			goto svf_scan_return;
 		}
-		svf_cache_add(svf_h->cache, scan_cache_e);
+		svf_cache_add(svf_h->cache_h, scan_cache_e);
 	}
 
 svf_scan_return:
