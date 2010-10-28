@@ -10,6 +10,7 @@
 /config.log
 /config.status
 /configure
-/include/sav-config.h.in
+/include/svf-config.h
+/include/svf-config.h.in
 /tags
 
