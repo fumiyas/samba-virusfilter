@@ -23,43 +23,43 @@ pdie() { echo "$0: ERROR: ${1-}" 1>&2; exit "${2-1}"; }
 
 ## ======================================================================
 
-sendmail="${SAV_ACTION_SENDMAIL_COMMAND:-/usr/sbin/sendmail}"
-sendmail_opts="${SAV_ACTION_SENDMAIL_OPTIONS:-}"
+sendmail="${SVF_ACTION_SENDMAIL_COMMAND:-/usr/sbin/sendmail}"
+sendmail_opts="${SVF_ACTION_SENDMAIL_OPTIONS:-}"
 
-smbclient="${SAV_ACTION_SMBCLIENT_COMMAND:-@SAMBA_BINDIR@/smbclient}"
-smbclient_opts="${SAV_ACTION_SMBCLIENT_OPTIONS:-}"
+smbclient="${SVF_ACTION_SMBCLIENT_COMMAND:-@SAMBA_BINDIR@/smbclient}"
+smbclient_opts="${SVF_ACTION_SMBCLIENT_OPTIONS:-}"
 
 ## ======================================================================
 
-if [ -n "${SAV_RESULT_IS_CACHE-}" ]; then
+if [ -n "${SVF_RESULT_IS_CACHE-}" ]; then
   ## Result is cache. Ignore!
   exit 0
 fi
 
-if [ ! -t 1 ] && [ -z "${SAV_ACTION_BG-}" ]; then
-  export SAV_ACTION_BG=1
+if [ ! -t 1 ] && [ -z "${SVF_ACTION_BG-}" ]; then
+  export SVF_ACTION_BG=1
   "$0" ${1+"$@"} </dev/null >/dev/null &
   exit 0
 fi
 
 ## ----------------------------------------------------------------------
 
-if [ -n "${SAV_INFECTED_FILE_ACTION-}" ]; then
-  report="$SAV_INFECTED_FILE_REPORT"
+if [ -n "${SVF_INFECTED_FILE_ACTION-}" ]; then
+  report="$SVF_INFECTED_FILE_REPORT"
 else
-  report="$SAV_SCAN_ERROR_REPORT"
+  report="$SVF_SCAN_ERROR_REPORT"
 fi
 
-if [ X"$SAV_COMMAND_SERVER_NAME" != X"$SAV_COMMAND_SERVER_IP" ]; then
-  server_name="$SAV_COMMAND_SERVER_NAME"
+if [ X"$SVF_COMMAND_SERVER_NAME" != X"$SVF_COMMAND_SERVER_IP" ]; then
+  server_name="$SVF_COMMAND_SERVER_NAME"
 else
-  server_name="$SAV_COMMAND_SERVER_NETBIOS_NAME"
+  server_name="$SVF_COMMAND_SERVER_NETBIOS_NAME"
 fi
 
-if [ X"$SAV_COMMAND_CLIENT_NAME" != X"$SAV_COMMAND_CLIENT_IP" ]; then
-  client_name="$SAV_COMMAND_CLIENT_NAME"
+if [ X"$SVF_COMMAND_CLIENT_NAME" != X"$SVF_COMMAND_CLIENT_IP" ]; then
+  client_name="$SVF_COMMAND_CLIENT_NAME"
 else
-  client_name="$SAV_COMMAND_CLIENT_NETBIOS_NAME"
+  client_name="$SVF_COMMAND_CLIENT_NETBIOS_NAME"
 fi
 
 mail_to=""
@@ -186,13 +186,13 @@ subject="$subject_prefix$report"
 msg_header="\
 Subject: $subject
 Content-Type: $content_type; charset=$content_encoding
-X-SAV-Version: $SAV_VERSION
-X-SAV-Module-Name: $SAV_MODULE_NAME
+X-SAV-Version: $SVF_VERSION
+X-SAV-Module-Name: $SVF_MODULE_NAME
 "
 
-if [ -n "${SAV_MODULE_VERSION-}" ]; then
+if [ -n "${SVF_MODULE_VERSION-}" ]; then
   msg_header="${msg_header}\
-X-SAV-Module-Version: $SAV_MODULE_VERSION
+X-SAV-Module-Version: $SVF_MODULE_VERSION
 "
 fi
 
@@ -231,30 +231,30 @@ if [ -n "${header_file-}" ] && [ -f "$header_file" ]; then
 fi
 
 msg_body="${msg_body}\
-Server: $server_name ($SAV_COMMAND_SERVER_IP)
-Server PID: $SAV_COMMAND_SERVER_PID
-Service name: $SAV_COMMAND_SERVICE_NAME
-Service path: $SAV_COMMAND_SERVICE_PATH
-Client: $client_name ($SAV_COMMAND_CLIENT_IP)
-User: $SAV_COMMAND_USER_DOMAIN\\$SAV_COMMAND_USER_NAME
+Server: $server_name ($SVF_COMMAND_SERVER_IP)
+Server PID: $SVF_COMMAND_SERVER_PID
+Service name: $SVF_COMMAND_SERVICE_NAME
+Service path: $SVF_COMMAND_SERVICE_PATH
+Client: $client_name ($SVF_COMMAND_CLIENT_IP)
+User: $SVF_COMMAND_USER_DOMAIN\\$SVF_COMMAND_USER_NAME
 "
 
-if [ -n "${SAV_INFECTED_FILE_ACTION-}" ]; then
+if [ -n "${SVF_INFECTED_FILE_ACTION-}" ]; then
   msg_body="${msg_body}\
-Infected file report: $SAV_INFECTED_FILE_REPORT
-Infected file path: $SAV_INFECTED_FILE_PATH
-Infected file action: $SAV_INFECTED_FILE_ACTION
+Infected file report: $SVF_INFECTED_FILE_REPORT
+Infected file path: $SVF_INFECTED_FILE_PATH
+Infected file action: $SVF_INFECTED_FILE_ACTION
 "
 else
   msg_body="${msg_body}\
-Scan error report: $SAV_SCAN_ERROR_REPORT
-Scan error file path: $SAV_SCAN_ERROR_FILE_PATH
+Scan error report: $SVF_SCAN_ERROR_REPORT
+Scan error file path: $SVF_SCAN_ERROR_FILE_PATH
 "
 fi
 
-if [ -n "${SAV_QUARANTINED_FILE_PATH-}" ]; then
+if [ -n "${SVF_QUARANTINED_FILE_PATH-}" ]; then
   msg_body="${msg_body}\
-Quarantined file path: ${SAV_QUARANTINED_FILE_PATH-}
+Quarantined file path: ${SVF_QUARANTINED_FILE_PATH-}
 "
 fi
 
