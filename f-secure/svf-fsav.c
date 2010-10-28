@@ -100,7 +100,7 @@ static svf_result svf_fsav_scan_init(svf_handle *svf_h)
 	if (io_h->socket != -1) {
 		/* Check if the currect connection is available */
 		/* FIXME: I don't know the correct PING command format... */
-		if (svf_io_writeread(io_h, "PING") == SVF_RESULT_OK) {
+		if (svf_io_writefl_readl(io_h, "PING") == SVF_RESULT_OK) {
 			if (strn_eq(io_h->r_buffer, "ERROR\t", 6)) {
 				DEBUG(10,("Re-using existent fsavd connection\n"));
 				return SVF_RESULT_OK;
@@ -124,7 +124,7 @@ static svf_result svf_fsav_scan_init(svf_handle *svf_h)
 		return SVF_RESULT_ERROR;
 	}
 
-	if (svf_io_read(io_h) != SVF_RESULT_OK) {
+	if (svf_io_readl(io_h) != SVF_RESULT_OK) {
 		DEBUG(0,("Reading fsavd greeting message failed: %s\n", strerror(errno)));
 		goto svf_fsav_init_failed;
 	}
@@ -133,7 +133,7 @@ static svf_result svf_fsav_scan_init(svf_handle *svf_h)
 		goto svf_fsav_init_failed;
 	}
 
-	if (svf_io_writeread(io_h,
+	if (svf_io_writefl_readl(io_h,
 	    "PROTOCOL\t%d", svf_h->fsav_protocol)
 	    != SVF_RESULT_OK) {
 		DEBUG(0,("PROTOCOL failed: %s\n", strerror(errno)));
@@ -145,7 +145,7 @@ static svf_result svf_fsav_scan_init(svf_handle *svf_h)
 	}
 
 #if 0 /* FIXME */
-	if (svf_io_writeread(io_h,
+	if (svf_io_writefl_readl(io_h,
 	    "CONFIGURE\tTIMEOUT\t%d", svf_h->timeout / 1000)
 	    != SVF_RESULT_OK) {
 		DEBUG(0,("CONFIGURE TIMEOUT failed: %s\n", strerror(errno)));
@@ -157,7 +157,7 @@ static svf_result svf_fsav_scan_init(svf_handle *svf_h)
 	}
 #endif
 
-	if (svf_io_writeread(io_h,
+	if (svf_io_writefl_readl(io_h,
 	    "CONFIGURE\tSTOPONFIRST\t%d", svf_h->stop_scan_on_first ? 1 : 0)
 	    != SVF_RESULT_OK) {
 		DEBUG(0,("CONFIGURE STOPONFIRST failed: %s\n", strerror(errno)));
@@ -168,7 +168,7 @@ static svf_result svf_fsav_scan_init(svf_handle *svf_h)
 		goto svf_fsav_init_failed;
 	}
 
-	if (svf_io_writeread(io_h,
+	if (svf_io_writefl_readl(io_h,
 	    "CONFIGURE\tFILTER\t%d", svf_h->filter_filename ? 1 : 0)
 	    != SVF_RESULT_OK) {
 		DEBUG(0,("CONFIGURE FILTER failed: %s\n", strerror(errno)));
@@ -179,7 +179,7 @@ static svf_result svf_fsav_scan_init(svf_handle *svf_h)
 		goto svf_fsav_init_failed;
 	}
 
-	if (svf_io_writeread(io_h,
+	if (svf_io_writefl_readl(io_h,
 	    "CONFIGURE\tARCHIVE\t%d", svf_h->scan_archive ? 1 : 0)
 	    != SVF_RESULT_OK) {
 		DEBUG(0,("CONFIGURE ARCHIVE failed: %s\n", strerror(errno)));
@@ -190,7 +190,7 @@ static svf_result svf_fsav_scan_init(svf_handle *svf_h)
 		goto svf_fsav_init_failed;
 	}
 
-	if (svf_io_writeread(io_h,
+	if (svf_io_writefl_readl(io_h,
 	    "CONFIGURE\tMAXARCH\t%d", svf_h->max_nested_scan_archive)
 	    != SVF_RESULT_OK) {
 		DEBUG(0,("CONFIGURE MAXARCH failed: %s\n", strerror(errno)));
@@ -201,7 +201,7 @@ static svf_result svf_fsav_scan_init(svf_handle *svf_h)
 		goto svf_fsav_init_failed;
 	}
 
-	if (svf_io_writeread(io_h,
+	if (svf_io_writefl_readl(io_h,
 	    "CONFIGURE\tMIME\t%d", svf_h->scan_mime ? 1 : 0)
 	    != SVF_RESULT_OK) {
 		DEBUG(0,("CONFIGURE MIME failed: %s\n", strerror(errno)));
@@ -212,7 +212,7 @@ static svf_result svf_fsav_scan_init(svf_handle *svf_h)
 		goto svf_fsav_init_failed;
 	}
 
-	if (svf_io_writeread(io_h,
+	if (svf_io_writefl_readl(io_h,
 	    "CONFIGURE\tRISKWARE\t%d", svf_h->scan_riskware ? 1 : 0)
 	    != SVF_RESULT_OK) {
 		DEBUG(0,("CONFIGURE RISKWARE failed: %s\n", strerror(errno)));
@@ -250,7 +250,7 @@ static svf_result svf_fsav_scan(
 	const char *report = NULL;
 	char *reply_token, *reply_svfeptr;
 
-	if (svf_io_writeread(io_h, "SCAN\t%s", filepath) != SVF_RESULT_OK) {
+	if (svf_io_writefl_readl(io_h, "SCAN\t%s", filepath) != SVF_RESULT_OK) {
 		DEBUG(0,("SCAN failed: %s\n", strerror(errno)));
 		result = SVF_RESULT_ERROR;
 		report = talloc_asprintf(talloc_tos(),
@@ -315,7 +315,7 @@ static svf_result svf_fsav_scan(
 			}
 		}
 
-		if (svf_io_read(io_h) != SVF_RESULT_OK) {
+		if (svf_io_readl(io_h) != SVF_RESULT_OK) {
 			DEBUG(0,("Reading continued reply from fsavd failed: %s\n",
 				strerror(errno)));
 			break;

@@ -80,7 +80,7 @@ static svf_result svf_sophos_scan(
 	const char *report = NULL;
 	char *colon;
 
-	if (svf_io_writeread(io_h, "%s", filepath) != SVF_RESULT_OK) {
+	if (svf_io_writefl_readl(io_h, "%s", filepath) != SVF_RESULT_OK) {
 		DEBUG(0,("Scan failed: %s\n", strerror(errno)));
 		result = SVF_RESULT_ERROR;
 		report = talloc_asprintf(talloc_tos(),

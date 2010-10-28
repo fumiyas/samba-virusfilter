@@ -47,7 +47,8 @@ svf_io_handle *svf_io_new(TALLOC_CTX *mem_ctx, int connect_timeout, int timeout)
 	}
 
 	io_h->socket = -1;
-	io_h->eol = '\n';
+	svf_io_set_eol(io_h, '\n');
+
 	/* timeout <= 0 means infinite */
 	io_h->connect_timeout = (connect_timeout > 0) ? connect_timeout : -1;
 	io_h->timeout = (timeout > 0) ? timeout : -1;
@@ -60,6 +61,7 @@ int svf_io_set_eol(svf_io_handle *io_h, int eol)
 	int eol_old = io_h->eol;
 
 	io_h->eol = eol;
+	io_h->eol_char = (char)eol;
 
 	return eol_old;
 }
@@ -88,32 +90,25 @@ svf_result svf_io_disconnect(svf_io_handle *io_h)
 		io_h->socket = -1;
 	}
 
-	io_h->w_size = io_h->r_size = io_h->r_rest_size = 0;
+	io_h->r_size = io_h->r_rest_size = 0;
 	io_h->r_rest_buffer = NULL;
 
 	return SVF_RESULT_OK;
 }
 
-svf_result svf_io_write(svf_io_handle *io_h)
+svf_result svf_io_write(svf_io_handle *io_h, const char *data, size_t data_size)
 {
-	char *buffer = io_h->w_buffer;
-	ssize_t buffer_size = io_h->w_size;
 	struct pollfd pollfd;
 	ssize_t wrote_size;
 
-	if (buffer_size == 0) {
+	if (data_size == 0) {
 		return SVF_RESULT_OK;
-	}
-
-	if (buffer[buffer_size-1] != io_h->eol) {
-		buffer[buffer_size] = io_h->eol;
-		buffer_size++;
 	}
 
 	pollfd.fd = io_h->socket;
 	pollfd.events = POLLOUT;
 
-	while (buffer_size > 0) {
+	while (data_size > 0) {
 		switch (poll(&pollfd, 1, io_h->timeout)) {
 		case -1:
 			if (errno == EINTR) {
@@ -126,7 +121,7 @@ svf_result svf_io_write(svf_io_handle *io_h)
 			return SVF_RESULT_ERROR;
 		}
 
-		wrote_size = write(io_h->socket, buffer, buffer_size);
+		wrote_size = write(io_h->socket, data, data_size);
 		if (wrote_size == -1) {
 			if (errno == EINTR) {
 				errno = 0;
@@ -135,14 +130,55 @@ svf_result svf_io_write(svf_io_handle *io_h)
 			return SVF_RESULT_ERROR;
 		}
 
-		buffer += wrote_size;
-		buffer_size -= wrote_size;
+		data += wrote_size;
+		data_size -= wrote_size;
 	}
 
 	return SVF_RESULT_OK;
 }
 
-svf_result svf_io_read(svf_io_handle *io_h)
+svf_result svf_io_writel(svf_io_handle *io_h, const char *data, size_t data_size)
+{
+	svf_result result;
+
+	result = svf_io_write(io_h, data, data_size);
+	if (result != SVF_RESULT_OK) {
+		return result;
+	}
+
+	return svf_io_write(io_h, &io_h->eol_char, 1);
+}
+
+svf_result svf_io_writefl(svf_io_handle *io_h, const char *data_fmt, ...)
+{
+	va_list ap;
+	char data[SVF_IO_BUFFER_SIZE + 1];
+	size_t data_size;
+
+	va_start(ap, data_fmt);
+	data_size = vsnprintf(data, SVF_IO_BUFFER_SIZE, data_fmt, ap);
+	va_end(ap);
+
+	data[data_size] = io_h->eol;
+	data_size++;
+
+	return svf_io_write(io_h, data, data_size);
+}
+
+svf_result svf_io_vwritefl(svf_io_handle *io_h, const char *data_fmt, va_list ap)
+{
+	char data[SVF_IO_BUFFER_SIZE + 1];
+	size_t data_size;
+
+	data_size = vsnprintf(data, SVF_IO_BUFFER_SIZE, data_fmt, ap);
+
+	data[data_size] = io_h->eol;
+	data_size++;
+
+	return svf_io_write(io_h, data, data_size);
+}
+
+svf_result svf_io_readl(svf_io_handle *io_h)
 {
 	char *buffer;
 	ssize_t buffer_size = SVF_IO_BUFFER_SIZE;
@@ -236,30 +272,27 @@ svf_result svf_io_read(svf_io_handle *io_h)
 	return SVF_RESULT_ERROR;
 }
 
-svf_result svf_io_writeread(svf_io_handle *io_h, const char *fmt, ...)
+svf_result svf_io_writefl_readl(svf_io_handle *io_h, const char *fmt, ...)
 {
 	if (fmt) {
 		va_list ap;
+		svf_result result;
 
 		va_start(ap, fmt);
-		io_h->w_size = vsnprintf(io_h->w_buffer, SVF_IO_BUFFER_SIZE, fmt, ap);
+		result = svf_io_vwritefl(io_h, fmt, ap);
 		va_end(ap);
 
-		DEBUG(10,("Write line data: %s\n", io_h->w_buffer));
-
-		if (svf_io_write(io_h) != SVF_RESULT_OK) {
-			return SVF_RESULT_ERROR;
+		if (result != SVF_RESULT_OK) {
+			return result;
 		}
 	}
 
-	if (svf_io_read(io_h) != SVF_RESULT_OK) {
+	if (svf_io_readl(io_h) != SVF_RESULT_OK) {
 		return SVF_RESULT_ERROR;
 	}
 	if (io_h->r_size == 0) { /* EOF */
 		return SVF_RESULT_ERROR; /* FIXME: SVF_RESULT_EOF? */
 	}
-
-	DEBUG(10,("Read line data: %s\n", io_h->r_buffer));
 
 	return SVF_RESULT_OK;
 }

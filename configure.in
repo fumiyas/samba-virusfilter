@@ -40,6 +40,14 @@ AC_CONFIG_FILES(
 #    esac
 #  ])
 
+## ======================================================================
+
+AC_SUBST(FSAVD_COMMAND)
+FSAVD_COMMAND=/opt/f-secure/fssp/sbin/fsavd
+
+AC_SUBST(SAVDID_COMMAND)
+SAVDID_COMMAND=/usr/local/bin/savdid
+
 ## Perl
 ## ======================================================================
 

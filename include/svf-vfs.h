@@ -486,6 +486,8 @@ static svf_action svf_treat_infected_file(
 		DEBUG(0,("Infected file command failed: %d\n", command_result));
 	}
 
+	DEBUG(10,("Infected file command finished: %d\n", command_result));
+
 done:
 	TALLOC_FREE(env_h);
 	TALLOC_FREE(command);

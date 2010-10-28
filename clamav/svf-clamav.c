@@ -94,7 +94,7 @@ static svf_result svf_clamav_scan(
 	const char *report = NULL;
 	char *reply_status;
 
-	if (svf_io_writeread(io_h, "zSCAN %s", filepath) != SVF_RESULT_OK) {
+	if (svf_io_writefl_readl(io_h, "zSCAN %s", filepath) != SVF_RESULT_OK) {
 		DEBUG(0,("zSCAN failed: %s\n", strerror(errno)));
 		result = SVF_RESULT_ERROR;
 		report = talloc_asprintf(talloc_tos(),
