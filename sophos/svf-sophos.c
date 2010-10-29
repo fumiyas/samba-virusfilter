@@ -78,6 +78,7 @@ static svf_result svf_sophos_scan(
 	svf_io_handle *io_h = svf_h->io_h;
 	svf_result result = SVF_RESULT_CLEAN;
 	const char *report = NULL;
+	char *reply;
 	char *colon;
 
 	if (svf_io_writefl_readl(io_h, "%s", filepath) != SVF_RESULT_OK) {
@@ -92,7 +93,7 @@ static svf_result svf_sophos_scan(
 	if (colon) {
 		*colon = '\0';
 		if (*(colon+1) != '\0') {
-			report = colon + 1;
+			reply = colon + 1;
 		}
 	}
 
@@ -103,9 +104,11 @@ static svf_result svf_sophos_scan(
 	} else if (str_eq(io_h->r_buffer, "1")) {
 		/* 1:<REPORT> */
 		result = SVF_RESULT_INFECTED;
+		report = talloc_strdup(talloc_tos(), reply);
 	} else if (str_eq(io_h->r_buffer, "-1")) {
 		/* -1:<REPORT> */
 		result = SVF_RESULT_ERROR;
+		report = talloc_strdup(talloc_tos(), reply);
 	} else {
 		result = SVF_RESULT_ERROR;
 		report = talloc_asprintf(talloc_tos(),

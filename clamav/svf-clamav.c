@@ -91,7 +91,8 @@ static svf_result svf_clamav_scan(
 	svf_io_handle *io_h = svf_h->io_h;
 	size_t filepath_len = strlen(filepath);
 	svf_result result = SVF_RESULT_CLEAN;
-	const char *report = NULL;
+	char *report = NULL;
+	char *reply;
 	char *reply_status;
 
 	if (svf_io_writefl_readl(io_h, "zSCAN %s", filepath) != SVF_RESULT_OK) {
@@ -107,7 +108,7 @@ static svf_result svf_clamav_scan(
 		result = SVF_RESULT_ERROR;
 		goto svf_clamav_scan_return;
 	}
-	report = io_h->r_buffer + filepath_len + 2;
+	reply = io_h->r_buffer + filepath_len + 2;
 
 	reply_status = strrchr(io_h->r_buffer, ' ');
 	if (!reply_status) {
@@ -115,7 +116,7 @@ static svf_result svf_clamav_scan(
 		result = SVF_RESULT_ERROR;
 		goto svf_clamav_scan_return;
 	}
-	reply_status[0] = '\0';
+	*reply_status = '\0';
 	reply_status++;
 
 	if (str_eq(reply_status, "OK") ) {
@@ -125,9 +126,11 @@ static svf_result svf_clamav_scan(
 	} else if (str_eq(reply_status, "FOUND")) {
 		/* <FILEPATH>: <REPORT> FOUND */
 		result = SVF_RESULT_INFECTED;
+		report = talloc_strdup(talloc_tos(), reply);
 	} else if (str_eq(reply_status, "ERROR")) {
 		/* <FILEPATH>: <REPORT> ERROR */
 		result = SVF_RESULT_ERROR;
+		report = talloc_strdup(talloc_tos(), reply);
 	} else {
 		result = SVF_RESULT_ERROR;
 		report = talloc_asprintf(talloc_tos(),

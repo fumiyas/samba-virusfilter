@@ -278,7 +278,7 @@ static svf_result svf_fsav_scan(
 			reply_token = strtok_r(NULL, "\t", &reply_svfeptr);
 			reply_token = strtok_r(NULL, "\t", &reply_svfeptr);
 			if (reply_token) {
-				  report = reply_token;
+				  report = talloc_strdup(talloc_tos(), reply_token);
 			} else {
 				  report = "UNKNOWN INFECTION";
 			}
@@ -302,7 +302,7 @@ static svf_result svf_fsav_scan(
 			reply_token = strtok_r(NULL, "\t", &reply_svfeptr);
 			reply_token = strtok_r(NULL, "\t", &reply_svfeptr);
 			if (reply_token) {
-				  report = reply_token;
+				  report = talloc_strdup(talloc_tos(), reply_token);
 			} else {
 				  report = "UNKNOWN ERROR";
 			}
