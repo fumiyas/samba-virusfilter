@@ -248,9 +248,9 @@ static svf_result svf_fsav_scan(
 	svf_io_handle *io_h = svf_h->io_h;
 	svf_result result = SVF_RESULT_CLEAN;
 	const char *report = NULL;
-	char *reply_token, *reply_svfeptr;
+	char *reply_token, *reply_saveptr;
 
-	if (svf_io_writefl_readl(io_h, "SCAN\t%s", filepath) != SVF_RESULT_OK) {
+	if (svf_io_writefl(io_h, "SCAN\t%s", filepath) != SVF_RESULT_OK) {
 		DEBUG(0,("SCAN failed: %s\n", strerror(errno)));
 		result = SVF_RESULT_ERROR;
 		report = talloc_asprintf(talloc_tos(),
@@ -259,7 +259,13 @@ static svf_result svf_fsav_scan(
 	}
 
 	while (true) {
-		reply_token = strtok_r(io_h->r_buffer, "\t", &reply_svfeptr);
+		if (svf_io_readl(io_h) != SVF_RESULT_OK) {
+			DEBUG(0,("Reading continued reply from fsavd failed: %s\n",
+				strerror(errno)));
+			break;
+		}
+
+		reply_token = strtok_r(io_h->r_buffer, "\t", &reply_saveptr);
 
 		if (str_eq(reply_token, "OK") ) {
 			break;
@@ -275,8 +281,8 @@ static svf_result svf_fsav_scan(
 			   str_eq(reply_token, "MIME_RISKWARE")) {
 			/* INFECTED\t<FILEPATH>\t<REPORT>\t<ENGINE> */
 			result = SVF_RESULT_INFECTED;
-			reply_token = strtok_r(NULL, "\t", &reply_svfeptr);
-			reply_token = strtok_r(NULL, "\t", &reply_svfeptr);
+			reply_token = strtok_r(NULL, "\t", &reply_saveptr);
+			reply_token = strtok_r(NULL, "\t", &reply_saveptr);
 			if (reply_token) {
 				  report = talloc_strdup(talloc_tos(), reply_token);
 			} else {
@@ -299,8 +305,8 @@ static svf_result svf_fsav_scan(
 		} else if (str_eq(reply_token, "SCAN_FAILURE")) {
 			/* SCAN_FAILURE\t<FILEPATH>\t0x<CODE>\t<REPORT> [<ENGINE>] */
 			result = SVF_RESULT_ERROR;
-			reply_token = strtok_r(NULL, "\t", &reply_svfeptr);
-			reply_token = strtok_r(NULL, "\t", &reply_svfeptr);
+			reply_token = strtok_r(NULL, "\t", &reply_saveptr);
+			reply_token = strtok_r(NULL, "\t", &reply_saveptr);
 			if (reply_token) {
 				  report = talloc_strdup(talloc_tos(), reply_token);
 			} else {
@@ -313,12 +319,6 @@ static svf_result svf_fsav_scan(
 			if (!report) {
 				DEBUG(0,("talloc_asprintf failed\n"));
 			}
-		}
-
-		if (svf_io_readl(io_h) != SVF_RESULT_OK) {
-			DEBUG(0,("Reading continued reply from fsavd failed: %s\n",
-				strerror(errno)));
-			break;
 		}
 	}
 
