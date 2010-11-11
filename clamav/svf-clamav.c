@@ -50,7 +50,8 @@ static int svf_clamav_connect(
 	const char *user)
 {
 	/* To use clamd "zXXXX" commands */
-        svf_io_set_eol(svf_h->io_h, '\0');
+        svf_io_set_writel_eol(svf_h->io_h, "\0", 1);
+        svf_io_set_readl_eol(svf_h->io_h, "\0", 1);
 
 	return 0;
 }

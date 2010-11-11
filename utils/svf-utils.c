@@ -25,6 +25,36 @@
 
 /* ====================================================================== */
 
+#ifndef HAVE_MEMMEM
+void *memmem(const void *m1, size_t m1_len, const void *m2, size_t m2_len)
+{
+	const char *m1_cur = (const char *)m1;
+	const char *m1_end = m1 + m1_len - m2_len;
+	const char *m2_cur = (const char *)m2;
+
+	if (m1_len == 0 || m2_len == 0 || m1_len < m2_len) {
+		return NULL;
+	}
+
+	if (m2_len == 1) {
+		return memchr(m1_cur, *m2_cur, m1_len);
+	}
+
+	while (m1_cur <= m1_end) {
+		if (*m1_cur == *m2_cur) {
+			if (memcmp(m1_cur+1, m2_cur+1, m2_len-1) == 0) {
+				return (void *)m1_cur;
+			}
+		}
+		m1_cur++;
+	}
+
+	return NULL;
+}
+#endif
+
+/* ====================================================================== */
+
 char *svf_string_sub(TALLOC_CTX *mem_ctx, connection_struct *conn, const char *str)
 {
 	return talloc_sub_advanced(mem_ctx, lp_servicename(SNUM(conn)),
@@ -33,6 +63,38 @@ char *svf_string_sub(TALLOC_CTX *mem_ctx, connection_struct *conn, const char *s
 					get_current_username(),
 					current_user_info.domain,
 					str);
+}
+
+/* Python's urllib.quote(string[, safe]) clone */
+int svf_url_quote(const char *src, char *dst, int dst_size)
+{
+	char *dst_c = dst;
+        static char hex[] = "0123456789ABCDEF";
+
+	for (; *src != '\0'; src++) {
+		if ((*src < '0' && *src != '-' && *src != '.' && *src != '/') ||
+		    (*src > '9' && *src < 'A') ||
+		    (*src > 'Z' && *src < 'a' && *src != '_') ||
+		    (*src > 'z')) {
+			if (dst_size < 4) {
+				return -1;
+			}
+			*dst_c++ = '%';
+			*dst_c++ = hex[(*src >> 4) & 0x0F];
+			*dst_c++ = hex[*src & 0x0F];
+			dst_size -= 3;
+		} else {
+			if (dst_size < 2) {
+				return -1;
+			}
+			*dst_c++ = *src;
+			dst_size--;
+		}
+	}
+
+        *dst_c = '\0';
+
+	return (dst_c - dst);
 }
 
 /* Line-based socket I/O
@@ -47,23 +109,52 @@ svf_io_handle *svf_io_new(TALLOC_CTX *mem_ctx, int connect_timeout, int timeout)
 	}
 
 	io_h->socket = -1;
-	svf_io_set_eol(io_h, '\n');
-
-	/* timeout <= 0 means infinite */
-	io_h->connect_timeout = (connect_timeout > 0) ? connect_timeout : -1;
-	io_h->timeout = (timeout > 0) ? timeout : -1;
+	svf_io_set_connect_timeout(io_h, connect_timeout);
+	svf_io_set_timeout(io_h, timeout);
+	svf_io_set_writel_eol(io_h, "\n", 1);
+	svf_io_set_readl_eol(io_h, "\n", 1);
 
 	return io_h;
 }
 
-int svf_io_set_eol(svf_io_handle *io_h, int eol)
+int svf_io_set_connect_timeout(svf_io_handle *io_h, int timeout)
 {
-	int eol_old = io_h->eol;
+	int timeout_old = io_h->connect_timeout;
 
-	io_h->eol = eol;
-	io_h->eol_char = (char)eol;
+	/* timeout <= 0 means infinite */
+	io_h->connect_timeout =  (timeout > 0) ? timeout : -1;
 
-	return eol_old;
+	return timeout_old;
+}
+
+int svf_io_set_timeout(svf_io_handle *io_h, int timeout)
+{
+	int timeout_old = io_h->timeout;
+
+	/* timeout <= 0 means infinite */
+	io_h->timeout =  (timeout > 0) ? timeout : -1;
+
+	return timeout_old;
+}
+
+void svf_io_set_writel_eol(svf_io_handle *io_h, const char *eol, int eol_size)
+{
+	if (eol_size < 1 || eol_size > SVF_IO_EOL_SIZE) {
+		return;
+	}
+
+	memcpy(io_h->w_eol, eol, eol_size);
+	io_h->w_eol_size = eol_size;
+}
+
+void svf_io_set_readl_eol(svf_io_handle *io_h, const char *eol, int eol_size)
+{
+	if (eol_size < 1 || eol_size > SVF_IO_EOL_SIZE) {
+		return;
+	}
+
+	memcpy(io_h->r_eol, eol, eol_size);
+	io_h->r_eol_size = eol_size;
 }
 
 svf_result svf_io_connect_path(svf_io_handle *io_h, const char *path)
@@ -146,34 +237,34 @@ svf_result svf_io_writel(svf_io_handle *io_h, const char *data, size_t data_size
 		return result;
 	}
 
-	return svf_io_write(io_h, &io_h->eol_char, 1);
+	return svf_io_write(io_h, &io_h->w_eol, io_h->w_eol_size);
 }
 
 svf_result svf_io_writefl(svf_io_handle *io_h, const char *data_fmt, ...)
 {
 	va_list ap;
-	char data[SVF_IO_BUFFER_SIZE + 1];
+	char data[SVF_IO_BUFFER_SIZE + SVF_IO_EOL_SIZE];
 	size_t data_size;
 
 	va_start(ap, data_fmt);
 	data_size = vsnprintf(data, SVF_IO_BUFFER_SIZE, data_fmt, ap);
 	va_end(ap);
 
-	data[data_size] = io_h->eol;
-	data_size++;
+	memcpy(data + data_size, io_h->w_eol, io_h->w_eol_size);
+	data_size += io_h->w_eol_size;
 
 	return svf_io_write(io_h, data, data_size);
 }
 
 svf_result svf_io_vwritefl(svf_io_handle *io_h, const char *data_fmt, va_list ap)
 {
-	char data[SVF_IO_BUFFER_SIZE + 1];
+	char data[SVF_IO_BUFFER_SIZE + SVF_IO_EOL_SIZE];
 	size_t data_size;
 
 	data_size = vsnprintf(data, SVF_IO_BUFFER_SIZE, data_fmt, ap);
 
-	data[data_size] = io_h->eol;
-	data_size++;
+	memcpy(data + data_size, io_h->w_eol, io_h->w_eol_size);
+	data_size += io_h->w_eol_size;
 
 	return svf_io_write(io_h, data, data_size);
 }
@@ -193,15 +284,16 @@ svf_result svf_io_readl(svf_io_handle *io_h)
 	} else {
 		DEBUG(10,("Rest data found in read buffer: %s, size=%ld\n",
 			io_h->r_rest_buffer, (long)io_h->r_rest_size));
-		eol = memchr(io_h->r_rest_buffer, io_h->eol, io_h->r_rest_size);
+		eol = memmem(io_h->r_rest_buffer, io_h->r_rest_size, io_h->r_eol, io_h->r_eol_size);
 		if (eol) {
 			*eol = '\0';
 			io_h->r_buffer = io_h->r_rest_buffer;
 			io_h->r_size = eol - io_h->r_rest_buffer;
 			DEBUG(10,("Read line data from read buffer: %s\n", io_h->r_buffer));
 
-			io_h->r_rest_size -= io_h->r_size + 1;
-			io_h->r_rest_buffer = (io_h->r_rest_size > 0) ? (eol + 1) : NULL;
+			io_h->r_rest_size -= io_h->r_size + io_h->r_eol_size;
+			io_h->r_rest_buffer = (io_h->r_rest_size > 0) ?
+				(eol + io_h->r_eol_size) : NULL;
 
 			return SVF_RESULT_OK;
 		}
@@ -249,14 +341,14 @@ svf_result svf_io_readl(svf_io_handle *io_h)
 
 		io_h->r_size += read_size;
 
-		eol = memchr(buffer, io_h->eol, read_size);
+		eol = memmem(buffer, read_size, io_h->r_eol, io_h->r_eol_size);
 		if (eol) {
 			*eol = '\0';
 			DEBUG(10,("Read line data from socket: %s\n", io_h->r_buffer));
 			io_h->r_size = eol - io_h->r_buffer;
-			io_h->r_rest_size = read_size - (eol - buffer + 1);
+			io_h->r_rest_size = read_size - (eol - buffer + io_h->r_eol_size);
 			if (io_h->r_rest_size > 0) {
-				io_h->r_rest_buffer = eol + 1;
+				io_h->r_rest_buffer = eol + io_h->r_eol_size;
 				DEBUG(10,("Rest data in read buffer: %s, size=%ld\n",
 					io_h->r_rest_buffer, (long)io_h->r_rest_size));
 			}

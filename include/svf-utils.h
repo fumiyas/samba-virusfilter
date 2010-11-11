@@ -24,14 +24,18 @@
 #define str_eq(s1, s2)		((strcmp((s1), (s2)) == 0) ? true : false)
 #define strn_eq(s1, s2, n)	((strncmp((s1), (s2), (n)) == 0) ? true : false)
 
-#define SVF_IO_BUFFER_SIZE	(PATH_MAX + 1024)
+#define SVF_IO_URL_MAX		(PATH_MAX * 3) /* "* 3" is for %-encoding */
+#define SVF_IO_BUFFER_SIZE	(SVF_IO_URL_MAX + 128)
+#define SVF_IO_EOL_SIZE		2
 
 typedef struct svf_io_handle {
 	int		socket;
-	int		eol;			/* end-of-line character */
-	char		eol_char;
 	int		connect_timeout;	/* msec */
 	int		timeout;		/* msec */
+	char		w_eol[SVF_IO_EOL_SIZE];	/* end-of-line character(s) */
+	int		w_eol_size;
+	char		r_eol[SVF_IO_EOL_SIZE];	/* end-of-line character(s) */
+	int		r_eol_size;
 	char		*r_buffer;
 	char		r_buffer_real[SVF_IO_BUFFER_SIZE+1];
 	ssize_t		r_size;
@@ -64,10 +68,14 @@ typedef struct {
 /* ====================================================================== */
 
 char *svf_string_sub(TALLOC_CTX *mem_ctx, connection_struct *conn, const char *str);
+int svf_url_quote(const char *src, char *dst, int dst_size);
 
 /* Line-based socket I/O */
 svf_io_handle *svf_io_new(TALLOC_CTX *mem_ctx, int connect_timeout, int timeout);
-int svf_io_set_eol(svf_io_handle *io_h, int eol);
+int svf_io_set_connect_timeout(svf_io_handle *io_h, int timeout);
+int svf_io_set_timeout(svf_io_handle *io_h, int timeout);
+void svf_io_set_writel_eol(svf_io_handle *io_h, const char *eol, int eol_size);
+void svf_io_set_readl_eol(svf_io_handle *io_h, const char *eol, int eol_size);
 svf_result svf_io_connect_path(svf_io_handle *io_h, const char *path);
 svf_result svf_io_disconnect(svf_io_handle *io_h);
 svf_result svf_io_write(svf_io_handle *io_h, const char *data, size_t data_size);
