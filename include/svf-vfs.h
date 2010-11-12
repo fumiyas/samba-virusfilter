@@ -644,12 +644,17 @@ svf_scan_result_eval:
 			goto svf_scan_return;
 		}
 		scan_cache_e->result = scan_result;
-		scan_cache_e->report = scan_report ? talloc_strdup(scan_cache_e, scan_report) : NULL;
-		if (!scan_cache_e->report) {
-			DEBUG(0,("Cannot create cache entry: talloc_strdup failed"));
-			TALLOC_FREE(scan_cache_e);
-			goto svf_scan_return;
+		if (scan_report) {
+			scan_cache_e->report = talloc_strdup(scan_cache_e, scan_report);
+			if (!scan_cache_e->report) {
+				DEBUG(0,("Cannot create cache entry: talloc_strdup failed"));
+				TALLOC_FREE(scan_cache_e);
+				goto svf_scan_return;
+			}
+		} else {
+			scan_cache_e->report = NULL;
 		}
+
 		svf_cache_add(svf_h->cache_h, scan_cache_e);
 	}
 
