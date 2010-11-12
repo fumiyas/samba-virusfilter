@@ -111,8 +111,8 @@ svf_io_handle *svf_io_new(TALLOC_CTX *mem_ctx, int connect_timeout, int timeout)
 	io_h->socket = -1;
 	svf_io_set_connect_timeout(io_h, connect_timeout);
 	svf_io_set_timeout(io_h, timeout);
-	svf_io_set_writel_eol(io_h, "\n", 1);
-	svf_io_set_readl_eol(io_h, "\n", 1);
+	svf_io_set_writel_eol(io_h, "\x0A", 1);
+	svf_io_set_readl_eol(io_h, "\x0A", 1);
 
 	return io_h;
 }
@@ -237,7 +237,7 @@ svf_result svf_io_writel(svf_io_handle *io_h, const char *data, size_t data_size
 		return result;
 	}
 
-	return svf_io_write(io_h, &io_h->w_eol, io_h->w_eol_size);
+	return svf_io_write(io_h, io_h->w_eol, io_h->w_eol_size);
 }
 
 svf_result svf_io_writefl(svf_io_handle *io_h, const char *data_fmt, ...)
@@ -341,7 +341,7 @@ svf_result svf_io_readl(svf_io_handle *io_h)
 
 		io_h->r_size += read_size;
 
-		eol = memmem(buffer, read_size, io_h->r_eol, io_h->r_eol_size);
+		eol = memmem(io_h->r_buffer, read_size, io_h->r_eol, io_h->r_eol_size);
 		if (eol) {
 			*eol = '\0';
 			DEBUG(10,("Read line data from socket: %s\n", io_h->r_buffer));
