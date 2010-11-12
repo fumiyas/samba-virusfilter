@@ -262,6 +262,9 @@ static svf_result svf_fsav_scan(
 		if (svf_io_readl(io_h) != SVF_RESULT_OK) {
 			DEBUG(0,("Reading continued reply from fsavd failed: %s\n",
 				strerror(errno)));
+			result = SVF_RESULT_ERROR;
+			report = talloc_asprintf(talloc_tos(),
+				"SCAN failed: %s\n", strerror(errno));
 			break;
 		}
 
