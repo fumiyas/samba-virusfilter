@@ -421,14 +421,14 @@ svf_result svf_io_readl(svf_io_handle *io_h)
 		buffer = io_h->r_buffer = io_h->r_buffer_real;
 		buffer_size = SVF_IO_BUFFER_SIZE;
 	} else {
-		DEBUG(10,("Rest data found in read buffer: %s, size=%ld\n",
+		DEBUG(11,("Rest data found in read buffer: %s, size=%ld\n",
 			io_h->r_rest_buffer, (long)io_h->r_rest_size));
 		eol = memmem(io_h->r_rest_buffer, io_h->r_rest_size, io_h->r_eol, io_h->r_eol_size);
 		if (eol) {
 			*eol = '\0';
 			io_h->r_buffer = io_h->r_rest_buffer;
 			io_h->r_size = eol - io_h->r_rest_buffer;
-			DEBUG(10,("Read line data from read buffer: %s\n", io_h->r_buffer));
+			DEBUG(11,("Read line data from read buffer: %s\n", io_h->r_buffer));
 
 			io_h->r_rest_size -= io_h->r_size + io_h->r_eol_size;
 			io_h->r_rest_buffer = (io_h->r_rest_size > 0) ?
@@ -483,12 +483,12 @@ svf_result svf_io_readl(svf_io_handle *io_h)
 		eol = memmem(io_h->r_buffer, read_size, io_h->r_eol, io_h->r_eol_size);
 		if (eol) {
 			*eol = '\0';
-			DEBUG(10,("Read line data from socket: %s\n", io_h->r_buffer));
+			DEBUG(11,("Read line data from socket: %s\n", io_h->r_buffer));
 			io_h->r_size = eol - io_h->r_buffer;
 			io_h->r_rest_size = read_size - (eol - buffer + io_h->r_eol_size);
 			if (io_h->r_rest_size > 0) {
 				io_h->r_rest_buffer = eol + io_h->r_eol_size;
-				DEBUG(10,("Rest data in read buffer: %s, size=%ld\n",
+				DEBUG(11,("Rest data in read buffer: %s, size=%ld\n",
 					io_h->r_rest_buffer, (long)io_h->r_rest_size));
 			}
 			return SVF_RESULT_OK;
@@ -549,7 +549,7 @@ void svf_cache_purge(svf_cache_handle *cache_h)
 	svf_cache_entry *cache_e;
 	time_t time_now = time(NULL);
 
-	DEBUG(10,("Purging cache entry\n"));
+	DEBUG(10,("Crawling cache entries to find purge entry\n"));
 
 	for (cache_e = cache_h->end; cache_e; cache_e = cache_h->end) {
 		time_t time_age = time_now - cache_e->time;
