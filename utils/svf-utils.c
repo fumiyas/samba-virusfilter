@@ -269,6 +269,145 @@ svf_result svf_io_vwritefl(svf_io_handle *io_h, const char *data_fmt, va_list ap
 	return svf_io_write(io_h, data, data_size);
 }
 
+svf_result svf_io_writev(svf_io_handle *io_h, ...)
+{
+	va_list ap;
+	struct iovec iov[SVF_IO_IOV_MAX], *iov_p;
+	int iov_n;
+	struct pollfd pollfd;
+	size_t data_size;
+	ssize_t wrote_size;
+
+	va_start(ap, io_h);
+	for (iov_p = iov, iov_n = 0, data_size = 0;
+	     iov_n < SVF_IO_IOV_MAX;
+	     iov_p++, iov_n++) {
+		iov_p->iov_base = va_arg(ap, void *);
+		if (!iov_p->iov_base) {
+			break;
+		}
+		iov_p->iov_len = va_arg(ap, int);
+		data_size += iov_p->iov_len;
+	}
+	va_end(ap);
+
+	pollfd.fd = io_h->socket;
+	pollfd.events = POLLOUT;
+
+	for (iov_p = iov;;) {
+		switch (poll(&pollfd, 1, io_h->timeout)) {
+		case -1:
+			if (errno == EINTR) {
+				errno = 0;
+				continue;
+			}
+			return SVF_RESULT_ERROR;
+		case 0:
+			errno = ETIMEDOUT;
+			return SVF_RESULT_ERROR;
+		}
+
+		wrote_size = writev(io_h->socket, iov_p, iov_n);
+		if (wrote_size == -1) {
+			if (errno == EINTR) {
+				errno = 0;
+				continue;
+			}
+			return SVF_RESULT_ERROR;
+		}
+
+		data_size -= wrote_size;
+		if (data_size <= 0) {
+			return SVF_RESULT_OK;
+		}
+
+		while (iov_n > 0 && wrote_size >= iov_p->iov_len) {
+			wrote_size -= iov_p->iov_len;
+			iov_p++;
+			iov_n--;
+		}
+		if (wrote_size > 0) {
+			iov_p->iov_base = (char *)iov_p->iov_base + wrote_size;
+			iov_p->iov_len -= wrote_size;
+		}
+	}
+
+	/* Notreached */
+	return SVF_RESULT_OK;
+}
+
+svf_result svf_io_writevl(svf_io_handle *io_h, ...)
+{
+	va_list ap;
+	struct iovec iov[SVF_IO_IOV_MAX + 1], *iov_p;
+	int iov_n;
+	struct pollfd pollfd;
+	size_t data_size;
+	ssize_t wrote_size;
+
+	va_start(ap, io_h);
+	for (iov_p = iov, iov_n = 0, data_size = 0;
+	     iov_n < SVF_IO_IOV_MAX;
+	     iov_p++, iov_n++) {
+		iov_p->iov_base = va_arg(ap, void *);
+		if (!iov_p->iov_base) {
+			break;
+		}
+		iov_p->iov_len = va_arg(ap, int);
+		data_size += iov_p->iov_len;
+	}
+	va_end(ap);
+
+	iov_p->iov_base = io_h->r_eol;
+	iov_p->iov_len = io_h->r_eol_size;
+	data_size += io_h->r_eol_size;
+	iov_n++;
+
+	pollfd.fd = io_h->socket;
+	pollfd.events = POLLOUT;
+
+	for (iov_p = iov;;) {
+		switch (poll(&pollfd, 1, io_h->timeout)) {
+		case -1:
+			if (errno == EINTR) {
+				errno = 0;
+				continue;
+			}
+			return SVF_RESULT_ERROR;
+		case 0:
+			errno = ETIMEDOUT;
+			return SVF_RESULT_ERROR;
+		}
+
+		wrote_size = writev(io_h->socket, iov_p, iov_n);
+		if (wrote_size == -1) {
+			if (errno == EINTR) {
+				errno = 0;
+				continue;
+			}
+			return SVF_RESULT_ERROR;
+		}
+
+		data_size -= wrote_size;
+		if (data_size <= 0) {
+			return SVF_RESULT_OK;
+		}
+
+		while (iov_n > 0 && wrote_size >= iov_p->iov_len) {
+			wrote_size -= iov_p->iov_len;
+			iov_p++;
+			iov_n--;
+		}
+		if (wrote_size > 0) {
+			iov_p->iov_base = (char *)iov_p->iov_base + wrote_size;
+			iov_p->iov_len -= wrote_size;
+		}
+	}
+
+	/* Notreached */
+	return SVF_RESULT_OK;
+}
+
 svf_result svf_io_readl(svf_io_handle *io_h)
 {
 	char *buffer;

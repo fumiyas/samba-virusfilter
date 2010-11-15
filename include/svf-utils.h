@@ -27,6 +27,7 @@
 #define SVF_IO_URL_MAX		(PATH_MAX * 3) /* "* 3" is for %-encoding */
 #define SVF_IO_BUFFER_SIZE	(SVF_IO_URL_MAX + 128)
 #define SVF_IO_EOL_SIZE		2
+#define SVF_IO_IOV_MAX		16
 
 typedef struct svf_io_handle {
 	int		socket;
@@ -82,6 +83,8 @@ svf_result svf_io_write(svf_io_handle *io_h, const char *data, size_t data_size)
 svf_result svf_io_writel(svf_io_handle *io_h, const char *data, size_t data_size);
 svf_result svf_io_writefl(svf_io_handle *io_h, const char *data_fmt, ...);
 svf_result svf_io_vwritefl(svf_io_handle *io_h, const char *data_fmt, va_list ap);
+svf_result svf_io_writev(svf_io_handle *io_h, ...);
+svf_result svf_io_writevl(svf_io_handle *io_h, ...);
 svf_result svf_io_readl(svf_io_handle *io_h);
 svf_result svf_io_writefl_readl(svf_io_handle *io_h, const char *fmt, ...);
 
