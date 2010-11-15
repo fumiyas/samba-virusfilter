@@ -60,24 +60,24 @@ static svf_result svf_sophos_scan_init(svf_handle *svf_h)
 	svf_io_handle *io_h = svf_h->io_h;
 	svf_result result;
 
-	DEBUG(0,("Connecting to savdid socket: %s\n", svf_h->socket_path));
+	DEBUG(3,("SSSP: Connecting to socket: %s\n", svf_h->socket_path));
 
 	become_root();
 	result = svf_io_connect_path(io_h, svf_h->socket_path);
 	unbecome_root();
 
 	if (result != SVF_RESULT_OK) {
-		DEBUG(0,("Connecting to savdid socket failed: %s: %s\n",
+		DEBUG(0,("SSSP: Connecting to socket failed: %s: %s\n",
 			svf_h->socket_path, strerror(errno)));
 		return SVF_RESULT_ERROR;
 	}
 
 	if (svf_io_readl(io_h) != SVF_RESULT_OK) {
-		DEBUG(0,("savdid: Reading greeting message failed: %s\n", strerror(errno)));
+		DEBUG(0,("SSSP: Reading greeting message failed: %s\n", strerror(errno)));
 		goto svf_sophos_scan_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK SSSP/1.0", 11)) {
-		DEBUG(0,("savdid: Invalid greeting message: %s\n", io_h->r_buffer));
+		DEBUG(0,("SSSP: Invalid greeting message: %s\n", io_h->r_buffer));
 		goto svf_sophos_scan_init_failed;
 	}
 
@@ -87,29 +87,31 @@ static svf_result svf_sophos_scan_init(svf_handle *svf_h)
 	    "output: brief\n",
 	    svf_h->scan_archive ? 1 : 0)
 	    != SVF_RESULT_OK) {
-		DEBUG(0,("savdid: OPTIONS failed: %s\n", strerror(errno)));
+		DEBUG(0,("SSSP: OPTIONS failed: %s\n", strerror(errno)));
 		goto svf_sophos_scan_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "ACC ", 4)) {
-		DEBUG(0,("savdid: OPTIONS rejected: %s\n", io_h->r_buffer));
+		DEBUG(0,("SSSP: OPTIONS rejected: %s\n", io_h->r_buffer));
 		goto svf_sophos_scan_init_failed;
 	}
 	if (svf_io_readl(io_h) != SVF_RESULT_OK) {
-		DEBUG(0,("savdid: Reading reply failed: %s\n", strerror(errno)));
+		DEBUG(0,("SSSP: Reading reply failed: %s\n", strerror(errno)));
 		goto svf_sophos_scan_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "DONE OK ", 8)) {
-		DEBUG(0,("savdid: OPTIONS failed: %s\n", io_h->r_buffer));
+		DEBUG(0,("SSSP: OPTIONS failed: %s\n", io_h->r_buffer));
 		goto svf_sophos_scan_init_failed;
 	}
 	if (svf_io_readl(io_h) != SVF_RESULT_OK) {
-		DEBUG(0,("savdid: Reading reply failed: %s\n", strerror(errno)));
+		DEBUG(0,("SSSP: Reading reply failed: %s\n", strerror(errno)));
 		goto svf_sophos_scan_init_failed;
 	}
 	if (!str_eq(io_h->r_buffer, "")) {
-		DEBUG(0,("savdid: OPTIONS failed: [%s]\n", io_h->r_buffer));
+		DEBUG(0,("SSSP: OPTIONS failed: [%s]\n", io_h->r_buffer));
 		goto svf_sophos_scan_init_failed;
 	}
+
+	DEBUG(10,("SSSP: Connected and configured\n"));
 
 	return SVF_RESULT_OK;
 
@@ -137,11 +139,10 @@ static svf_result svf_sophos_scan(
 	svf_result result = SVF_RESULT_ERROR;
 	const char *report = NULL;
 	char *reply_token, *reply_saveptr;
-
-#define URL_PATH_MAX (PATH_MAX * 3)
-
 	char fileurl[SVF_IO_URL_MAX+1];
 	int fileurl_len;
+
+	DEBUG(10,("Scanning file: %s\n", filepath));
 
 	fileurl_len = svf_url_quote(filepath, fileurl, SVF_IO_URL_MAX);
 	if (fileurl_len < 0) {
@@ -162,7 +163,7 @@ static svf_result svf_sophos_scan(
 		goto svf_sophos_scan_io_error;
 	}
 	if (!strn_eq(io_h->r_buffer, "ACC ", 4)) {
-		DEBUG(0,("SCANFILE command rejected: %s\n", io_h->r_buffer));
+		DEBUG(0,("SSSP: SCANFILE command rejected: %s\n", io_h->r_buffer));
 		goto svf_sophos_scan_return;
 	}
 
@@ -195,7 +196,7 @@ static svf_result svf_sophos_scan(
 			    !strn_eq(reply_token, "OK 0203 ", 8)) { /* Infected */
 				result = SVF_RESULT_ERROR;
 				report = talloc_asprintf(talloc_tos(),
-					"Scan error: %s\t", reply_token);
+					"SSSP: Scan error: %s\t", reply_token);
 				if (!report) {
 					DEBUG(0,("talloc_asprintf failed\n"));
 					report = "Scan error";
@@ -204,10 +205,10 @@ static svf_result svf_sophos_scan(
 		} else {
 			result = SVF_RESULT_ERROR;
 			report = talloc_asprintf(talloc_tos(),
-				"Invalid reply from fsavd: %s\t", reply_token);
+				"SSSP: Invalid reply: %s\t", reply_token);
 			if (!report) {
 				DEBUG(0,("talloc_asprintf failed\n"));
-				report = "Invalid reply from fsavd";
+				report = "Invalid reply";
 			}
 		}
 	}
@@ -220,7 +221,7 @@ svf_sophos_scan_return:
 svf_sophos_scan_io_error:
 	DEBUG(0,("Scan failed: %s\n", strerror(errno)));
 	*reportp = talloc_asprintf(talloc_tos(),
-		"Scan failed: %s\n", strerror(errno));
+		"SSSP: Scan failed: %s\n", strerror(errno));
 
 	return result;
 }
