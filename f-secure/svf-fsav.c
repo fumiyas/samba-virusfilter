@@ -98,49 +98,53 @@ static svf_result svf_fsav_scan_init(svf_handle *svf_h)
 	svf_result result;
 
 	if (io_h->socket != -1) {
-		/* Check if the currect connection is available */
+		DEBUG(10,("fsavd: Checking if connection is alive\n"));
+
 		/* FIXME: I don't know the correct PING command format... */
 		if (svf_io_writefl_readl(io_h, "PING") == SVF_RESULT_OK) {
 			if (strn_eq(io_h->r_buffer, "ERROR\t", 6)) {
-				DEBUG(10,("Re-using existent fsavd connection\n"));
+				DEBUG(10,("fsavd: Re-using existent connection\n"));
 				return SVF_RESULT_OK;
 			}
 		}
 
-		DEBUG(10,("Closing unavailable fsavd connection\n"));
-
+		DEBUG(10,("fsavd: Closing dead connection\n"));
 		svf_fsav_scan_end(svf_h);
 	}
 
-	DEBUG(10,("Connecting to fsavd socket: %s\n", svf_h->socket_path));
+	DEBUG(7,("fsavd: Connecting to socket: %s\n", svf_h->socket_path));
 
 	become_root();
 	result = svf_io_connect_path(io_h, svf_h->socket_path);
 	unbecome_root();
 
 	if (result != SVF_RESULT_OK) {
-		DEBUG(0,("Connecting to fsavd socket failed: %s: %s\n",
+		DEBUG(0,("fsavd: Connecting to socket failed: %s: %s\n",
 			svf_h->socket_path, strerror(errno)));
 		return SVF_RESULT_ERROR;
 	}
 
 	if (svf_io_readl(io_h) != SVF_RESULT_OK) {
-		DEBUG(0,("Reading fsavd greeting message failed: %s\n", strerror(errno)));
+		DEBUG(0,("fsavd: Reading greeting message failed: %s\n", strerror(errno)));
 		goto svf_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "DBVERSION\t", 10)) {
-		DEBUG(0,("Invalid fsavd greeting message: %s\n", io_h->r_buffer));
+		DEBUG(0,("fsavd: Invalid greeting message: %s\n", io_h->r_buffer));
 		goto svf_fsav_init_failed;
 	}
+
+	DEBUG(10,("fsavd: Connected\n"));
+
+	DEBUG(7,("fsavd: Configuring\n"));
 
 	if (svf_io_writefl_readl(io_h,
 	    "PROTOCOL\t%d", svf_h->fsav_protocol)
 	    != SVF_RESULT_OK) {
-		DEBUG(0,("PROTOCOL failed: %s\n", strerror(errno)));
+		DEBUG(0,("fsavd: PROTOCOL: I/O error: %s\n", strerror(errno)));
 		goto svf_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK\t", 3)) {
-		DEBUG(0,("PROTOCOL failed: %s\n", io_h->r_buffer));
+		DEBUG(0,("fsavd: PROTOCOL: Not accepted: %s\n", io_h->r_buffer));
 		goto svf_fsav_init_failed;
 	}
 
@@ -148,11 +152,11 @@ static svf_result svf_fsav_scan_init(svf_handle *svf_h)
 	if (svf_io_writefl_readl(io_h,
 	    "CONFIGURE\tTIMEOUT\t%d", svf_h->timeout / 1000)
 	    != SVF_RESULT_OK) {
-		DEBUG(0,("CONFIGURE TIMEOUT failed: %s\n", strerror(errno)));
+		DEBUG(0,("fsavd: CONFIGURE TIMEOUT: I/O error: %s\n", strerror(errno)));
 		goto svf_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK\t", 3)) {
-		DEBUG(0,("CONFIGURE TIMEOUT failed: %s\n", io_h->r_buffer));
+		DEBUG(0,("fsavd: CONFIGURE TIMEOUT: Not accepted: %s\n", io_h->r_buffer));
 		goto svf_fsav_init_failed;
 	}
 #endif
@@ -160,73 +164,74 @@ static svf_result svf_fsav_scan_init(svf_handle *svf_h)
 	if (svf_io_writefl_readl(io_h,
 	    "CONFIGURE\tSTOPONFIRST\t%d", svf_h->stop_scan_on_first ? 1 : 0)
 	    != SVF_RESULT_OK) {
-		DEBUG(0,("CONFIGURE STOPONFIRST failed: %s\n", strerror(errno)));
+		DEBUG(0,("fsavd: CONFIGURE STOPONFIRST: I/O error: %s\n", strerror(errno)));
 		goto svf_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK\t", 3)) {
-		DEBUG(0,("CONFIGURE STOPONFIRST failed: %s\n", io_h->r_buffer));
+		DEBUG(0,("fsavd: CONFIGURE STOPONFIRST: Not accepted: %s\n", io_h->r_buffer));
 		goto svf_fsav_init_failed;
 	}
 
 	if (svf_io_writefl_readl(io_h,
 	    "CONFIGURE\tFILTER\t%d", svf_h->filter_filename ? 1 : 0)
 	    != SVF_RESULT_OK) {
-		DEBUG(0,("CONFIGURE FILTER failed: %s\n", strerror(errno)));
+		DEBUG(0,("fsavd: CONFIGURE FILTER: I/O error: %s\n", strerror(errno)));
 		goto svf_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK\t", 3)) {
-		DEBUG(0,("CONFIGURE FILTER failed: %s\n", io_h->r_buffer));
+		DEBUG(0,("fsavd: CONFIGURE FILTER: Not accepted: %s\n", io_h->r_buffer));
 		goto svf_fsav_init_failed;
 	}
 
 	if (svf_io_writefl_readl(io_h,
 	    "CONFIGURE\tARCHIVE\t%d", svf_h->scan_archive ? 1 : 0)
 	    != SVF_RESULT_OK) {
-		DEBUG(0,("CONFIGURE ARCHIVE failed: %s\n", strerror(errno)));
+		DEBUG(0,("fsavd: CONFIGURE ARCHIVE: I/O error: %s\n", strerror(errno)));
 		goto svf_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK\t", 3)) {
-		DEBUG(0,("CONFIGURE ARCHIVE failed: %s\n", io_h->r_buffer));
+		DEBUG(0,("fsavd: CONFIGURE ARCHIVE: Not accepted: %s\n", io_h->r_buffer));
 		goto svf_fsav_init_failed;
 	}
 
 	if (svf_io_writefl_readl(io_h,
 	    "CONFIGURE\tMAXARCH\t%d", svf_h->max_nested_scan_archive)
 	    != SVF_RESULT_OK) {
-		DEBUG(0,("CONFIGURE MAXARCH failed: %s\n", strerror(errno)));
+		DEBUG(0,("fsavd: CONFIGURE MAXARCH: I/O error: %s\n", strerror(errno)));
 		goto svf_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK\t", 3)) {
-		DEBUG(0,("CONFIGURE MAXARCH failed: %s\n", io_h->r_buffer));
+		DEBUG(0,("fsavd: CONFIGURE MAXARCH: Not accepted: %s\n", io_h->r_buffer));
 		goto svf_fsav_init_failed;
 	}
 
 	if (svf_io_writefl_readl(io_h,
 	    "CONFIGURE\tMIME\t%d", svf_h->scan_mime ? 1 : 0)
 	    != SVF_RESULT_OK) {
-		DEBUG(0,("CONFIGURE MIME failed: %s\n", strerror(errno)));
+		DEBUG(0,("fsavd: CONFIGURE MIME: I/O error: %s\n", strerror(errno)));
 		goto svf_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK\t", 3)) {
-		DEBUG(0,("CONFIGURE MIME failed: %s\n", io_h->r_buffer));
+		DEBUG(0,("fsavd: CONFIGURE MIME: Not accepted: %s\n", io_h->r_buffer));
 		goto svf_fsav_init_failed;
 	}
 
 	if (svf_io_writefl_readl(io_h,
 	    "CONFIGURE\tRISKWARE\t%d", svf_h->scan_riskware ? 1 : 0)
 	    != SVF_RESULT_OK) {
-		DEBUG(0,("CONFIGURE RISKWARE failed: %s\n", strerror(errno)));
+		DEBUG(0,("fsavd: CONFIGURE RISKWARE: I/O error: %s\n", strerror(errno)));
 		goto svf_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK\t", 3)) {
-		DEBUG(0,("CONFIGURE RISKWARE failed: %s\n", io_h->r_buffer));
+		DEBUG(0,("fsavd: CONFIGURE RISKWARE: Not accepted: %s\n", io_h->r_buffer));
 		goto svf_fsav_init_failed;
 	}
+
+	DEBUG(10,("fsavd: Configured\n"));
 
 	return SVF_RESULT_OK;
 
 svf_fsav_init_failed:
-
 	svf_fsav_scan_end(svf_h);
 
 	return SVF_RESULT_ERROR;
@@ -236,6 +241,7 @@ static void svf_fsav_scan_end(svf_handle *svf_h)
 {
 	svf_io_handle *io_h = svf_h->io_h;
 
+	DEBUG(7,("fsavd: Disconnecting\n"));
 	svf_io_disconnect(io_h);
 }
 
@@ -250,21 +256,26 @@ static svf_result svf_fsav_scan(
 	const char *report = NULL;
 	char *reply_token, *reply_saveptr;
 
-	if (svf_io_writefl(io_h, "SCAN\t%s", filepath) != SVF_RESULT_OK) {
-		DEBUG(0,("SCAN failed: %s\n", strerror(errno)));
+	DEBUG(7,("Scanning file: %s\n", filepath));
+
+	if (svf_io_writevl(io_h,
+	    "SCAN\t", 5,
+	    filepath, (int)strlen(filepath),
+	    NULL) != SVF_RESULT_OK) {
+		DEBUG(0,("fsavd: SCAN: Write error: %s\n", strerror(errno)));
 		result = SVF_RESULT_ERROR;
 		report = talloc_asprintf(talloc_tos(),
-			"SCAN failed: %s\n", strerror(errno));
+			"Scanner I/O error: %s\n", strerror(errno));
 		goto svf_fsav_scan_return;
 	}
 
-	while (true) {
+	for (;;) {
 		if (svf_io_readl(io_h) != SVF_RESULT_OK) {
-			DEBUG(0,("Reading continued reply from fsavd failed: %s\n",
+			DEBUG(0,("fsavd: SCANFILE: Read error: %s\n",
 				strerror(errno)));
 			result = SVF_RESULT_ERROR;
 			report = talloc_asprintf(talloc_tos(),
-				"SCAN failed: %s\n", strerror(errno));
+				"Scanner I/O error: %s\n", strerror(errno));
 			break;
 		}
 
@@ -310,23 +321,19 @@ static svf_result svf_fsav_scan(
 			result = SVF_RESULT_ERROR;
 			reply_token = strtok_r(NULL, "\t", &reply_saveptr);
 			reply_token = strtok_r(NULL, "\t", &reply_saveptr);
-			if (reply_token) {
-				  report = talloc_strdup(talloc_tos(), reply_token);
-			} else {
-				  report = "UNKNOWN ERROR";
-			}
+			DEBUG(0,("fsavd: SCANFILE: Scaner error: %s\n",
+				reply_token ? reply_token : "UNKNOWN ERROR"));
+			report = talloc_asprintf(talloc_tos(),
+				"Scanner error: %s",
+				reply_token ? reply_token : "UNKNOWN ERROR");
 		} else {
 			result = SVF_RESULT_ERROR;
-			report = talloc_asprintf(talloc_tos(),
-				"Invalid reply from fsavd: %s\t", reply_token);
-			if (!report) {
-				DEBUG(0,("talloc_asprintf failed\n"));
-			}
+			DEBUG(0,("fsavd: SCANFILE: Invalid reply: %s\t", reply_token));
+			report = "Scanner communication error";
 		}
 	}
 
 svf_fsav_scan_return:
-
 	*reportp = report;
 
 	return result;

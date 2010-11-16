@@ -61,17 +61,19 @@ static svf_result svf_clamav_scan_init(svf_handle *svf_h)
 	svf_io_handle *io_h = svf_h->io_h;
 	svf_result result;
 
-	DEBUG(0,("Connecting to clamd socket: %s\n", svf_h->socket_path));
+	DEBUG(7,("clamd: Connecting to socket: %s\n", svf_h->socket_path));
 
 	become_root();
 	result = svf_io_connect_path(io_h, svf_h->socket_path);
 	unbecome_root();
 
 	if (result != SVF_RESULT_OK) {
-		DEBUG(0,("Connecting to clamd socket failed: %s: %s\n",
+		DEBUG(0,("clamd: Connecting to socket failed: %s: %s\n",
 			svf_h->socket_path, strerror(errno)));
 		return SVF_RESULT_ERROR;
 	}
+
+	DEBUG(7,("clamd: Connected\n"));
 
 	return SVF_RESULT_OK;
 }
@@ -79,6 +81,8 @@ static svf_result svf_clamav_scan_init(svf_handle *svf_h)
 static void svf_clamav_scan_end(svf_handle *svf_h)
 {
 	svf_io_handle *io_h = svf_h->io_h;
+
+	DEBUG(7,("clamd: Disconnecting\n"));
 
 	svf_io_disconnect(io_h);
 }
@@ -94,55 +98,57 @@ static svf_result svf_clamav_scan(
 	svf_result result = SVF_RESULT_CLEAN;
 	char *report = NULL;
 	char *reply;
-	char *reply_status;
+	char *reply_token;
+
+	DEBUG(7,("Scanning file: %s\n", filepath));
 
 	if (svf_io_writefl_readl(io_h, "zSCAN %s", filepath) != SVF_RESULT_OK) {
-		DEBUG(0,("zSCAN failed: %s\n", strerror(errno)));
+		DEBUG(0,("clamd: zSCAN: I/O error: %s\n", strerror(errno)));
 		result = SVF_RESULT_ERROR;
 		report = talloc_asprintf(talloc_tos(),
-			"zSCAN failed: %s\n", strerror(errno));
+			"Scanner I/O error: %s\n", strerror(errno));
 		goto svf_clamav_scan_return;
 	}
 
 	if (io_h->r_buffer[filepath_len] != ':' || io_h->r_buffer[filepath_len+1] != ' ') {
-		DEBUG(0,("Invalid reply from clamd: %s\n", io_h->r_buffer));
+		DEBUG(0,("clamd: zSCAN: Invalid reply: %s\n", io_h->r_buffer));
 		result = SVF_RESULT_ERROR;
+		report = "Scanner communication error";
 		goto svf_clamav_scan_return;
 	}
 	reply = io_h->r_buffer + filepath_len + 2;
 
-	reply_status = strrchr(io_h->r_buffer, ' ');
-	if (!reply_status) {
-		DEBUG(0,("Invalid reply from clamd: %s\n", io_h->r_buffer));
+	reply_token = strrchr(io_h->r_buffer, ' ');
+	if (!reply_token) {
+		DEBUG(0,("clamd: zSCAN: Invalid reply: %s\n", io_h->r_buffer));
 		result = SVF_RESULT_ERROR;
+		report = "Scanner communication error";
 		goto svf_clamav_scan_return;
 	}
-	*reply_status = '\0';
-	reply_status++;
+	*reply_token = '\0';
+	reply_token++;
 
-	if (str_eq(reply_status, "OK") ) {
+	if (str_eq(reply_token, "OK") ) {
 		/* <FILEPATH>: OK */
 		result = SVF_RESULT_CLEAN;
 		report = "Clean";
-	} else if (str_eq(reply_status, "FOUND")) {
+	} else if (str_eq(reply_token, "FOUND")) {
 		/* <FILEPATH>: <REPORT> FOUND */
 		result = SVF_RESULT_INFECTED;
 		report = talloc_strdup(talloc_tos(), reply);
-	} else if (str_eq(reply_status, "ERROR")) {
+	} else if (str_eq(reply_token, "ERROR")) {
 		/* <FILEPATH>: <REPORT> ERROR */
-		result = SVF_RESULT_ERROR;
-		report = talloc_strdup(talloc_tos(), reply);
-	} else {
+		DEBUG(0,("clamd: zSCAN: Error: %s\n", reply));
 		result = SVF_RESULT_ERROR;
 		report = talloc_asprintf(talloc_tos(),
-			"Invalid reply from clamd: %s\t", reply_status);
-		if (!report) {
-			DEBUG(0,("talloc_asprintf failed\n"));
-		}
+			"Scanner error: %s\t", reply);
+	} else {
+		DEBUG(0,("clamd: zSCAN: Invalid reply: %s\n", reply_token));
+		result = SVF_RESULT_ERROR;
+		report = "Scanner communication error";
 	}
 
 svf_clamav_scan_return:
-
 	*reportp = report;
 
 	return result;

@@ -417,7 +417,7 @@ svf_result svf_io_readl(svf_io_handle *io_h)
 	char *eol;
 
 	if (io_h->r_rest_buffer == NULL) {
-		DEBUG(10,("Rest data not found in read buffer\n"));
+		DEBUG(11,("Rest data not found in read buffer\n"));
 		buffer = io_h->r_buffer = io_h->r_buffer_real;
 		buffer_size = SVF_IO_BUFFER_SIZE;
 	} else {
