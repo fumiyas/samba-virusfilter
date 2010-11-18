@@ -20,12 +20,12 @@
 #define SVF_MODULE_ENGINE "fsav"
 
 /* Default values for standard "extra" configuration variables */
-#define SVF_DEFAULT_SCAN_REQUEST_LIMIT		0
 #define SVF_DEFAULT_SOCKET_PATH			"/tmp/.fsav-0"
 #define SVF_DEFAULT_CONNECT_TIMEOUT		30000 /* msec */
 #define SVF_DEFAULT_TIMEOUT			60000 /* msec */
 #define SVF_DEFAULT_SCAN_ARCHIVE		false
 #define SVF_DEFAULT_MAX_NESTED_SCAN_ARCHIVE	1
+#define SVF_DEFAULT_SCAN_REQUEST_LIMIT		0
 #define SVF_DEFAULT_SCAN_MIME			false
 /* Default values for module-specific configuration variables */
 #define SVF_DEFAULT_FSAV_PROTOCOL		5 /* F-Secure Linux 7 or later? */

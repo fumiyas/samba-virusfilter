@@ -27,6 +27,7 @@
 #endif
 #define SVF_DEFAULT_CONNECT_TIMEOUT		30000 /* msec */
 #define SVF_DEFAULT_TIMEOUT			60000 /* msec */
+#define SVF_DEFAULT_SCAN_REQUEST_LIMIT		0
 #define SVF_DEFAULT_SCAN_ARCHIVE		false
 /* Default values for module-specific configuration variables */
 /* None */
@@ -55,10 +56,44 @@ static int svf_sophos_connect(
 	return 0;
 }
 
+static svf_result svf_sophos_scan_ping(svf_handle *svf_h)
+{
+	svf_io_handle *io_h = svf_h->io_h;
+
+	/* SSSP/1.0 has no "PING" command */
+	if (svf_io_writel(io_h, "SSSP/1.0 OPTIONS\n", 17) != SVF_RESULT_OK) {
+		return SVF_RESULT_ERROR;
+	}
+
+	for (;;) {
+		if (svf_io_readl(io_h) != SVF_RESULT_OK) {
+			return SVF_RESULT_ERROR;
+		}
+		if (str_eq(io_h->r_buffer, "")) {
+			break;
+		}
+	}
+
+	return SVF_RESULT_OK;
+}
+
 static svf_result svf_sophos_scan_init(svf_handle *svf_h)
 {
 	svf_io_handle *io_h = svf_h->io_h;
 	svf_result result;
+
+	if (io_h->socket != -1) {
+		DEBUG(10,("SSSP: Checking if connection is alive\n"));
+
+		if (svf_sophos_scan_ping(svf_h) == SVF_RESULT_OK) {
+			DEBUG(10,("SSSP: Re-using existent connection\n"));
+			return SVF_RESULT_OK;
+		}
+
+		DEBUG(7,("SSSP: Closing dead connection\n"));
+		svf_sophos_scan_end(svf_h);
+	}
+
 
 	DEBUG(7,("SSSP: Connecting to socket: %s\n", svf_h->socket_path));
 
@@ -87,8 +122,8 @@ static svf_result svf_sophos_scan_init(svf_handle *svf_h)
 
 	if (svf_io_writefl_readl(io_h,
 	    "SSSP/1.0 OPTIONS\n"
-	    "savigrp:GrpArchiveUnpack %d\n"
-	    "output: brief\n",
+	    "output:brief\n"
+	    "savigrp:GrpArchiveUnpack %d\n",
 	    svf_h->scan_archive ? 1 : 0)
 	    != SVF_RESULT_OK) {
 		DEBUG(0,("SSSP: OPTIONS: I/O error: %s\n", strerror(errno)));

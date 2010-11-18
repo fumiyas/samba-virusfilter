@@ -1,7 +1,6 @@
 SATOH Fumiyasu:
 
   * Support other anti-virus engines:
-    * Sophos Anti-Virus
     * External command
     * ... and so on
   * Samba 3.3+ support
