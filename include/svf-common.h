@@ -22,8 +22,8 @@
 /* Samba common include file */
 #include "includes.h"
 
-#if (SMB_VFS_INTERFACE_VERSION < 22)
-#error "Samba 3.2 required (SMB_VFS_INTERFACE_VERSION >= 22)"
+#if (SMB_VFS_INTERFACE_VERSION < 27)
+#error "Samba 3.5+ required (SMB_VFS_INTERFACE_VERSION >= 27)"
 #endif
 
 /* Undefine Samba's PACKAGE_* macros */

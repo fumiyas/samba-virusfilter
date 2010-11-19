@@ -20,7 +20,7 @@ include $(SOURCE_BUILD)/Makefile.common
 $(BUILD_OBJS): $(SAV_VFS_HEADERS)
 
 $(BUILD_VFS): $(BUILD_OBJS) $(SAV_VFS_OBJS)
-	$(SHLD) $(LDSHFLAGS) -o $@ $(BUILD_OBJS) $(SAV_VFS_OBJS)
+	$(SHLD) $(LDSHFLAGS_MODULES) -o $@ $(BUILD_OBJS) $(SAV_VFS_OBJS)
 
 install:: install-exes
 

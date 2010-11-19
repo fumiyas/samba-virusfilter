@@ -23,11 +23,11 @@ pdie() { echo "$0: ERROR: ${1-}" 1>&2; exit "${2-1}"; }
 
 ## ======================================================================
 
-sendmail="${SVF_ACTION_SENDMAIL_COMMAND:-/usr/sbin/sendmail}"
-sendmail_opts="${SVF_ACTION_SENDMAIL_OPTIONS:-}"
+sendmail="${SVF_NOTIFY_SENDMAIL_COMMAND:-/usr/sbin/sendmail}"
+sendmail_opts="${SVF_NOTIFY_SENDMAIL_OPTIONS:-}"
 
-smbclient="${SVF_ACTION_SMBCLIENT_COMMAND:-@SAMBA_BINDIR@/smbclient}"
-smbclient_opts="${SVF_ACTION_SMBCLIENT_OPTIONS:-}"
+smbclient="${SVF_NOTIFY_SMBCLIENT_COMMAND:-@SAMBA_BINDIR@/smbclient}"
+smbclient_opts="${SVF_NOTIFY_SMBCLIENT_OPTIONS:-}"
 
 ## ======================================================================
 
@@ -36,8 +36,8 @@ if [ -n "${SVF_RESULT_IS_CACHE-}" ]; then
   exit 0
 fi
 
-if [ ! -t 1 ] && [ -z "${SVF_ACTION_BG-}" ]; then
-  export SVF_ACTION_BG=1
+if [ ! -t 1 ] && [ -z "${SVF_NOTIFY_BG-}" ]; then
+  export SVF_NOTIFY_BG=1
   "$0" ${1+"$@"} </dev/null >/dev/null &
   exit 0
 fi
@@ -242,13 +242,13 @@ User: $SVF_COMMAND_USER_DOMAIN\\$SVF_COMMAND_USER_NAME
 if [ -n "${SVF_INFECTED_FILE_ACTION-}" ]; then
   msg_body="${msg_body}\
 Infected file report: $SVF_INFECTED_FILE_REPORT
-Infected file path: $SVF_INFECTED_FILE_PATH
+Infected file path: $SVF_COMMAND_SERVICE_PATH/$SVF_INFECTED_SERVICE_FILE_PATH
 Infected file action: $SVF_INFECTED_FILE_ACTION
 "
 else
   msg_body="${msg_body}\
 Scan error report: $SVF_SCAN_ERROR_REPORT
-Scan error file path: $SVF_SCAN_ERROR_FILE_PATH
+Scan error file path: $SVF_COMMAND_SERVICE_PATH/$SVF_SCAN_ERROR_SERVICE_FILE_PATH
 "
 fi
 

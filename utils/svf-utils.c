@@ -57,12 +57,14 @@ void *memmem(const void *m1, size_t m1_len, const void *m2, size_t m2_len)
 
 char *svf_string_sub(TALLOC_CTX *mem_ctx, connection_struct *conn, const char *str)
 {
-	return talloc_sub_advanced(mem_ctx, lp_servicename(SNUM(conn)),
-					conn->user,
-					conn->connectpath, conn->gid,
-					get_current_username(),
-					current_user_info.domain,
-					str);
+	return talloc_sub_advanced(mem_ctx,
+		lp_servicename(SNUM(conn)),
+		conn->server_info->unix_name,
+		conn->connectpath,
+		conn->server_info->utok.gid,
+		conn->server_info->sanitized_username,
+		pdb_get_domain(conn->server_info->sam_account),
+		str);
 }
 
 /* Python's urllib.quote(string[, safe]) clone */
@@ -160,14 +162,17 @@ void svf_io_set_readl_eol(svf_io_handle *io_h, const char *eol, int eol_size)
 svf_result svf_io_connect_path(svf_io_handle *io_h, const char *path)
 {
 	struct sockaddr_un addr;
+	NTSTATUS status;
 
 	ZERO_STRUCT(addr);
 	addr.sun_family = AF_UNIX;
 	strncpy(addr.sun_path, path, sizeof(addr.sun_path));
 
-	io_h->socket = open_socket_out(SOCK_STREAM,
-		(struct sockaddr_storage *)&addr, 0, io_h->connect_timeout);
-	if (io_h->socket == -1) {
+	status = open_socket_out((struct sockaddr_storage *)&addr, 0,
+		io_h->connect_timeout,
+		&io_h->socket);
+	if (!NT_STATUS_IS_OK(status)) {
+		io_h->socket = -1;
 		return SVF_RESULT_ERROR;
 	}
 

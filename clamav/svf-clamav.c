@@ -90,19 +90,23 @@ static void svf_clamav_scan_end(svf_handle *svf_h)
 static svf_result svf_clamav_scan(
 	vfs_handle_struct *vfs_h,
 	svf_handle *svf_h,
-	const char *filepath,
+	const struct smb_filename *smb_fname,
 	const char **reportp)
 {
+	const char *connectpath = vfs_h->conn->connectpath;
+	const char *fname = smb_fname->base_name;
+	size_t filepath_len = strlen(connectpath) +
+			      strlen(fname);
 	svf_io_handle *io_h = svf_h->io_h;
-	size_t filepath_len = strlen(filepath);
 	svf_result result = SVF_RESULT_CLEAN;
 	char *report = NULL;
 	char *reply;
 	char *reply_token;
 
-	DEBUG(7,("Scanning file: %s\n", filepath));
+	DEBUG(7,("Scanning file: %s/%s\n", connectpath, fname));
 
-	if (svf_io_writefl_readl(io_h, "zSCAN %s", filepath) != SVF_RESULT_OK) {
+	if (svf_io_writefl_readl(io_h, "zSCAN %s/%s",
+	    connectpath, fname) != SVF_RESULT_OK) {
 		DEBUG(0,("clamd: zSCAN: I/O error: %s\n", strerror(errno)));
 		result = SVF_RESULT_ERROR;
 		report = talloc_asprintf(talloc_tos(),

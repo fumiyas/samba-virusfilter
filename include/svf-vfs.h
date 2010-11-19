@@ -142,7 +142,7 @@ static void svf_module_scan_end(svf_handle *svf_h);
 static svf_result svf_module_scan(
 	vfs_handle_struct *vfs_h,
 	svf_handle *svf_h,
-	const char *filepath,
+	const struct smb_filename *smb_fname,
 	const char **reportp);
 
 /* ====================================================================== */
@@ -340,16 +340,18 @@ static void svf_vfs_disconnect(vfs_handle_struct *vfs_h)
 static svf_action svf_do_infected_file_action(
 	vfs_handle_struct *vfs_h,
 	svf_handle *svf_h,
-	const char *filepath,
+	const struct smb_filename *smb_fname,
 	const char **filepath_newp)
 {
 	TALLOC_CTX *mem_ctx = talloc_tos();
 	connection_struct *conn = vfs_h->conn;
 	*filepath_newp = NULL;
+	struct smb_filename *q_smb_fname = NULL;
 	char *q_dir;
 	char *q_prefix;
 	char *q_filepath;
 	int q_fd;
+	NTSTATUS status;
 
 	switch (svf_h->infected_file_action) {
 	case SVF_ACTION_QUARANTINE:
@@ -357,35 +359,52 @@ static svf_action svf_do_infected_file_action(
 		q_dir = svf_string_sub(mem_ctx, conn, svf_h->quarantine_dir);
 		q_prefix = svf_string_sub(mem_ctx, conn, svf_h->quarantine_prefix);
 		if (!q_dir || !q_prefix) {
-			DEBUG(0,("Quarantine failed: %s: Cannot allocate memory", filepath));
+			DEBUG(0,("Quarantine failed: %s/%s: "
+				"Cannot allocate memory\n",
+				conn->connectpath,
+				smb_fname->base_name));
 			return SVF_ACTION_DO_NOTHING;
 		}
 		q_filepath = talloc_asprintf(talloc_tos(), "%s/%sXXXXXX", q_dir, q_prefix);
 		TALLOC_FREE(q_dir);
 		TALLOC_FREE(q_prefix);
 		if (!q_filepath) {
-			DEBUG(0,("Quarantine failed: %s: Cannot allocate memory", filepath));
+			DEBUG(0,("Quarantine failed: %s/%s: "
+				"Cannot allocate memory\n",
+				conn->connectpath,
+				smb_fname->base_name));
 			return SVF_ACTION_DO_NOTHING;
 		}
+
+		status = create_synthetic_smb_fname(mem_ctx,
+		      q_filepath,
+		      smb_fname->stream_name,
+		      NULL,
+		      &q_smb_fname);
 
 		become_root();
 
 		q_fd = smb_mkstemp(q_filepath);
 		if (q_fd == -1) {
 			unbecome_root();
-			DEBUG(0,("Quarantine failed: %s: Cannot open destination: %s: %s",
-				filepath, q_filepath, strerror(errno)));
+			DEBUG(0,("Quarantine failed: %s/%s: "
+				"Cannot open destination: %s: %s",
+				conn->connectpath,
+				smb_fname->base_name,
+				q_filepath, strerror(errno)));
 			return SVF_ACTION_DO_NOTHING;
 		}
 		close(q_fd);
 
-		if (SMB_VFS_NEXT_RENAME(vfs_h, filepath, q_filepath) == -1) {
+		if (SMB_VFS_NEXT_RENAME(vfs_h, smb_fname, q_smb_fname) == -1) {
 #if SAMBA_VERSION_NUMBER >= 30600
 #  error FIXME: Do copy_reg() instead if errno == EXDEV for Samba 3.6+
 #endif
 			unbecome_root();
-			DEBUG(0,("Quarantine failed: %s: Rename failed: %s",
-				filepath, strerror(errno)));
+			DEBUG(0,("Quarantine failed: %s/%s: Rename failed: %s",
+				conn->connectpath,
+				smb_fname->base_name,
+				strerror(errno)));
 			return SVF_ACTION_DO_NOTHING;
 		}
 		unbecome_root();
@@ -396,10 +415,12 @@ static svf_action svf_do_infected_file_action(
 
 	case SVF_ACTION_DELETE:
 		become_root();
-		if (SMB_VFS_NEXT_UNLINK(vfs_h, filepath) == -1) {
+		if (SMB_VFS_NEXT_UNLINK(vfs_h, smb_fname) == -1) {
 			unbecome_root();
-			DEBUG(0,("Delete failed: %s: Unlink failed: %s",
-				filepath, strerror(errno)));
+			DEBUG(0,("Delete failed: %s/%s: Unlink failed: %s",
+				conn->connectpath,
+				smb_fname->base_name,
+				strerror(errno)));
 			return SVF_ACTION_DO_NOTHING;
 		}
 		unbecome_root();
@@ -414,7 +435,7 @@ static svf_action svf_do_infected_file_action(
 static svf_action svf_treat_infected_file(
 	vfs_handle_struct *vfs_h,
 	svf_handle *svf_h,
-	const char *filepath,
+	const struct smb_filename *smb_fname,
 	const char *report,
 	bool is_cache)
 {
@@ -428,14 +449,17 @@ static svf_action svf_treat_infected_file(
 	char *command = NULL;
 	int command_result;
 
-	action = svf_do_infected_file_action(vfs_h, svf_h, filepath, &filepath_q);
+	action = svf_do_infected_file_action(vfs_h, svf_h, smb_fname, &filepath_q);
 	for (i=0; svf_actions[i].name; i++) {
 		if (svf_actions[i].value == action) {
 			action_name = svf_actions[i].name;
 			break;
 		}
 	}
-	DEBUG(1,("Infected file action: %s: %s\n", filepath, action_name));
+	DEBUG(1,("Infected file action: %s/%s: %s\n",
+		vfs_h->conn->connectpath,
+		smb_fname->base_name,
+		action_name));
 
 	if (!svf_h->infected_file_command) {
 		return action;
@@ -457,7 +481,7 @@ static svf_action svf_treat_infected_file(
 		goto done;
 	}
 #endif
-	if (svf_env_set(env_h, "SVF_INFECTED_FILE_PATH", filepath) == -1) {
+	if (svf_env_set(env_h, "SVF_INFECTED_SERVICE_FILE_PATH", smb_fname->base_name) == -1) {
 		goto done;
 	}
 	if (report && svf_env_set(env_h, "SVF_INFECTED_FILE_REPORT", report) == -1) {
@@ -479,7 +503,10 @@ static svf_action svf_treat_infected_file(
 		goto done;
 	}
 
-	DEBUG(3,("Infected file command: %s: %s\n", filepath, command));
+	DEBUG(3,("Infected file command line: %s/%s: %s\n",
+		vfs_h->conn->connectpath,
+		smb_fname->base_name,
+		command));
 
 	command_result = svf_shell_run(command, 0, 0, env_h, vfs_h->conn, true);
 	if (command_result != 0) {
@@ -498,7 +525,7 @@ done:
 static void svf_treat_scan_error(
 	vfs_handle_struct *vfs_h,
 	svf_handle *svf_h,
-	const char *filepath,
+	const struct smb_filename *smb_fname,
 	const char *report,
 	bool is_cache)
 {
@@ -517,7 +544,7 @@ static void svf_treat_scan_error(
 		DEBUG(0,("svf_env_new failed\n"));
 		goto done;
 	}
-	if (svf_env_set(env_h, "SVF_SCAN_ERROR_FILE_PATH", filepath) == -1) {
+	if (svf_env_set(env_h, "SVF_SCAN_ERROR_SERVICE_FILE_PATH", smb_fname->base_name) == -1) {
 		goto done;
 	}
 	if (report && svf_env_set(env_h, "SVF_SCAN_ERROR_REPORT", report) == -1) {
@@ -533,7 +560,10 @@ static void svf_treat_scan_error(
 		goto done;
 	}
 
-	DEBUG(3,("Scan error command: %s: %s\n", filepath, command));
+	DEBUG(3,("Scan error command line: %s/%s: %s\n",
+		vfs_h->conn->connectpath,
+		smb_fname->base_name,
+		command));
 
 	command_result = svf_shell_run(command, 0, 0, env_h, vfs_h->conn, true);
 	if (command_result != 0) {
@@ -548,21 +578,15 @@ done:
 static svf_result svf_scan(
 	vfs_handle_struct *vfs_h,
 	svf_handle *svf_h,
-	const char *fname)
+	const struct smb_filename *smb_fname)
 {
 	svf_result scan_result;
 	const char *scan_report = NULL;
-	char *filepath;
+	char *fname = smb_fname->base_name;
 	svf_cache_entry *scan_cache_e = NULL;
 	bool is_cache = false;
 	svf_action file_action;
 	bool add_scan_cache;
-
-	filepath = talloc_asprintf(talloc_tos(), "%s/%s", vfs_h->conn->connectpath, fname);
-	if (!filepath) {
-		DEBUG(0, ("talloc_asprintf failed\n"));
-		return SVF_RESULT_ERROR;
-	}
 
 	if (svf_h->cache_h) {
 		DEBUG(10, ("Searching cache entry: fname: %s\n", fname));
@@ -587,7 +611,7 @@ static svf_result svf_scan(
 	}
 #endif
 
-	scan_result = svf_module_scan(vfs_h, svf_h, filepath, &scan_report);
+	scan_result = svf_module_scan(vfs_h, svf_h, smb_fname, &scan_report);
 
 #ifdef svf_module_scan_end
 #ifdef SVF_DEFAULT_SCAN_REQUEST_LIMIT
@@ -610,23 +634,34 @@ svf_scan_result_eval:
 
 	switch (scan_result) {
 	case SVF_RESULT_CLEAN:
-		DEBUG(5, ("Scan result: Clean: %s\n", filepath));
+		DEBUG(5, ("Scan result: Clean: %s/%s\n",
+			vfs_h->conn->connectpath,
+			fname));
 		break;
 	case SVF_RESULT_INFECTED:
-		DEBUG(0, ("Scan result: Infected: %s: %s\n", filepath, scan_report));
-		file_action = svf_treat_infected_file(vfs_h, svf_h, filepath, scan_report, is_cache);
+		DEBUG(0, ("Scan result: Infected: %s/%s: %s\n",
+			vfs_h->conn->connectpath,
+			fname,
+			scan_report));
+		file_action = svf_treat_infected_file(vfs_h, svf_h, smb_fname, scan_report, is_cache);
 		if (file_action != SVF_ACTION_DO_NOTHING) {
 			add_scan_cache = false;
 		}
 		break;
 	case SVF_RESULT_ERROR:
-		DEBUG(0, ("Scan result: Error: %s: %s\n", filepath, scan_report));
-		svf_treat_scan_error(vfs_h, svf_h, filepath, scan_report, is_cache);
+		DEBUG(0, ("Scan result: Error: %s/%s: %s\n",
+			vfs_h->conn->connectpath,
+			fname,
+			scan_report));
+		svf_treat_scan_error(vfs_h, svf_h, smb_fname, scan_report, is_cache);
 		break;
 	default:
-		DEBUG(0, ("Scan result: Unknown result code %d: %s: %s\n",
-			scan_result, filepath, scan_report));
-		svf_treat_scan_error(vfs_h, svf_h, filepath, scan_report, is_cache);
+		DEBUG(0, ("Scan result: Unknown result code %d: %s/%s: %s\n",
+			scan_result,
+			vfs_h->conn->connectpath,
+			fname,
+			scan_report));
+		svf_treat_scan_error(vfs_h, svf_h, smb_fname, scan_report, is_cache);
 		break;
 	}
 
@@ -665,13 +700,14 @@ svf_scan_return:
 
 static int svf_vfs_open(
 	vfs_handle_struct *vfs_h,
-	const char *fname, files_struct *fsp,
+	struct smb_filename *smb_fname,
+	files_struct *fsp,
 	int flags, mode_t mode)
 {
 	TALLOC_CTX *mem_ctx = talloc_stackframe();
 	svf_handle *svf_h;
-	SMB_STRUCT_STAT stat_buf;
 	svf_result scan_result;
+	char *fname = smb_fname->base_name;
 	int scan_errno = 0;
 
 	SMB_VFS_HANDLE_GET_DATA(vfs_h, svf_h,
@@ -690,21 +726,21 @@ static int svf_vfs_open(
 		goto svf_vfs_open_next;
 	}
 
-	if (SMB_VFS_NEXT_STAT(vfs_h, fname, &stat_buf) != 0) {
+	if (SMB_VFS_NEXT_STAT(vfs_h, smb_fname) != 0) {
 		/* FIXME: Return immediately if !(flags & O_CREAT) && errno != ENOENT? */
 		goto svf_vfs_open_next;
 	}
-	if (!S_ISREG(stat_buf.st_mode)) {
+	if (!S_ISREG(smb_fname->st.st_ex_mode)) {
                 DEBUG(5, ("Not scanned: Directory or special file: %s/%s\n",
 			vfs_h->conn->connectpath, fname));
 		goto svf_vfs_open_next;
 	}
-	if (svf_h->max_file_size > 0 && stat_buf.st_size > svf_h->max_file_size) {
+	if (svf_h->max_file_size > 0 && smb_fname->st.st_ex_size > svf_h->max_file_size) {
                 DEBUG(5, ("Not scanned: file size > max file size: %s/%s\n",
 			vfs_h->conn->connectpath, fname));
 		goto svf_vfs_open_next;
 	}
-	if (svf_h->min_file_size > 0 && stat_buf.st_size < svf_h->min_file_size) {
+	if (svf_h->min_file_size > 0 && smb_fname->st.st_ex_size < svf_h->min_file_size) {
                 DEBUG(5, ("Not scanned: file size < min file size: %s/%s\n",
 			vfs_h->conn->connectpath, fname));
 		goto svf_vfs_open_next;
@@ -716,7 +752,7 @@ static int svf_vfs_open(
 		goto svf_vfs_open_next;
 	}
 
-	scan_result = svf_scan(vfs_h, svf_h, fname);
+	scan_result = svf_scan(vfs_h, svf_h, smb_fname);
 
 	switch (scan_result) {
 	case SVF_RESULT_CLEAN:
@@ -738,7 +774,7 @@ static int svf_vfs_open(
 
 svf_vfs_open_next:
 	TALLOC_FREE(mem_ctx);
-	return SMB_VFS_NEXT_OPEN(vfs_h, fname, fsp, flags, mode);
+	return SMB_VFS_NEXT_OPEN(vfs_h, smb_fname, fsp, flags, mode);
 
 svf_vfs_open_fail:
 	TALLOC_FREE(mem_ctx);
@@ -748,12 +784,12 @@ svf_vfs_open_fail:
 
 static int svf_vfs_close(
 	vfs_handle_struct *vfs_h,
-	files_struct *fsp,
-	int fd)
+	files_struct *fsp)
 {
 	TALLOC_CTX *mem_ctx = talloc_stackframe();
 	connection_struct *conn = vfs_h->conn;
 	svf_handle *svf_h;
+	char *fname = fsp->fsp_name->base_name;
 	int close_result, close_errno;
 	svf_result scan_result;
 	int scan_errno = 0;
@@ -769,19 +805,19 @@ static int svf_vfs_close(
 
 	if (fsp->is_directory) {
                 DEBUG(5, ("Not scanned: Directory: %s/%s\n",
-			conn->connectpath, fsp->fsp_name));
+			conn->connectpath, fname));
 		return close_result;
 	}
 
 	if (!svf_h->scan_on_close) {
                 DEBUG(5, ("Not scanned: scan on close is disabled: %s/%s\n",
-			conn->connectpath, fsp->fsp_name));
+			conn->connectpath, fname));
 		return close_result;
 	}
 
 	if (!fsp->modified) {
 		DEBUG(3, ("Not scanned: File not modified: %s/%s\n",
-			conn->connectpath, fsp->fsp_name));
+			conn->connectpath, fname));
 
 		return close_result;
 	}
@@ -820,33 +856,11 @@ svf_vfs_close_fail:
 }
 
 /* VFS operations */
-static vfs_op_tuple svf_ops[] = {
-	/* Disk operations */
-	{
-		SMB_VFS_OP(svf_vfs_connect),
-		SMB_VFS_OP_CONNECT,
-		SMB_VFS_LAYER_TRANSPARENT
-	},
-	{
-		SMB_VFS_OP(svf_vfs_disconnect),
-		SMB_VFS_OP_DISCONNECT,
-		SMB_VFS_LAYER_TRANSPARENT
-	},
-
-	/* File operations */
-	{
-		SMB_VFS_OP(svf_vfs_open),
-		SMB_VFS_OP_OPEN,
-		SMB_VFS_LAYER_TRANSPARENT
-	},
-	{
-		SMB_VFS_OP(svf_vfs_close),
-		SMB_VFS_OP_CLOSE,
-		SMB_VFS_LAYER_TRANSPARENT
-	},
-
-	/* Finish VFS operations definition */
-	{SMB_VFS_OP(NULL), SMB_VFS_OP_NOOP, SMB_VFS_LAYER_NOOP}
+static struct vfs_fn_pointers vfs_svf_fns = {
+	.connect_fn =	svf_vfs_connect,
+	.disconnect =	svf_vfs_disconnect,
+	.open =		svf_vfs_open,
+	.close_fn =	svf_vfs_close,
 };
 
 NTSTATUS init_samba_module(void)
@@ -854,7 +868,7 @@ NTSTATUS init_samba_module(void)
 	NTSTATUS ret;
 
 	ret = smb_register_vfs(SMB_VFS_INTERFACE_VERSION,
-				SVF_MODULE_NAME, svf_ops);
+				SVF_MODULE_NAME, &vfs_svf_fns);
 	if (!NT_STATUS_IS_OK(ret)) {
 		return ret;
 	}

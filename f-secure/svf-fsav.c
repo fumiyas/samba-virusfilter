@@ -248,19 +248,23 @@ static void svf_fsav_scan_end(svf_handle *svf_h)
 static svf_result svf_fsav_scan(
 	vfs_handle_struct *vfs_h,
 	svf_handle *svf_h,
-	const char *filepath,
+	const struct smb_filename *smb_fname,
 	const char **reportp)
 {
+	const char *connectpath = vfs_h->conn->connectpath;
+	const char *fname = smb_fname->base_name;
 	svf_io_handle *io_h = svf_h->io_h;
 	svf_result result = SVF_RESULT_CLEAN;
 	const char *report = NULL;
 	char *reply_token, *reply_saveptr;
 
-	DEBUG(7,("Scanning file: %s\n", filepath));
+	DEBUG(7,("Scanning file: %s/%s\n", connectpath, fname));
 
 	if (svf_io_writevl(io_h,
 	    "SCAN\t", 5,
-	    filepath, (int)strlen(filepath),
+	    connectpath, (int)strlen(connectpath),
+	    "/", 1,
+	    fname, (int)strlen(fname),
 	    NULL) != SVF_RESULT_OK) {
 		DEBUG(0,("fsavd: SCAN: Write error: %s\n", strerror(errno)));
 		result = SVF_RESULT_ERROR;

@@ -173,21 +173,33 @@ static void svf_sophos_scan_end(svf_handle *svf_h)
 static svf_result svf_sophos_scan(
 	vfs_handle_struct *vfs_h,
 	svf_handle *svf_h,
-	const char *filepath,
+	const struct smb_filename *smb_fname,
 	const char **reportp)
 {
+	const char *connectpath = vfs_h->conn->connectpath;
+	const char *fname = smb_fname->base_name;
+	char fileurl[SVF_IO_URL_MAX+1];
+	int fileurl_len, fileurl_len2;
 	svf_io_handle *io_h = svf_h->io_h;
 	svf_result result = SVF_RESULT_ERROR;
 	const char *report = NULL;
 	char *reply_token, *reply_saveptr;
-	char fileurl[SVF_IO_URL_MAX+1];
-	int fileurl_len;
 
-	DEBUG(7,("Scanning file: %s\n", filepath));
+	DEBUG(7,("Scanning file: %s/%s\n", connectpath, fname));
 
-	fileurl_len = svf_url_quote(filepath, fileurl, SVF_IO_URL_MAX);
+	fileurl_len = svf_url_quote(connectpath, fileurl, SVF_IO_URL_MAX);
 	if (fileurl_len < 0) {
-		DEBUG(0,("svf_url_quote failed: File path too long: %s\n", filepath));
+		DEBUG(0,("svf_url_quote failed: File path too long: %s/%s\n",
+			connectpath, fname));
+		result = SVF_RESULT_ERROR;
+		report = "File path too long";
+		goto svf_sophos_scan_return;
+	}
+	fileurl_len += fileurl_len2 = svf_url_quote(fname,
+		fileurl + fileurl_len, SVF_IO_URL_MAX - fileurl_len);
+	if (fileurl_len2 < 0) {
+		DEBUG(0,("svf_url_quote failed: File path too long: %s/%s\n",
+			connectpath, fname));
 		result = SVF_RESULT_ERROR;
 		report = "File path too long";
 		goto svf_sophos_scan_return;

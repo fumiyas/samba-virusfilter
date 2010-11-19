@@ -4,7 +4,7 @@ Installation instructions for Samba-VirusFilter VFS modules
 Basic install procedure
 ======================================================================
 
-  $ ./configure --with-samba-source=/path/to/samba-3.2.x/source
+  $ ./configure --with-samba-source=/path/to/samba-3.5.x/source
   ...
   $ make
   ...
@@ -16,6 +16,6 @@ Basic install procedure
 Requirements
 ======================================================================
 
-  * Samba 3.2 source tree
+  * Samba 3.5+ source tree
   * Samba build environment
 
