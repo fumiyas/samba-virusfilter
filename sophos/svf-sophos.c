@@ -195,6 +195,9 @@ static svf_result svf_sophos_scan(
 		report = "File path too long";
 		goto svf_sophos_scan_return;
 	}
+	fileurl[fileurl_len] = '/';
+	fileurl_len++;
+
 	fileurl_len += fileurl_len2 = svf_url_quote(fname,
 		fileurl + fileurl_len, SVF_IO_URL_MAX - fileurl_len);
 	if (fileurl_len2 < 0) {
@@ -204,6 +207,7 @@ static svf_result svf_sophos_scan(
 		report = "File path too long";
 		goto svf_sophos_scan_return;
 	}
+	fileurl_len += fileurl_len2;
 
 	if (svf_io_writevl(io_h,
 	    "SSSP/1.0 SCANFILE ", 18,

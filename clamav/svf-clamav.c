@@ -95,8 +95,7 @@ static svf_result svf_clamav_scan(
 {
 	const char *connectpath = vfs_h->conn->connectpath;
 	const char *fname = smb_fname->base_name;
-	size_t filepath_len = strlen(connectpath) +
-			      strlen(fname);
+	size_t filepath_len = strlen(connectpath) + 1 /* slash */ + strlen(fname);
 	svf_io_handle *io_h = svf_h->io_h;
 	svf_result result = SVF_RESULT_CLEAN;
 	char *report = NULL;

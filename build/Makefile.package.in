@@ -2,21 +2,23 @@
 ## ======================================================================
 
 CC=			$(SAMBA_CC)
-FLAGS=			$(SAMBA_FLAGS)
-CPPFLAGS=		$(SAV_CPPFLAGS) $(SAMBA_CPPFLAGS)
-CFLAGS=			$(SAV_CFLAGS) $(SAMBA_CFLAGS) $(SAMBA_PICFLAG)
-PICFLAG=		$(SAMBA_PICFLAG)
+CPPFLAGS=		$(SAV_CPPFLAGS)
+CFLAGS=			$(SAV_CFLAGS)
 
+FLAGS=			$(SAMBA_FLAGS)
+PICFLAG=		$(SAMBA_PICFLAG)
 SHLD=			$(SAMBA_SHLD)
 LDSHFLAGS=		$(SAMBA_LDSHFLAGS)
 LDSHFLAGS_MODULES=	$(SAMBA_LDSHFLAGS_MODULES)
 
 LIBDIR=			$(SAMBA_LIBDIR)
+MODULESDIR=		$(SAMBA_MODULESDIR)
 
 ## ======================================================================
 
 srcdir=			$(SAMBA_SOURCE_DIR)
 
+SAMBA_TOP_DIR=		@SAMBA_TOP_DIR@
 SAMBA_SOURCE_DIR=	@SAMBA_SOURCE_DIR@
 SAMBA_VERSION=		@SAMBA_VERSION@
 SAMBA_VERSION_NUMBER=	@SAMBA_VERSION_NUMBER@
@@ -50,4 +52,11 @@ SAV_COMMON_HEADERS=	$(SOURCE_DIR)/include/svf-common.h
 SAV_VFS_HEADERS=	$(SOURCE_DIR)/include/svf-vfs.h \
 			$(SAV_COMMON_HEADERS)
 SAV_VFS_OBJS=		$(SOURCE_DIR)/utils/svf-utils.o
+
+## ======================================================================
+
+COMPILE_CC = $(CC) $(CFLAGS) $(SAMBA_CFLAGS) $(EXTRA_FLAGS) $(PICFLAG) -c $< -o $@
+
+.c.o:
+	$(COMPILE_CC)
 

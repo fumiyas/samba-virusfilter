@@ -90,17 +90,17 @@ if test -z "$SAMBA_SOURCE_DIR"; then
   AC_ERROR([You must specify --with-samba-source=PATH])
 fi
 
-AC_SUBST(SAMBA_BUILD_DIR)
+AC_SUBST(SAMBA_TOP_DIR)
 case "$SAMBA_SOURCE_DIR" in
 */source*)
-  SAMBA_BUILD_DIR=`dirname "$SAMBA_SOURCE_DIR"`
+  SAMBA_TOP_DIR=`dirname "$SAMBA_SOURCE_DIR"`
   ;;
 *)
-  SAMBA_BUILD_DIR="$SAMBA_SOURCE_DIR"
+  SAMBA_TOP_DIR="$SAMBA_SOURCE_DIR"
   if test -d "$SAMBA_SOURCE_DIR/source3"; then
-    SAMBA_SOURCE_DIR="$SAMBA_BUILD_DIR/source3"
+    SAMBA_SOURCE_DIR="$SAMBA_TOP_DIR/source3"
   elif test -d "$SAMBA_SOURCE_DIR/source3"; then
-    SAMBA_SOURCE_DIR="$SAMBA_BUILD_DIR/source"
+    SAMBA_SOURCE_DIR="$SAMBA_TOP_DIR/source"
   else
     AC_ERROR([Samba source has no source* directory: $SAMBA_SOURCE_DIR])
   fi
@@ -153,8 +153,8 @@ SAMBA_VERSION="$SAMBA_VERSION_MAJOR.$SAMBA_VERSION_MINOR.$SAMBA_VERSION_RELEASE"
 AC_SUBST(SAMBA_VERSION_NUMBER)
 SAMBA_VERSION_NUMBER=`printf '%d%02d%02d' $SAMBA_VERSION_MAJOR $SAMBA_VERSION_MINOR $SAMBA_VERSION_RELEASE`
 
-SAMBA_FLAGS="`echo \" $SAMBA_FLAGS \" |sed 's#-I. #-I\$(SAMBA_SOURCE_DIR) #g;s# -I\./# -I\$(SAMBA_SOURCE_DIR)/#g;s# -I\.\./# -I\$(SAMBA_SOURCE_DIR)/../#g'`"
-SAMBA_CPPFLAGS="`echo \" $SAMBA_CPPFLAGS \" |sed 's#-I. #-I\$(SAMBA_SOURCE_DIR) #g;s# -I\./# -I\$(SAMBA_SOURCE_DIR)/#g'`"
+SAMBA_FLAGS="`echo \" $SAMBA_FLAGS \" |sed 's#-I. #-I\$(SAMBA_SOURCE_DIR) #g;s# -I\./\.\./# -I\$(SAMBA_TOP_DIR)/#g;s# -I\.\./# -I\$(SAMBA_TOP_DIR)/#g;s# -I\./# -I\$(SAMBA_SOURCE_DIR)/#g'`"
+SAMBA_CPPFLAGS="`echo \" $SAMBA_CPPFLAGS \" |sed 's#-I. #-I\$(SAMBA_SOURCE_DIR) #g;s# -I\./\.\./# -I\$(SAMBA_TOP_DIR)/#g;s# -I\.\./# -I\$(SAMBA_TOP_DIR)/#g;s# -I\./# -I\$(SAMBA_SOURCE_DIR)/#g'`"
 
 AC_SUBST(CFLAGS)
 AC_SUBST(CPPFLAGS)
