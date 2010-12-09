@@ -376,12 +376,6 @@ static svf_action svf_do_infected_file_action(
 			return SVF_ACTION_DO_NOTHING;
 		}
 
-		status = create_synthetic_smb_fname(mem_ctx,
-		      q_filepath,
-		      smb_fname->stream_name,
-		      NULL,
-		      &q_smb_fname);
-
 		become_root();
 
 		q_fd = mkstemp(q_filepath);
@@ -395,6 +389,17 @@ static svf_action svf_do_infected_file_action(
 			return SVF_ACTION_DO_NOTHING;
 		}
 		close(q_fd);
+
+		status = create_synthetic_smb_fname(mem_ctx,
+			q_filepath,
+			smb_fname->stream_name,
+			NULL,
+			&q_smb_fname);
+		if (!NT_STATUS_IS_OK(status)) {
+			unlink(q_filepath);
+			unbecome_root();
+			return SVF_ACTION_DO_NOTHING;
+		}
 
 		if (SMB_VFS_NEXT_RENAME(vfs_h, smb_fname, q_smb_fname) == -1) {
 #if SAMBA_VERSION_NUMBER >= 30600
