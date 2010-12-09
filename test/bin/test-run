@@ -1,0 +1,101 @@
+#!/bin/ksh
+##
+## test.ksh: Provides a simple framework for writing test scripts
+##           (Test::More Perl module clone)
+##
+## Copyright (C) 2010 SATOH Fumiyasu @ OSS Technology, Inc.
+## Copyright (C) 2003-2004 SATOH Fumiyasu @ MIRACLE LINUX Corporation
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 3 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program.  If not, see <http://www.gnu.org/licenses/>.
+##
+
+set -u
+export LC_ALL=C
+
+if [ -n "${ZSH_VERSION-}" ]; then
+  setopt SH_WORD_SPLIT
+  setopt GLOB_SUBST
+  setopt no_NOMATCH
+fi
+
+pdie() { echo "$0: ERROR: ${1-}" 1>&2; exit "${2-1}"; }
+
+## Initialization
+## ======================================================================
+
+case "$0" in
+/*)
+  TEST_bin_dir="${0%/*}"
+  ;;
+*)
+  TEST_bin_dir=$(cd "${0%/*}" && pwd)
+  if [ $? -ne 0 ]; then
+    echo "$0: ERROR: Cannot determine directory" 1>&2
+    exit 100
+  fi
+  ;;
+esac
+
+TEST_dir="${TEST_bin_dir%/*}"
+TEST_lib_dir="$TEST_dir/lib"
+TEST_tmp_dir="$TEST_dir/tmp"
+TEST_case_dir="$TEST_dir/case"
+
+export PATH="$TEST_bin_dir:$TEST_lib_dir:$TEST_case_dir:$PATH"
+
+## Options
+## ======================================================================
+
+CMD_usage="Usage: $0 [OPTIONS] TEST [TEST-OPTIONS]"
+CMD_help="$CMD_usage
+"
+
+## ======================================================================
+
+. "$TEST_lib_dir/test.ksh"
+
+test_configure ${1+"$@"}
+shift "$TEST_configure_args"
+
+if [ $# -lt 1 ]; then
+    echo "$CMD_help"
+    exit 100
+fi
+
+TEST_case_file="$1"; shift
+
+if [ ! -e "$TEST_case_file" ]; then
+  pdie "Test case file not found: $TEST_case_file"
+fi
+
+. "$TEST_lib_dir/package.ksh"
+. "$TEST_case_file" ${1+"$@"}
+
+## DEBUG: If the -x option is set, enable trace flag on all functions
+[ x"${-#*x}" != x"$-" ] && typeset -ft $(typeset +f)
+
+if [ -n "$TEST_list_case" ]; then
+  typeset +f |sed -n 's/^tc_//p'
+  exit 0
+fi
+
+test_case_configure ${1+"$@"}
+if [ -n "$TEST_case_name" ]; then
+  tc_$TEST_case_name ''
+else
+  test_case_default ''
+fi
+test_stats
+test_end
+

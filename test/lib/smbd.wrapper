@@ -1,0 +1,18 @@
+#!/bin/ksh
+
+. package.ksh
+
+cd "$TEST_dir" || exit 1
+
+## Ensure that all commands in the pipeline are terminated
+wait
+
+exec /usr/bin/setsid \
+  "$T_samba_sbin_dir/smbd" \
+    --debuglevel=10 \
+    --configfile="$T_smb_conf_file" \
+    --log-basename="$T_samba_log_dir" \
+    ${1+"$@"}
+
+exit 1
+

@@ -1,0 +1,189 @@
+#!/bin/ksh
+# vim:filetype=sh
+
+T_tmp_dir="${TEST_TMP_DIR-@TEST_TMP_DIR@}"
+
+T_orig_LIB_PATH="${@SAMBA_LIB_PATH_VAR@:-}"
+
+T_samba_bin_dir="${TEST_SAMBA_BIN_DIR-@TEST_SAMBA_BIN_DIR@}"
+T_samba_sbin_dir="${TEST_SAMBA_SBIN_DIR-@TEST_SAMBA_SBIN_DIR@}"
+T_samba_lib_dir="${TEST_SAMBA_LIB_DIR-@TEST_SAMBA_LIB_DIR@}"
+
+T_virus_text='X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*'
+T_virus_size="${#T_virus_text}"
+
+T_min_file_size="1000"
+T_max_file_size=$(($T_min_file_size * 10))
+
+T_file_marker="This-is-a-file.I-like-files.marker"
+T_file_prefix="file"
+T_file_virus="eicar.com"
+T_file_excluded_suffix=".ext"
+T_file_size_list="0 $(($T_min_file_size / 10)) $T_min_file_size $T_max_file_size $(($T_max_file_size * 10))"
+
+T_quarantine_dir="$T_tmp_dir/quarantine"
+T_quarantine_prefix="svf."
+
+## ----------------------------------------------------------------------
+
+T_samba_sysconf_dir="$T_tmp_dir/etc"
+T_samba_log_dir="$T_tmp_dir/log"
+T_samba_var_dir="$T_tmp_dir/var"
+T_samba_data_dir="$T_tmp_dir/data"
+T_samba_share_dir="$T_tmp_dir/share"
+T_samba_share_name="share"
+
+T_smbd_log_file="$T_samba_log_dir/log.smbd"
+T_smb_conf_file="$T_samba_sysconf_dir/smb.conf"
+
+T_smb_global_conf="\
+[global]
+log level = 10
+max log size = 10000
+#debug timestamp = no
+private dir = $T_samba_var_dir
+pid directory = $T_samba_var_dir
+lock directory = $T_samba_var_dir
+cache directory = $T_samba_var_dir
+state directory = $T_samba_var_dir
+map to guest = bad user
+guest ok = yes
+path = $T_samba_share_dir
+"
+
+## ======================================================================
+
+function test_case_configure
+{
+  test_case_init
+}
+
+function test_case_init
+{
+  typeset size
+
+  test_init
+
+  test_verbose 1 "t_init: Initializing test environment ..."
+
+  T_svf_module=$(print -r "$TEST_dir/.."/*/$T_svf_module_name.so)
+  if [ ! -f "$T_svf_module" ]; then
+    test_abort "t_reset: VFS module not found: $T_svf_module"
+  fi
+
+  rm -rf \
+    "$T_samba_data_dir" \
+    || test_abort "t_init: Cannot remove directory: $T_samba_data_dir"
+  mkdir -p -m 0755 \
+    "$T_samba_data_dir" \
+    || test_abort "t_init: Cannot create directory: $T_samba_data_dir"
+
+  rm -rf \
+    "$T_quarantine_dir" \
+    || test_abort "t_init: Cannot remove directory: $T_quarantine_dir"
+  mkdir -p -m 0755 \
+    "$T_quarantine_dir" \
+    || test_abort "t_init: Cannot create directory: $T_quarantine_dir"
+
+  print -r -n "$T_virus_text" \
+    >"$T_samba_data_dir/$T_file_virus" \
+    || test_abort "t_init: Cannot create $T_file_virus"
+  cp -p \
+    "$T_samba_data_dir/$T_file_virus" \
+    "$T_samba_data_dir/$T_file_virus$T_file_excluded_suffix" \
+    || test_abort "t_init: Cannot copy $T_file_virus"
+  (cd "$T_samba_data_dir" && tar cf "$T_file_virus.tar" "$T_file_virus") \
+    || test_abort "t_init: Cannot create $T_file_virus.tar"
+  (cd "$T_samba_data_dir" && tar cf "$T_file_virus.tar.tar" "$T_file_virus.tar") \
+    || test_abort "t_init: Cannot create $T_file_virus.tar.tar"
+
+  touch "$T_samba_data_dir/$T_file_marker" \
+    || test_abort "t_init: Cannot create marker file"
+
+  typeset file file_excluded virus virus_excluded
+  for size in $T_file_size_list; do
+    file="$T_samba_data_dir/$T_file_prefix.$size"
+    touch "$file" \
+      || test_abort "t_init: Cannot create file: $file"
+    file_excluded="$file$T_file_excluded_suffix"
+    ln "$file" "$file_excluded" \
+      || test_abort "t_init: Cannot link file: $file_excluded"
+
+    virus="$T_samba_data_dir/eicar.com.$size"
+    cp -p "$T_samba_data_dir/eicar.com" "$virus" \
+      || test_abort "t_init: Cannot create eicar.com: $virus"
+    virus_excluded="$virus$T_file_excluded_suffix"
+    ln "$virus" "$virus_excluded" \
+      || test_abort "t_init: Cannot link file: $virus_excluded"
+
+    if [ "$size" -gt 0 ]; then
+      dd if=/dev/zero of="$file" bs="$size" count="1" 2>/dev/null \
+	|| test_abort "t_init: Cannot create file: $file"
+      dd if=/dev/zero bs="$(($size - $T_virus_size))" count="1" 2>/dev/null \
+	>>"$virus" \
+	|| test_abort "t_init: Cannot enlarge file: $virus"
+    fi
+  done
+}
+
+function t_reset
+{
+  test_verbose 1 "t_reset: Resetting test environment ..."
+
+  export LIBSMB_PROG="$TEST_lib_dir/smbd.wrapper"
+
+  if [ -n "$T_samba_lib_dir" ]; then
+    export @SAMBA_LIB_PATH_VAR@="$T_samba_lib_dir${T_orig_LIB_PATH:+:$T_orig_LIB_PATH}"
+  fi
+
+  rm -rf \
+    "$T_samba_sysconf_dir" \
+    "$T_samba_log_dir" \
+    "$T_samba_var_dir" \
+    "$T_samba_share_dir" \
+    || test_abort "t_reset: Cannot remove directories"
+  mkdir -p -m 0755 \
+    "$T_samba_sysconf_dir" \
+    "$T_samba_log_dir" \
+    "$T_samba_var_dir" \
+    "$T_samba_share_dir" \
+    || test_abort "t_reset: Cannot create directories"
+
+  print -r \
+    "$T_smb_global_conf" \
+    >"$T_smb_conf_file" \
+    || test_abort "t_reset: Cannot create file: $T_smb_conf_file"
+  t_smb_conf_append "[$T_samba_share_name]"
+  t_smb_conf_append "vfs objects = $T_svf_module"
+  t_smb_conf_append "$T_svf_module_name: quarantine directory = $T_quarantine_dir"
+  t_smb_conf_append "$T_svf_module_name: quarantine prefix = $T_quarantine_prefix"
+
+  for file in "$T_samba_data_dir"/*; do
+    ln "$file" "$T_samba_share_dir/" \
+      || test_abort "t_reset: Cannot create hardlink: $T_samba_share_dir/$file"
+  done
+}
+
+function t_smb_conf_append
+{
+  print -r "$1" \
+    >>"$T_smb_conf_file" \
+    || test_abort "t_reset: Cannot append to file: $T_smb_conf_file"
+}
+
+function t_smb_conf_append_svf_option
+{
+  t_smb_conf_append "$T_svf_module_name: $1"
+}
+
+function t_smbclient
+{
+  test_exec "$T_samba_bin_dir/smbclient" \
+    --configfile="$T_smb_conf_file" \
+    --user=% \
+    --log-basename="$T_samba_log_dir" \
+    "//127.0.0.1/$T_samba_share_name" \
+    ${1+"$@"}
+}
+
+
