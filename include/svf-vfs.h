@@ -384,7 +384,7 @@ static svf_action svf_do_infected_file_action(
 
 		become_root();
 
-		q_fd = smb_mkstemp(q_filepath);
+		q_fd = mkstemp(q_filepath);
 		if (q_fd == -1) {
 			unbecome_root();
 			DEBUG(0,("Quarantine failed: %s/%s: "
