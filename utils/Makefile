@@ -3,7 +3,7 @@ SOURCE_BUILD=	$(SOURCE_DIR)/build
 
 ## ======================================================================
 
-DIRS=
+BUILD_SUBDIRS=
 BUILD_TARGETS= svf-utils.o
 BUILD_TARGETS_POST=
 INSTALL_TARGETS=

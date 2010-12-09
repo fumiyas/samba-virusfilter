@@ -3,7 +3,7 @@ SOURCE_BUILD=	$(SOURCE_DIR)/build
 
 ## ======================================================================
 
-DIRS=
+BUILD_SUBDIRS=
 
 BUILD_TARGETS=		fsavd-svconf.exe savdid-svconf.exe
 BUILD_TARGETS_POST=

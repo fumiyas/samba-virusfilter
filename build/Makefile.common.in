@@ -165,8 +165,8 @@ clean::
 distclean:: clean
 
 build install clean distclean::
-	@if [ -n "$(DIRS)" ]; then \
-	    set - $(DIRS); \
+	@if [ -n "$(BUILD_SUBDIRS)" ]; then \
+	    set - $(BUILD_SUBDIRS); \
 	    for subdir in "$$@"; do \
 		(cd $$subdir && $(MAKE) $@) || exit 1; \
 	    done \

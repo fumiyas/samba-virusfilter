@@ -3,7 +3,7 @@ SOURCE_BUILD=	$(SOURCE_DIR)/build
 
 ## ======================================================================
 
-DIRS=
+BUILD_SUBDIRS=
 
 BUILD_OBJS=		svf-fsav.o
 BUILD_VFS=		svf-fsav.so

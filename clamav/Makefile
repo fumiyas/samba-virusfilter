@@ -3,7 +3,7 @@ SOURCE_BUILD=	$(SOURCE_DIR)/build
 
 ## ======================================================================
 
-DIRS=
+BUILD_SUBDIRS=
 
 BUILD_OBJS=		svf-clamav.o
 BUILD_VFS=		svf-clamav.so
