@@ -3,7 +3,15 @@ SATOH Fumiyasu:
   * Support other anti-virus engines:
     * External command
     * ... and so on
-  * Samba 3.3+ support
-  * Implement automated test
+  * Samba 3.6+ support
+  * Extend quarantine options:
+    * quarantine keep tree = yes
+    * quarantine keep name = yes
+    * quarantine suffix = .infected
+  * Support "rename" action:
+    * svf-*:infected file action = rename
+    * svf-*:rename prefix = svf.
+    * svf-*:rename suffix = .infected
+  * More test cases
   * Documentation
 
