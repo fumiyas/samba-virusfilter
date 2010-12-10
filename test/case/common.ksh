@@ -293,7 +293,7 @@ function tc_get_virus_file
 	INFECTED_FILE_REPORT="*" \
 	INFECTED_SERVICE_FILE_PATH="$file" \
 	MODULE_NAME="$T_svf_module_name" \
-	VERSION="0.1.0" \
+	VERSION="$T_svf_version" \
 	END \
 	; do
 	if ! read -r env; then
