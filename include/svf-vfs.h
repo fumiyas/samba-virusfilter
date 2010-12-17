@@ -401,10 +401,7 @@ static svf_action svf_do_infected_file_action(
 			return SVF_ACTION_DO_NOTHING;
 		}
 
-		if (SMB_VFS_NEXT_RENAME(vfs_h, smb_fname, q_smb_fname) == -1) {
-#if SAMBA_VERSION_NUMBER >= 30600
-#  error FIXME: Do copy_reg() instead if errno == EXDEV for Samba 3.6+
-#endif
+		if (svf_vfs_next_move(vfs_h, smb_fname, q_smb_fname) == -1) {
 			unbecome_root();
 			DEBUG(0,("Quarantine failed: %s/%s: Rename failed: %s",
 				conn->connectpath,
