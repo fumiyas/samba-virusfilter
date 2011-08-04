@@ -1,9 +1,9 @@
 T_svf_module_name="svf-clamav"
 
-. common.ksh
+. "$TEST_case_dir/common.ksh"
 
-function test_case_default
+function tc_run
 {
-  tc_common
+  tcx_common
 }
 

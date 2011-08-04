@@ -26,8 +26,6 @@
 TEST_output="${TEST_OUTPUT:-}"
 TEST_verbose_level="${TEST_VERBOSE_LEVEL:-0}"
 TEST_tmp_dir="${TEST_TMP_DIR:-$PWD/tmp}"
-TEST_c_CR="
-"
 
 ##	FD	Purpose
 ##	==	=======
@@ -59,7 +57,6 @@ TEST_list_case=""
 
 function test_configure
 {
-  typeset args="$#"
   typeset opt
 
   while [ "$#" -gt 0 ]; do
@@ -93,7 +90,14 @@ function test_configure
     esac
   done
 
-  TEST_configure_args=$(($args - $#))
+  if [ $# -lt 1 ]; then
+    test_abort "No test case file specified"
+  fi
+
+  TEST_case_file="$1"; shift
+  if [ ! -e "$TEST_case_file" ]; then
+    test_abort "Test case file not found: $TEST_case_file"
+  fi
 }
 
 function test_init
@@ -365,6 +369,34 @@ function test_assert_not_match
     ;;
   esac
 }
+
+function test_case_configure
+{
+  if type tc_configure >/dev/null 2>&1; then
+    tc_configure "$@"
+  fi
+}
+
+function test_case_init
+{
+  if type tc_init >/dev/null 2>&1; then
+    tc_init
+  fi
+}
+
+function test_case_run
+{
+  tc_run
+}
+
+function test_case_end
+{
+  if type tc_end >/dev/null 2>&1; then
+    tc_end
+  fi
+}
+
+## ======================================================================
 
 function wc
 {

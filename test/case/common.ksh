@@ -1,6 +1,6 @@
 #!/bin/ksh
 
-function tc_common
+function tcx_common
 {
   tc_basic
   tc_option_exclude_files
@@ -16,7 +16,7 @@ function tc_basic
   typeset tc=""
 
   test_verbose 0 "Testing basic function"
-  t_reset
+  tu_reset
   tc_connect_share "$tc"
   tc_get_safe_file "$tc"
   tc_get_safe_file "$tc" --filename-suffix "$T_file_excluded_suffix"
@@ -33,8 +33,8 @@ function tc_option_exclude_files
   typeset tc="exclude files"
 
   test_verbose 0 "Testing 'exclude files' option"
-  t_reset
-  t_smb_conf_append_svf_option "exclude files = /dummy.*/*$T_file_excluded_suffix/dummy.*/"
+  tu_reset
+  tu_smb_conf_append_svf_option "exclude files = /dummy.*/*$T_file_excluded_suffix/dummy.*/"
   tc_connect_share "$tc"
   tc_get_safe_file "$tc"
   tc_get_safe_file "$tc" --filename-suffix "$T_file_excluded_suffix"
@@ -51,9 +51,9 @@ function tc_option_minmax_file_size
   typeset tc="min/max file size"
 
   test_verbose 0 "Testing 'min/max file size' option"
-  t_reset
-  t_smb_conf_append_svf_option "min file size = $T_min_file_size"
-  t_smb_conf_append_svf_option "max file size = $T_max_file_size"
+  tu_reset
+  tu_smb_conf_append_svf_option "min file size = $T_min_file_size"
+  tu_smb_conf_append_svf_option "max file size = $T_max_file_size"
   tc_connect_share "$tc"
   tc_get_safe_file "$tc"
   tc_get_safe_file "$tc" --filename-suffix "$T_file_excluded_suffix"
@@ -70,8 +70,8 @@ function tc_option_infected_file_action_nothing
   typeset tc="infected file action = nothing"
 
   test_verbose 0 "Testing 'infected file action = none' option"
-  t_reset
-  t_smb_conf_append_svf_option "infected file action = nothing"
+  tu_reset
+  tu_smb_conf_append_svf_option "infected file action = nothing"
   tc_get_virus_file "$tc" --infected-file-action nothing
   tc_get_virus_files_on_a_session "$tc" --infected-file-action nothing
 }
@@ -81,11 +81,11 @@ function tc_option_infected_file_action_delete
   typeset tc="infected file action = delete"
 
   test_verbose 0 "Testing 'infected file action = delete' option"
-  t_reset
-  t_smb_conf_append_svf_option "infected file action = delete"
+  tu_reset
+  tu_smb_conf_append_svf_option "infected file action = delete"
   tc_get_virus_file "$tc" --infected-file-action delete
-  t_reset
-  t_smb_conf_append_svf_option "infected file action = delete"
+  tu_reset
+  tu_smb_conf_append_svf_option "infected file action = delete"
   tc_get_virus_files_on_a_session "$tc" --infected-file-action delete
 }
 
@@ -94,11 +94,11 @@ function tc_option_infected_file_action_quarantine
   typeset tc="infected file action = quarantine"
 
   test_verbose 0 "Testing 'infected file action = quarantine' option"
-  t_reset
-  t_smb_conf_append_svf_option "infected file action = quarantine"
+  tu_reset
+  tu_smb_conf_append_svf_option "infected file action = quarantine"
   tc_get_virus_file "$tc" --infected-file-action quarantine
-  t_reset
-  t_smb_conf_append_svf_option "infected file action = quarantine"
+  tu_reset
+  tu_smb_conf_append_svf_option "infected file action = quarantine"
   tc_get_virus_files_on_a_session "$tc" --infected-file-action quarantine
 }
 
@@ -107,9 +107,9 @@ function tc_option_infected_file_command
   typeset tc="infected file command"
 
   test_verbose 0 "Testing 'infected file command' option"
-  t_reset
+  tu_reset
   typeset command_out="$TEST_tmp_dir/command.out"
-  t_smb_conf_append_svf_option "infected file command = sh -c 'env >>$command_out'"
+  tu_smb_conf_append_svf_option "infected file command = sh -c 'env >>$command_out'"
   tc_get_virus_file "$tc" --infected-file-command-env-out "$command_out"
 }
 
@@ -118,8 +118,8 @@ function tc_scan_limit
   typeset tc="scan limit"
 
   test_verbose 0 "Testing 'scan limit' option"
-  t_reset
-  t_smb_conf_append_svf_option "scan limit = 2"
+  tu_reset
+  tu_smb_conf_append_svf_option "scan limit = 2"
   tc_get_safe_files_on_a_session "$tc"
   tc_get_virus_files_on_a_session "$tc"
 }
@@ -133,7 +133,7 @@ function tc_connect_share
 
   out=$(
     print -r "ls \"$T_file_marker\"" \
-    |t_smbclient
+    |tu_smbclient
   )
   test_assert_match "$out" "*$T_file_marker*" "Connecting to share${comment:+ ($comment)}"
 }
@@ -161,7 +161,7 @@ function tc_get_safe_file
     file="$T_file_prefix.$size$suffix"
     out=$(
       print -r "get \"$file\" /dev/null" \
-      |t_smbclient
+      |tu_smbclient
       )
       test_assert_empty "$out" "Getting SAFE file is OK${comment:+ ($comment)}: $file"
   done
@@ -219,7 +219,7 @@ function tc_get_virus_file
     file="$T_file_virus.$size$suffix"
     out=$(
       print -r "get \"$file\" /dev/null" \
-      |t_smbclient
+      |tu_smbclient
     )
 
     excluded=
@@ -344,7 +344,7 @@ function tc_get_safe_files_on_a_session
       file="$T_file_prefix.$size$suffix"
       print -r "get \"$file\" /dev/null"
     done \
-    |t_smbclient
+    |tu_smbclient
   )
 
   test_assert_empty "$out" \
@@ -392,7 +392,7 @@ function tc_get_virus_files_on_a_session
       file="$T_file_virus.$size$suffix"
       print -r "get \"$file\" /dev/null"
     done \
-    |t_smbclient
+    |tu_smbclient
   )
 
   typeset excluded_num=0

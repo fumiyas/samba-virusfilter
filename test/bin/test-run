@@ -26,6 +26,7 @@ export LC_ALL=C
 if [[ -n "${ZSH_VERSION-}" ]] && [[ $(emulate 2>/dev/null) != "ksh" ]]; then
   sh_opts="$-"
   emulate -R ksh
+  setopt FUNCTION_ARGZERO
   [[ -z "${sh_opts##*x*}" ]] && set -x
   unset sh_opts
 fi
@@ -65,38 +66,29 @@ CMD_help="$CMD_usage
 ## ======================================================================
 
 . "$TEST_lib_dir/test.ksh"
+. "$TEST_lib_dir/package.ksh"
 
 test_configure ${1+"$@"}
-shift "$TEST_configure_args"
 
-if [ $# -lt 1 ]; then
-    echo "$CMD_help"
-    exit 100
-fi
-
-TEST_case_file="$1"; shift
-
-if [ ! -e "$TEST_case_file" ]; then
-  pdie "Test case file not found: $TEST_case_file"
-fi
-
-. "$TEST_lib_dir/package.ksh"
 . "$TEST_case_file" ${1+"$@"}
 
 ## DEBUG: If the -x option is set, enable trace flag on all functions
 [ x"${-#*x}" != x"$-" ] && typeset -ft $(typeset +f)
 
 if [ -n "$TEST_list_case" ]; then
-  typeset +f |sed -n 's/^tc_//p'
+  typeset +f |sed -n 's/^tc_//p' |egrep -v '^(configure|init|run|end)$'
   exit 0
 fi
 
+## ======================================================================
+
+test_init
+
 test_case_configure ${1+"$@"}
-if [ -n "$TEST_case_name" ]; then
-  tc_$TEST_case_name ''
-else
-  test_case_default ''
-fi
+test_case_init
+test_case_run
+test_case_end
+
 test_stats
 test_end
 
