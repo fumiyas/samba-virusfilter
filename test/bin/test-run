@@ -48,10 +48,10 @@ case "$0" in
   ;;
 esac
 
-TEST_dir="${TEST_bin_dir%/*}"
-TEST_lib_dir="$TEST_dir/lib"
-TEST_tmp_dir="$TEST_dir/tmp"
-TEST_case_dir="$TEST_dir/case"
+export TEST_dir="${TEST_bin_dir%/*}"
+export TEST_lib_dir="$TEST_dir/lib"
+export TEST_tmp_dir="$TEST_dir/tmp"
+export TEST_case_dir="$TEST_dir/case"
 
 export PATH="$TEST_bin_dir:$TEST_lib_dir:$TEST_case_dir:$PATH"
 
