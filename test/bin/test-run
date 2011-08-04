@@ -23,10 +23,11 @@
 set -u
 export LC_ALL=C
 
-if [ -n "${ZSH_VERSION-}" ]; then
-  setopt SH_WORD_SPLIT
-  setopt GLOB_SUBST
-  setopt no_NOMATCH
+if [[ -n "${ZSH_VERSION-}" ]] && [[ $(emulate 2>/dev/null) != "ksh" ]]; then
+  sh_opts="$-"
+  emulate -R ksh
+  [[ -z "${sh_opts##*x*}" ]] && set -x
+  unset sh_opts
 fi
 
 pdie() { echo "$0: ERROR: ${1-}" 1>&2; exit "${2-1}"; }
