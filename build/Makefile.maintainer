@@ -16,12 +16,6 @@ dist: dist-conf dist-archive
 
 dist-conf:
 	./build/autogen.sh
-	cp build/subst.in.in build/subst.in
-	sed -n \
-	  -e "s/^/ /;s/$$/ /;s/'/ ' /" \
-	  -e "/^ ac_subst_vars=/,/'/s/^.* \([A-Za-z_][A-Za-z0-9_]*\) .*/\1=@\1@/p" \
-	  configure \
-	  >>build/subst.in
 
 dist-archive:
 	$(MAKE) distclean

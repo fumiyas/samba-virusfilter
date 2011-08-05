@@ -1,12 +1,9 @@
-SOURCE_DIR=	.
-SOURCE_BUILD=	$(SOURCE_DIR)/build
+SOURCE_DIR=		.
+SOURCE_BUILD=		$(SOURCE_DIR)/build
 
 ## ======================================================================
 
-BUILD_SUBDIRS=	utils clamav f-secure sophos sbin bin etc
-
-BUILD_TARGETS=
-BUILD_TARGETS_POST=
+MAKE_DIRS=		utils clamav f-secure sophos sbin bin etc
 
 ## ======================================================================
 

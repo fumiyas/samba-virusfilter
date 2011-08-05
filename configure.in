@@ -15,7 +15,7 @@ AC_CONFIG_FILES(
   build/Makefile.common
   build/Makefile.package
   build/Makefile.top
-  build/subst
+  build/subst.pl
 )
 
 ## Installation directories
@@ -165,8 +165,6 @@ CPPFLAGS="$CPPFLAGS -I\$(SOURCE_DIR)/include"
 ## ======================================================================
 
 AC_OUTPUT
-
-chmod +x build/subst
 
 AC_MSG_RESULT([
 Configuration summary for $PACKAGE_NAME $PACKAGE_VERSION:

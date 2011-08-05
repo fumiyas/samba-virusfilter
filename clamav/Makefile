@@ -3,7 +3,7 @@ SOURCE_BUILD=	$(SOURCE_DIR)/build
 
 ## ======================================================================
 
-BUILD_SUBDIRS=
+MAKE_DIRS=
 
 BUILD_OBJS=		svf-clamav.o
 BUILD_VFS=		svf-clamav.so
@@ -17,9 +17,9 @@ INSTALL_EXES=		$(BUILD_VFS)
 
 include $(SOURCE_BUILD)/Makefile.common
 
-$(BUILD_OBJS): $(SAV_VFS_HEADERS)
+$(BUILD_OBJS):: $(SAV_VFS_HEADERS)
 
-$(BUILD_VFS): $(BUILD_OBJS) $(SAV_VFS_OBJS)
+$(BUILD_VFS):: $(BUILD_OBJS) $(SAV_VFS_OBJS)
 	$(SHLD) $(LDSHFLAGS_MODULES) -o $@ $(BUILD_OBJS) $(SAV_VFS_OBJS)
 
 install:: install-exes

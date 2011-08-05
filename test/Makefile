@@ -3,7 +3,7 @@ SOURCE_BUILD=	$(SOURCE_DIR)/build
 
 ## ======================================================================
 
-BUILD_SUBDIRS=
+MAKE_DIRS=
 
 BUILD_TARGETS=		$(TEST_DIRS) $(TEST_LIB_PACKAGE)
 

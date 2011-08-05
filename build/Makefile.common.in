@@ -3,6 +3,7 @@
 
 PACKAGE_NAME=		@PACKAGE_NAME@
 PACKAGE_VERSION=	@PACKAGE_VERSION@
+PACKAGE_TARNAME=	@PACKAGE_TARNAME@
 
 ## Path
 ## ----------------------------------------------------------------------
@@ -32,6 +33,8 @@ logdir=			$(localstatedir)/log$(package_subdir)
 ## Commands, Flags and so on
 ## ----------------------------------------------------------------------
 
+SUBST=			$(SOURCE_BUILD)/subst
+
 CC=			@CC@
 CPPFLAGS=		@CPPFLAGS@
 CFLAGS=			@CFLAGS@
@@ -42,6 +45,10 @@ LN_S=			ln -s
 INSTALL=		$(SOURCE_BUILD)/install-sh -c
 CHMOD_FILES=		chmod 0644
 CHMOD_EXES=		chmod 0755
+CHMOD_CMDS=		chmod 0755
+## ----------------------------------------------------------------------
+
+BUILD_TARGETS_TOP=	$(SUBST)
 
 ## Package local
 ## ----------------------------------------------------------------------
@@ -53,7 +60,7 @@ include $(SOURCE_BUILD)/Makefile.package
 
 .SUFFIXES: .subst .substed
 .SUFFIXES: .sh .ksh .rb .rbt .pl .php .tmpl
-.SUFFIXES: .pm .exe .cgi .conf .default .example
+.SUFFIXES: .pm .cmd .cgi .conf .default .example
 
 .subst.substed:
 	@echo "Building $@ from $< ..."
@@ -62,73 +69,73 @@ include $(SOURCE_BUILD)/Makefile.package
 	@$(CHMOD_FILES) $@.tmp
 	@mv $@.tmp $@
 
-.sh.exe:
+.sh.cmd:
 	@echo "Building $@ from $< ..."
 	@$(RM) $@ $@.tmp
 	@$(SOURCE_BUILD)/subst <$< >$@.tmp
-	@$(CHMOD_EXES) $@.tmp
+	@$(CHMOD_CMDS) $@.tmp
 	@mv $@.tmp $@
 
-.ksh.exe:
+.ksh.cmd:
 	@echo "Building $@ from $< ..."
 	@$(RM) $@ $@.tmp
 	@$(SOURCE_BUILD)/subst <$< >$@.tmp
-	@$(CHMOD_EXES) $@.tmp
+	@$(CHMOD_CMDS) $@.tmp
 	@mv $@.tmp $@
 
-.rb.exe:
+.rb.cmd:
 	@echo "Building $@ from $< ..."
 	@$(RM) $@ $@.tmp
 	@$(SOURCE_BUILD)/subst <$< >$@.tmp
-	@$(CHMOD_EXES) $@.tmp
+	@$(CHMOD_CMDS) $@.tmp
 	@mv $@.tmp $@
 
 .rbt.rb:
 	@echo "Building $@ from $< ..."
 	@$(RM) $@ $@.tmp
-	@$(SOURCE_BUILD)/subst <$< >$@.tmp
-	@$(CHMOD_EXES) $@.tmp
+	@$(SUBST) <$< >$@.tmp
+	@$(CHMOD_CMDS) $@.tmp
 	@mv $@.tmp $@
 
-.pl.exe:
+.pl.cmd:
 	@echo "Building $@ from $< ..."
 	@$(RM) $@ $@.tmp
-	@$(SOURCE_BUILD)/subst <$< >$@.tmp
-	@$(CHMOD_EXES) $@.tmp
+	@$(SUBST) <$< >$@.tmp
+	@$(CHMOD_CMDS) $@.tmp
 	@mv $@.tmp $@
 
 .pl.cgi:
 	@echo "Building $@ from $< ..."
 	@$(RM) $@ $@.tmp
-	@$(SOURCE_BUILD)/subst <$< >$@.tmp
-	@$(CHMOD_EXES) $@.tmp
+	@$(SUBST) <$< >$@.tmp
+	@$(CHMOD_CMDS) $@.tmp
 	@mv $@.tmp $@
 
 .pl.pm:
 	@echo "Building $@ from $< ..."
 	@$(RM) $@ $@.tmp
-	@$(SOURCE_BUILD)/subst <$< >$@.tmp
+	@$(SUBST) <$< >$@.tmp
 	@$(CHMOD_FILES) $@.tmp
 	@mv $@.tmp $@
 
 .tmpl.conf:
 	@echo "Building $@ from $< ..."
 	@$(RM) $@ $@.tmp
-	@$(SOURCE_BUILD)/subst <$< >$@.tmp
+	@$(SUBST) <$< >$@.tmp
 	@$(CHMOD_FILES) $@.tmp
 	@mv $@.tmp $@
 
 .tmpl.default:
 	@echo "Building $@ from $< ..."
 	@$(RM) $@ $@.tmp
-	@$(SOURCE_BUILD)/subst <$< >$@.tmp
+	@$(SUBST) <$< >$@.tmp
 	@$(CHMOD_FILES) $@.tmp
 	@mv $@.tmp $@
 
 .tmpl.example:
 	@echo "Building $@ from $< ..."
 	@$(RM) $@ $@.tmp
-	@$(SOURCE_BUILD)/subst <$< >$@.tmp
+	@$(SUBST) <$< >$@.tmp
 	@$(CHMOD_FILES) $@.tmp
 	@mv $@.tmp $@
 
@@ -152,25 +159,37 @@ install-files: install-dir
 	      || exit 1; \
 	done
 
-install-exes: install-dir
-	@for f in $(INSTALL_EXES); do \
+install-cmd-dir:
+	@echo "Creating directory $(INSTALL_ROOT)$(INSTALL_CMD_DIR) ..."
+	@$(INSTALL) -d $(INSTALL_ROOT)$(INSTALL_CMD_DIR)
+
+install-cmds: install-dir
+	@for f in $(INSTALL_CMDS); do \
 	    echo "Installing file $$f into $(INSTALL_ROOT)$(INSTALL_DIR) ..."; \
-	    $(INSTALL) -m 0755 -t='s/\.exe$$//' $$f "$(INSTALL_ROOT)$(INSTALL_DIR)" \
+	    $(INSTALL) -m 0755 -t='s/\.cmd$$//' $$f "$(INSTALL_ROOT)$(INSTALL_DIR)" \
 	      || exit 1; \
 	done
 
 clean::
-	$(RM) *.tmp $(BUILD_TARGETS) $(BUILD_TARGETS_POST)
+	$(RM) $(BUILD_TARGETS) $(BUILD_TARGETS_POST) *.tmp
 
 distclean:: clean
 
 build install clean distclean::
-	@if [ -n "$(BUILD_SUBDIRS)" ]; then \
-	    set - $(BUILD_SUBDIRS); \
+	@if [ -n "$(MAKE_DIRS)" ]; then \
+	    set - $(MAKE_DIRS); \
 	    for subdir in "$$@"; do \
 		(cd $$subdir && $(MAKE) $@) || exit 1; \
 	    done \
 	fi
 
 build:: $(BUILD_TARGETS_POST)
+
+$(BUILD_TARGETS):: $(SUBST)
+
+$(SUBST): $(SUBST).pl $(SOURCE_BUILD)/Makefile.common $(SOURCE_BUILD)/Makefile.package
+	cp $< $@.tmp
+	$(PERL_CMD) -ne 'print if s/^(\w+)\s*=\s*(.*?)\s$$/$$1=$$2\n/' $(SOURCE_BUILD)/Makefile $(SOURCE_BUILD)/Makefile.package >>$@.tmp
+	chmod 0755 $@.tmp
+	mv $@.tmp $@
 
