@@ -20,7 +20,7 @@ libdir=			@libdir@
 libexecdir=		@libexecdir@$(package_subdir)
 sysconfdir=		@sysconfdir@$(package_subdir)
 localstatedir=		@localstatedir@
-datadir=		@datadir@$(package_subdir)
+datadir=		@datadir@
 datarootdir=		@datarootdir@$(package_subdir)
 mandir=			@mandir@
 infodir=		@infodir@
@@ -34,6 +34,7 @@ logdir=			$(localstatedir)/log$(package_subdir)
 ## ----------------------------------------------------------------------
 
 SUBST=			$(SOURCE_BUILD)/subst
+SUBST_SRC=		$(SUBST).pl
 
 CC=			@CC@
 CPPFLAGS=		@CPPFLAGS@
@@ -163,10 +164,10 @@ install-cmd-dir:
 	@echo "Creating directory $(INSTALL_ROOT)$(INSTALL_CMD_DIR) ..."
 	@$(INSTALL) -d $(INSTALL_ROOT)$(INSTALL_CMD_DIR)
 
-install-cmds: install-dir
+install-cmds: install-cmd-dir
 	@for f in $(INSTALL_CMDS); do \
-	    echo "Installing file $$f into $(INSTALL_ROOT)$(INSTALL_DIR) ..."; \
-	    $(INSTALL) -m 0755 -t='s/\.cmd$$//' $$f "$(INSTALL_ROOT)$(INSTALL_DIR)" \
+	    echo "Installing file $$f into $(INSTALL_ROOT)$(INSTALL_CMD_DIR) ..."; \
+	    $(INSTALL) -m 0755 -t='s/\.cmd$$//' $$f "$(INSTALL_ROOT)$(INSTALL_CMD_DIR)" \
 	      || exit 1; \
 	done
 
@@ -187,7 +188,7 @@ build:: $(BUILD_TARGETS_POST)
 
 $(BUILD_TARGETS):: $(SUBST)
 
-$(SUBST): $(SUBST).pl $(SOURCE_BUILD)/Makefile.common $(SOURCE_BUILD)/Makefile.package
+$(SUBST): $(SUBST_SRC) $(SOURCE_BUILD)/Makefile.common $(SOURCE_BUILD)/Makefile.package
 	cp $< $@.tmp
 	sed -n 's/^\([A-Za-z_][A-Za-z_0-9]*\)[ 	]*=[ 	]*\(.*\)/\1=\2/p' \
 	  $(SOURCE_BUILD)/Makefile.common \
