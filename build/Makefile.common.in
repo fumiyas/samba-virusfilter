@@ -189,7 +189,10 @@ $(BUILD_TARGETS):: $(SUBST)
 
 $(SUBST): $(SUBST).pl $(SOURCE_BUILD)/Makefile.common $(SOURCE_BUILD)/Makefile.package
 	cp $< $@.tmp
-	$(PERL_CMD) -ne 'print if s/^(\w+)\s*=\s*(.*?)\s$$/$$1=$$2\n/' $(SOURCE_BUILD)/Makefile $(SOURCE_BUILD)/Makefile.package >>$@.tmp
+	sed -n 's/^\([A-Za-z_][A-Za-z_0-9]*\)[ 	]*=[ 	]*\(.*\)/\1=\2/p' \
+	  $(SOURCE_BUILD)/Makefile.common \
+	  $(SOURCE_BUILD)/Makefile.package \
+	  >>$@.tmp
 	chmod 0755 $@.tmp
 	mv $@.tmp $@
 

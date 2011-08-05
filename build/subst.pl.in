@@ -45,8 +45,16 @@ foreach my $arg (@ARGV) {
 }
 
 while (defined(my $line = $fh_in->getline())) {
-  $line =~ s/$tag1/exists($text{lc($1)}) ? $text{lc($1)} : "XXX Unknown: $1 XXX"/ge;
-  while ($line =~ s/$tag2/exists($text{lc($1)}) ? $text{lc($1)} : "XXX Unknown: $1 XXX"/ge) {};
+  $line =~ s#$tag1#
+    my $s;
+    if (exists($text{lc($1)})) {
+      $s = $text{lc($1)};
+      while ($s =~ s/$tag2/exists($text{lc($1)}) ? $text{lc($1)} : "XXX Unknown: $1 XXX"/ge) {};
+    } else {
+      $s = "XXX Unknown: $1 XXX"
+    }
+    $s;
+  #ge;
   $fh_out->print($line);
 }
 
