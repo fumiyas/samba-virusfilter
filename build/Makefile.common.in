@@ -34,7 +34,6 @@ logdir=			$(localstatedir)/log$(package_subdir)
 ## ----------------------------------------------------------------------
 
 SUBST=			$(SOURCE_BUILD)/subst
-SUBST_SRC=		$(SUBST).pl
 
 CC=			@CC@
 CPPFLAGS=		@CPPFLAGS@
@@ -66,28 +65,28 @@ include $(SOURCE_BUILD)/Makefile.package
 .subst.substed:
 	@echo "Building $@ from $< ..."
 	@$(RM) $@ $@.tmp
-	@$(SOURCE_BUILD)/subst <$< >$@.tmp
+	@$(SUBST) <$< >$@.tmp
 	@$(CHMOD_FILES) $@.tmp
 	@mv $@.tmp $@
 
 .sh.cmd:
 	@echo "Building $@ from $< ..."
 	@$(RM) $@ $@.tmp
-	@$(SOURCE_BUILD)/subst <$< >$@.tmp
+	@$(SUBST) <$< >$@.tmp
 	@$(CHMOD_CMDS) $@.tmp
 	@mv $@.tmp $@
 
 .ksh.cmd:
 	@echo "Building $@ from $< ..."
 	@$(RM) $@ $@.tmp
-	@$(SOURCE_BUILD)/subst <$< >$@.tmp
+	@$(SUBST) <$< >$@.tmp
 	@$(CHMOD_CMDS) $@.tmp
 	@mv $@.tmp $@
 
 .rb.cmd:
 	@echo "Building $@ from $< ..."
 	@$(RM) $@ $@.tmp
-	@$(SOURCE_BUILD)/subst <$< >$@.tmp
+	@$(SUBST) <$< >$@.tmp
 	@$(CHMOD_CMDS) $@.tmp
 	@mv $@.tmp $@
 
@@ -187,13 +186,4 @@ build install clean distclean::
 build:: $(BUILD_TARGETS_POST)
 
 $(BUILD_TARGETS):: $(SUBST)
-
-$(SUBST): $(SUBST_SRC) $(SOURCE_BUILD)/Makefile.common $(SOURCE_BUILD)/Makefile.package
-	cp $< $@.tmp
-	sed -n 's/^\([A-Za-z_][A-Za-z_0-9]*\)[ 	]*=[ 	]*\(.*\)/\1=\2/p' \
-	  $(SOURCE_BUILD)/Makefile.common \
-	  $(SOURCE_BUILD)/Makefile.package \
-	  >>$@.tmp
-	chmod 0755 $@.tmp
-	mv $@.tmp $@
 
