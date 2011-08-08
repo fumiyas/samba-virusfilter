@@ -7,15 +7,14 @@ MAKE_DIRS=
 
 BUILD_TARGETS=		$(TEST_DIRS) $(TEST_LIB_PACKAGE)
 
-SUBST=			$(SOURCE_BUILD)/subst \
-			  TEST_DIR="$(TEST_DIR)" \
-			  TEST_BIN_DIR="$(TEST_DIR)/$(TEST_BIN_DIR)" \
-			  TEST_LIB_DIR="$(TEST_DIR)/$(TEST_LIB_DIR)" \
-			  TEST_TMP_DIR="$(TEST_DIR)/$(TEST_TMP_DIR)" \
-			  TEST_LOG_DIR="$(TEST_DIR)/$(TEST_LOG_DIR)" \
-			  TEST_SAMBA_BIN_DIR="$(SAMBA_SOURCE_DIR)/bin" \
-			  TEST_SAMBA_SBIN_DIR="$(SAMBA_SOURCE_DIR)/bin" \
-			  TEST_SAMBA_LIB_DIR="$(SAMBA_SOURCE_DIR)/bin" \
+SUBST_ARGS=		TEST_DIR="$(TEST_DIR)" \
+			TEST_BIN_DIR="$(TEST_DIR)/$(TEST_BIN_DIR)" \
+			TEST_LIB_DIR="$(TEST_DIR)/$(TEST_LIB_DIR)" \
+			TEST_TMP_DIR="$(TEST_DIR)/$(TEST_TMP_DIR)" \
+			TEST_LOG_DIR="$(TEST_DIR)/$(TEST_LOG_DIR)" \
+			TEST_SAMBA_BIN_DIR="$(SAMBA_SOURCE_DIR)/bin" \
+			TEST_SAMBA_SBIN_DIR="$(SAMBA_SOURCE_DIR)/bin" \
+			TEST_SAMBA_LIB_DIR="$(SAMBA_SOURCE_DIR)/bin" \
 
 #TEST_USER=		`id |sed 's/).*//;s/.*(//'`
 #TEST_PASSWORD=		test
@@ -40,11 +39,11 @@ include $(SOURCE_BUILD)/Makefile.common
 clean::
 	rm -rf $(TEST_DIRS)
 
-$(TEST_DIRS):
+$(TEST_DIRS)::
 	@echo "Creating $@ ..."
 	@mkdir -p -m 0755 $@
 
-$(TEST_LIB_PACKAGE): $(TEST_LIB_PACKAGE).tmpl
+$(TEST_LIB_PACKAGE):: $(TEST_LIB_PACKAGE).tmpl
 	@echo "Generating $@ ..."
 	@$(SUBST) <$(TEST_LIB_PACKAGE).tmpl >$@
 

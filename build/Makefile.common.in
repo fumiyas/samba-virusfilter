@@ -33,7 +33,8 @@ logdir=			$(localstatedir)/log$(package_subdir)
 ## Commands, Flags and so on
 ## ----------------------------------------------------------------------
 
-SUBST=			$(SOURCE_BUILD)/subst
+SUBST_COMMAND=		$(SOURCE_BUILD)/subst
+SUBST=			$(SUBST_COMMAND) $(SUBST_ARGS)
 
 CC=			@CC@
 CPPFLAGS=		@CPPFLAGS@
@@ -46,9 +47,6 @@ INSTALL=		$(SOURCE_BUILD)/install-sh -c
 CHMOD_FILES=		chmod 0644
 CHMOD_EXES=		chmod 0755
 CHMOD_CMDS=		chmod 0755
-## ----------------------------------------------------------------------
-
-BUILD_TARGETS_TOP=	$(SUBST)
 
 ## Package local
 ## ----------------------------------------------------------------------
@@ -185,5 +183,5 @@ build install clean distclean::
 
 build:: $(BUILD_TARGETS_POST)
 
-$(BUILD_TARGETS):: $(SUBST)
+$(BUILD_TARGETS):: $(SUBST_COMMAND)
 
