@@ -6,7 +6,7 @@
 /build/Makefile.package
 /build/Makefile.top
 /build/subst
-/build/subst.pl
+/build/subst.in
 /config.log
 /config.status
 /configure

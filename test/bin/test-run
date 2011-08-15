@@ -50,7 +50,9 @@ case "$0" in
 esac
 
 export TEST_dir="${TEST_bin_dir%/*}"
+export TEST_sysconf_dir="$TEST_dir/etc"
 export TEST_lib_dir="$TEST_dir/lib"
+export TEST_log_dir="$TEST_dir/log"
 export TEST_tmp_dir="$TEST_dir/tmp"
 export TEST_case_dir="$TEST_dir/case"
 

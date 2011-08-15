@@ -1,0 +1,8 @@
+#!/bin/sh
+##
+## Dummy of daemontools softlimit(8)
+##
+
+exec "$@"
+exit 1
+

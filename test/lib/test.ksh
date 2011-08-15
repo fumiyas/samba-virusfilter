@@ -1,9 +1,9 @@
 #!/bin/ksh
 ##
 ## test.ksh: Provides a simple framework for writing test scripts
-##           (Test::More Perl module clone)
+##           (Perl Test::More clone)
 ##
-## Copyright (C) 2010 SATOH Fumiyasu @ OSS Technology, Inc.
+## Copyright (C) 2010-2011 SATOH Fumiyasu @ OSS Technology, Inc.
 ## Copyright (C) 2003-2004 SATOH Fumiyasu @ MIRACLE LINUX Corporation
 ##
 ## This program is free software; you can redistribute it and/or modify
@@ -25,6 +25,9 @@
 
 TEST_output="${TEST_OUTPUT:-}"
 TEST_verbose_level="${TEST_VERBOSE_LEVEL:-0}"
+TEST_sysconf_dir="${TEST_BIN_DIR:-$PWD/etc}"
+TEST_bin_dir="${TEST_BIN_DIR:-$PWD/bin}"
+TEST_log_dir="${TEST_LOG_DIR:-$PWD/log}"
 TEST_tmp_dir="${TEST_TMP_DIR:-$PWD/tmp}"
 
 ##	FD	Purpose
@@ -51,6 +54,8 @@ TEST_count_skipped=0
 
 TEST_case_name=""
 TEST_list_case=""
+
+TEST_at_exit=""
 
 ## Functions
 ## ======================================================================
@@ -110,23 +115,41 @@ function test_init
   export TMP="$TEST_tmp_dir"
   export TMPDIR="$TEST_tmp_dir"
   export TEMP="$TEST_tmp_dir"
+
+  if type t_init >/dev/null 2>&1; then
+    t_init
+  fi
 }
 
 function test_stats
 {
-  test_output "Statistics: ok: $TEST_count_ok"
-  test_output "Statistics: not ok: $TEST_count_ng"
-  test_output "Statistics: skipped: $TEST_count_skipped"
-  test_output "Statistics: total: $TEST_count"
+  test_output "Statistics: OK: $TEST_count_ok"
+  test_output "Statistics: Not OK: $TEST_count_ng"
+  test_output "Statistics: Skipped: $TEST_count_skipped"
+  test_output "Statistics: Total: $TEST_count"
 }
 
 function test_end
 {
+  if type t_end >/dev/null 2>&1; then
+    t_end
+  fi
+
   if [ "$TEST_count_ng" -gt 0 ]; then
     exit 100
   fi
 
   exit 0
+}
+
+function test_at_exit
+{
+  TEST_at_exit="${TEST_at_exit:+$TEST_at_exit; }$1"
+}
+
+function test_do_exit
+{
+  eval "$TEST_at_exit"
 }
 
 ## Output error messages
@@ -246,10 +269,10 @@ function test_result
   let TEST_count++
 
   case "$result" in
-  "ok")
+  OK)
     let TEST_count_ok++
     ;;
-  "skip")
+  Skip)
     let TEST_count_skipped++
     ;;
   *)
@@ -279,9 +302,9 @@ function test_assert_zero
   typeset name="$1"; shift
 
   if [ x"$got" = x"0" ]; then
-    test_result "ok" "$name"
+    test_result "OK" "$name"
   else
-    test_result "not ok" "$name"
+    test_result "Not OK" "$name"
   fi
 }
 
@@ -292,9 +315,9 @@ function test_assert_not_zero
   typeset name="$1"; shift
 
   if [ x"$got" != x"0" ]; then
-    test_result "ok" "$name"
+    test_result "OK" "$name"
   else
-    test_result "not ok" "$name"
+    test_result "Not OK" "$name"
   fi
 }
 
@@ -304,9 +327,9 @@ function test_assert_empty
   typeset name="$1"; shift
 
   if [ x"$got" = x"" ]; then
-    test_result "ok" "$name"
+    test_result "OK" "$name"
   else
-    test_result "not ok" "$name"
+    test_result "Not OK" "$name"
   fi
 }
 
@@ -318,9 +341,9 @@ function test_assert_eq
   typeset name="$1"; shift
 
   if [ x"$got" = x"$expected" ]; then
-    test_result "ok" "$name"
+    test_result "OK" "$name"
   else
-    test_result "not ok" "$name"
+    test_result "Not OK" "$name"
   fi
 }
 
@@ -332,9 +355,9 @@ function test_assert_not_eq
   typeset name="$1"; shift
 
   if [ x"$got" != x"not_expected" ]; then
-    test_result "ok" "$name"
+    test_result "OK" "$name"
   else
-    test_result "not ok" "$name"
+    test_result "Not OK" "$name"
   fi
 }
 
@@ -346,10 +369,10 @@ function test_assert_match
 
   case X"$got" in
   X$expected)
-    test_result "ok" "$name"
+    test_result "OK" "$name"
     ;;
   *)
-    test_result "not ok" "$name"
+    test_result "Not OK" "$name"
     ;;
   esac
 }
@@ -362,10 +385,10 @@ function test_assert_not_match
 
   case X"$got" in
   X$expected)
-    test_result "not ok" "$name"
+    test_result "Not OK" "$name"
     ;;
   *)
-    test_result "ok" "$name"
+    test_result "OK" "$name"
     ;;
   esac
 }
@@ -414,4 +437,7 @@ eval exec "$TEST_fd_output>&1"
 eval exec "$TEST_fd_error>&2"
 ## Redirect stdout to stderr to prevent odd output mixing with test result
 exec 1>&2
+
+trap 'test_do_exit' EXIT
+trap 'test_verbose 0 "[$1]"; exit 1' INT
 

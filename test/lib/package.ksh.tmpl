@@ -54,7 +54,7 @@ path = $T_samba_share_dir
 
 ## ======================================================================
 
-function tc_init
+function t_init
 {
   typeset size
 
@@ -156,6 +156,10 @@ function tu_reset
     ln "$file" "$T_samba_share_dir/" \
       || test_abort "$0: Cannot create hardlink: $T_samba_share_dir/$file"
   done
+
+  if type tc_reset >/dev/null 2>&1; then
+    tc_reset
+  fi
 }
 
 function tu_smb_conf_append

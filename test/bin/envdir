@@ -1,0 +1,19 @@
+#!/bin/sh
+##
+## daemontools envdir(8) clone
+## Copyright (c) 2011 SATOH Fumiyasu @ OSS Technology, Inc., Japan
+##
+
+set -u
+
+dir="$1"; shift
+
+for name in `ls "$dir" |grep '^[A-Za-z_][A-Za-z_0-9]*$'`; do
+  [ -f "$dir/$name" ] || continue
+  value=`head -n 1 "$dir/$name"`
+  eval "export $name=\"\$value\""
+done
+
+exec "$@"
+exit 1
+
