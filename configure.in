@@ -43,13 +43,52 @@ AC_CONFIG_FILES(
 ## ======================================================================
 
 AC_SUBST(CLAMD_COMMAND)
-CLAMD_COMMAND=/usr/sbin/clamd
+AC_ARG_WITH(
+  clamd,
+  AC_HELP_STRING(--with-clamd=PATH, [Use specific ClamAV clamd for test]),
+  [case "$withval" in
+    yes|no)
+      ;;
+    *)
+      CLAMD_COMMAND=$withval
+      AC_MSG_RESULT([using $PERL_COMMAND for perl])
+      ;;
+    esac
+  ],
+  [CLAMD_COMMAND=/usr/sbin/clamd]
+)
 
 AC_SUBST(FSAVD_COMMAND)
-FSAVD_COMMAND=/opt/f-secure/fssp/sbin/fsavd
+AC_ARG_WITH(
+  fsavd,
+  AC_HELP_STRING(--with-fsavd=PATH, [Use specific F-Secure AV fsavd for test]),
+  [case "$withval" in
+    yes|no)
+      ;;
+    *)
+      FSAVD_COMMAND=$withval
+      AC_MSG_RESULT([using $PERL_COMMAND for perl])
+      ;;
+    esac
+  ],
+  [FSAVD_COMMAND=/opt/f-secure/fssp/sbin/fsavd]
+)
 
 AC_SUBST(SAVDID_COMMAND)
-SAVDID_COMMAND=/usr/local/bin/savdid
+AC_ARG_WITH(
+  savdid,
+  AC_HELP_STRING(--with-savdid=PATH, [Use specific Sophos AV savdid for test]),
+  [case "$withval" in
+    yes|no)
+      ;;
+    *)
+      SAVDID_COMMAND=$withval
+      AC_MSG_RESULT([using $PERL_COMMAND for perl])
+      ;;
+    esac
+  ],
+  [SAVDID_COMMAND=/usr/local/bin/savdid]
+)
 
 ## Perl
 ## ======================================================================
@@ -174,9 +213,15 @@ chmod +x build/subst
 AC_MSG_RESULT([
 Configuration summary for $PACKAGE_NAME $PACKAGE_VERSION:
 
- Samba source:			$SAMBA_SOURCE_DIR
- Samba version:			$SAMBA_VERSION
- Samba VFS interface version:	$SMB_VFS_INTERFACE_VERSION
- Samba prefix:			$SAMBA_prefix
+Samba:
+  Source directory:		$SAMBA_SOURCE_DIR
+  Version:			$SAMBA_VERSION
+  VFS interface version:	$SMB_VFS_INTERFACE_VERSION
+  Install prefix:		$SAMBA_prefix
+
+Anti-Virus daemons:
+  ClamAV clamd:			$CLAMD_COMMAND
+  F-Secure AV fsavd:		$FSAVD_COMMAND
+  Sophos AV savdid:		$SAVDID_COMMAND
 ])
 
