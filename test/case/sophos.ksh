@@ -18,9 +18,7 @@ function tc_init
 
 function tc_reset
 {
-  echo "$T_svf_module_name: socket path = $TEST_tmp_dir/sssp.sock" \
-    >>"$T_smb_conf_file" \
-    || exit 1
+  tu_smb_conf_append_svf_option "socket path = $TEST_tmp_dir/sssp.sock"
 }
 
 function tc_all
@@ -34,7 +32,7 @@ function tcu_savdid_start
   tcu_savdid_stop
 
   test_verbose 1 "Starting savdid ..."
-  (cd "$TEST_tmp_dir/savdid" && exec ./run >"$TEST_log_dir/savdid-run.log") &
+  (cd "$TEST_tmp_dir/savdid" && exec ./run >>"$TEST_log_dir/savdid-run.log") &
   T_savdid_pid="$!"
 
   sleep 1

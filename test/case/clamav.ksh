@@ -18,9 +18,7 @@ function tc_init
 
 function tc_reset
 {
-  echo "$T_svf_module_name: socket path = $TEST_tmp_dir/clamd.socket" \
-    >>"$T_smb_conf_file" \
-    || exit 1
+  tu_smb_conf_append_svf_option "socket path = $TEST_tmp_dir/clamd.socket"
 }
 
 function tc_all
@@ -33,7 +31,7 @@ function tcu_clamd_start
   tcu_clamd_stop
 
   test_verbose 1 "Starting clamd ..."
-  (cd "$TEST_tmp_dir/clamd" && exec ./run >"$TEST_log_dir/clamd-run.log") &
+  (cd "$TEST_tmp_dir/clamd" && exec ./run >>"$TEST_log_dir/clamd-run.log") &
   T_clamd_pid="$!"
 
   sleep 1
@@ -49,3 +47,4 @@ function tcu_clamd_stop
   wait "$T_clamd_pid"
   T_clamd_pid=""
 }
+
