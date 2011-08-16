@@ -23,7 +23,7 @@ function tc_reset
 
 function tc_all
 {
-  tcx_common
+  tcs_common
   ## FIXME: Extra test case for savdid specific options
 }
 

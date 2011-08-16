@@ -1,6 +1,6 @@
 #!/bin/ksh
 
-function tcx_common
+function tcs_common
 {
   tc_basic
   tc_option_exclude_files

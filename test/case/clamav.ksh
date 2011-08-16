@@ -23,7 +23,7 @@ function tc_reset
 
 function tc_all
 {
-  tcx_common
+  tcs_common
 }
 
 function tcu_clamd_start
