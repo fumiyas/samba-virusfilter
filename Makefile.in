@@ -3,10 +3,15 @@ SOURCE_BUILD=		$(SOURCE_DIR)/build
 
 ## ======================================================================
 
-MAKE_DIRS=		utils clamav f-secure sophos sbin bin etc test
+MAKE_DIRS=		utils clamav f-secure sophos bin etc test
 
 ## ======================================================================
 
 include $(SOURCE_BUILD)/Makefile.common
 include $(SOURCE_BUILD)/Makefile.top
+
+.PHONY: test
+
+test:
+	cd test && $(MAKE) $@
 

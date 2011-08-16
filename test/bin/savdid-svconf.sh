@@ -11,12 +11,6 @@
 set -u
 umask 0022
 
-pdie()
-{
-  echo "$0: ERROR: $1" 1>&2
-  exit 1
-}
-
 ## Options
 ## ======================================================================
 
@@ -77,7 +71,7 @@ exec envdir ./env sh -c '
       ${COREFILELIMIT:+"-c$COREFILELIMIT"} \
     "$COMMAND" \
       -s \
-      ${CONFIGFILE:+"-c$CONFIGFILE"} \
+      ${CONFIGFILE:+-c} ${CONFIGFILE:+"$CONFIGFILE"} \
       $OPTIONS \
     ;
   ## ksh: Ensure that all commands in the pipeline are terminated

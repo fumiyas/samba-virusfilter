@@ -23,11 +23,6 @@ function tc_reset
     || exit 1
 }
 
-function tc_end
-{
-  echo clamd stop
-}
-
 function tc_run
 {
   tcx_common

@@ -5,7 +5,9 @@ SOURCE_BUILD=	$(SOURCE_DIR)/build
 
 BUILD_TARGETS=		$(TEST_DIRS) $(TEST_LIB_PACKAGE) \
 			etc/clamd.conf.test \
+			etc/savdid.conf.test \
 			bin/clamd-svconf.cmd \
+			bin/savdid-svconf.cmd \
 
 SUBST_ARGS=		TEST_DIR="$(TEST_DIR)" \
 			TEST_SYSCONF_DIR="$(PWD)/etc" \
@@ -42,16 +44,4 @@ $(TEST_DIRS)::
 $(TEST_LIB_PACKAGE):: $(TEST_LIB_PACKAGE).tmpl
 	@echo "Generating $@ ..."
 	@$(SUBST) <$(TEST_LIB_PACKAGE).tmpl >$@
-
-#$(SMB_GLOBAL_CONF_FILE): $(SMB_GLOBAL_CONF_FILE).tmpl
-#	@echo "Generating $@ ..."
-#	@$(SUBST) <$(SMB_GLOBAL_CONF_FILE).tmpl >$@.tmp
-#	@mv $@.tmp $@
-
-$(SMB_AUTH_FILE):
-	@echo "Generating $@ ..."
-	@(umask 0077; touch $@.tmp)
-	@echo "username=$(TEST_USER)" >$@.tmp
-	@echo "password=$(TEST_PASSWORD)" >>$@.tmp
-	@mv $@.tmp $@
 
