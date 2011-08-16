@@ -1,15 +1,68 @@
 #!/bin/ksh
 
-function tcs_common
+function tc_init
 {
-  tc_basic
-  tc_option_exclude_files
-  tc_option_minmax_file_size
-  tc_option_infected_file_action_nothing
-  tc_option_infected_file_action_delete
-  tc_option_infected_file_action_quarantine
-  tc_option_infected_file_command
+  rm -rf "$TEST_tmp_dir/$T_scanner_name" \
+    || exit 1
+  "$TEST_bin_dir/$T_scanner_name-svconf.cmd" "$TEST_tmp_dir/$T_scanner_name" \
+    || exit 1
+  echo "$TEST_sysconf_dir/$T_scanner_name.conf.test" \
+    >"$TEST_tmp_dir/$T_scanner_name/env/CONFIGFILE" \
+    || exit 1
+
+  test_at_exit 'tcu_scanner_stop'
+  tcu_scanner_start
 }
+
+function tc_reset
+{
+  tu_smb_conf_append_svf_option "socket path = $TEST_tmp_dir/$T_scanner_name.socket"
+}
+
+## ======================================================================
+
+function tcu_scanner_start
+{
+  tcu_scanner_stop
+
+  test_verbose 1 "Starting $T_scanner_name ..."
+  (
+    cd "$TEST_tmp_dir/$T_scanner_name" || exit 1
+    exec ./run >>"$TEST_log_dir/$T_scanner_name-run.log"
+  ) &
+  T_scanner_pid="$!"
+
+  sleep 1
+  kill -0 "$T_scanner_pid" || test_abort "$0: Starting $T_scanner_name failed"
+}
+
+function tcu_scanner_stop
+{
+  [ -z "$T_scanner_pid" ] && return
+
+  test_verbose 1 "Stopping $T_scanner_name ..."
+  kill "$T_scanner_pid"
+  wait "$T_scanner_pid"
+  T_scanner_pid=""
+}
+
+function tcu_scanner_pause
+{
+  [ -z "$T_scanner_pid" ] && return
+
+  test_verbose 1 "Pausing $T_scanner_name ..."
+  kill -STOP "$T_scanner_pid"
+}
+
+function tcu_scanner_continue
+{
+  [ -z "$T_scanner_pid" ] && return
+
+  test_verbose 1 "Continuing $T_scanner_name ..."
+  kill -CONT "$T_scanner_pid"
+}
+
+## ======================================================================
 
 function tc_basic
 {
@@ -122,6 +175,19 @@ function tc_scan_limit
   tu_smb_conf_append_svf_option "scan limit = 2"
   tcx_get_safe_files_on_a_session "$tc"
   tcx_get_virus_files_on_a_session "$tc"
+}
+
+## ======================================================================
+
+function tcs_common
+{
+  tc_basic
+  tc_option_exclude_files
+  tc_option_minmax_file_size
+  tc_option_infected_file_action_nothing
+  tc_option_infected_file_action_delete
+  tc_option_infected_file_action_quarantine
+  tc_option_infected_file_command
 }
 
 ## ======================================================================
