@@ -1,7 +1,7 @@
 #!/bin/sh
 ##
 ## Setup a supervised Sophos Anti-Virus savdid service
-## Copyright (c) 2010 SATOH Fumiyasu @ OSS Technology, Inc.
+## Copyright (c) 2010-2011 SATOH Fumiyasu @ OSS Technology, Inc.
 ##               <http://www.osstech.co.jp/>
 ##
 ## License: GNU General Public License version 3

@@ -1,7 +1,7 @@
 #!/bin/ksh
 ##
 ## Samba-VirusFilter VFS modules
-## Copyright (C) 2010 SATOH Fumiyasu @ OSS Technology, Inc.
+## Copyright (C) 2010-2011 SATOH Fumiyasu @ OSS Technology, Inc.
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
