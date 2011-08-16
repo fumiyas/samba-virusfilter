@@ -23,7 +23,7 @@ function tc_reset
     || exit 1
 }
 
-function tc_run
+function tc_all
 {
   tcx_common
   ## FIXME: Extra test case for savdid specific options

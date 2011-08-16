@@ -52,7 +52,7 @@ TEST_count_ok=0
 TEST_count_ng=0
 TEST_count_skipped=0
 
-TEST_case_name=""
+TEST_case_name="all"
 TEST_list_case=""
 
 TEST_at_exit=""
@@ -412,7 +412,12 @@ function test_case_init
 
 function test_case_run
 {
-  tc_run
+  typeset test_case_func="tc_$TEST_case_name"
+
+  type "$test_case_func" >/dev/null 2>&1 \
+    || test_abort "test_case_run: No such test case name: $TEST_case_name"
+
+  "$test_case_func"
 }
 
 function test_case_end
