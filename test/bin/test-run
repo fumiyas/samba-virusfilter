@@ -78,7 +78,7 @@ test_configure ${1+"$@"}
 [ x"${-#*x}" != x"$-" ] && typeset -ft $(typeset +f)
 
 if [ -n "$TEST_list_case" ]; then
-  typeset +f |sed -n 's/^tc_//p' |egrep -v '^(configure|init|run|end)$'
+  typeset +f |sed -n 's/^tc_//p' |egrep -v '^(configure|init|run|end|reset)$'
   exit 0
 fi
 

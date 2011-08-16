@@ -135,6 +135,8 @@ function test_end
     t_end
   fi
 
+  test_do_exit
+
   if [ "$TEST_count_ng" -gt 0 ]; then
     exit 100
   fi
@@ -149,7 +151,8 @@ function test_at_exit
 
 function test_do_exit
 {
-  eval "$TEST_at_exit"
+  test_verbose 2 "test_do_exit: $TEST_at_exit"
+  $TEST_at_exit
 }
 
 ## Output error messages
@@ -438,6 +441,5 @@ eval exec "$TEST_fd_error>&2"
 ## Redirect stdout to stderr to prevent odd output mixing with test result
 exec 1>&2
 
-trap 'test_do_exit' EXIT
-trap 'test_verbose 0 "[$1]"; exit 1' INT
+trap 'test_do_exit; exit 1' INT
 
