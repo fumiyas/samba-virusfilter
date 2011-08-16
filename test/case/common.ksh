@@ -17,15 +17,15 @@ function tc_basic
 
   test_verbose 0 "Testing basic function"
   tu_reset
-  tc_connect_share "$tc"
-  tc_get_safe_file "$tc"
-  tc_get_safe_file "$tc" --filename-suffix "$T_file_excluded_suffix"
-  tc_get_virus_file "$tc"
-  tc_get_virus_file "$tc" --filename-suffix "$T_file_excluded_suffix"
-  tc_get_safe_files_on_a_session "$tc"
-  tc_get_safe_files_on_a_session "$tc" --filename-suffix "$T_file_excluded_suffix"
-  tc_get_virus_files_on_a_session "$tc"
-  tc_get_virus_files_on_a_session "$tc" --filename-suffix "$T_file_excluded_suffix"
+  tcx_connect_share "$tc"
+  tcx_get_safe_file "$tc"
+  tcx_get_safe_file "$tc" --filename-suffix "$T_file_excluded_suffix"
+  tcx_get_virus_file "$tc"
+  tcx_get_virus_file "$tc" --filename-suffix "$T_file_excluded_suffix"
+  tcx_get_safe_files_on_a_session "$tc"
+  tcx_get_safe_files_on_a_session "$tc" --filename-suffix "$T_file_excluded_suffix"
+  tcx_get_virus_files_on_a_session "$tc"
+  tcx_get_virus_files_on_a_session "$tc" --filename-suffix "$T_file_excluded_suffix"
 }
 
 function tc_option_exclude_files
@@ -35,15 +35,15 @@ function tc_option_exclude_files
   test_verbose 0 "Testing 'exclude files' option"
   tu_reset
   tu_smb_conf_append_svf_option "exclude files = /dummy.*/*$T_file_excluded_suffix/dummy.*/"
-  tc_connect_share "$tc"
-  tc_get_safe_file "$tc"
-  tc_get_safe_file "$tc" --filename-suffix "$T_file_excluded_suffix"
-  tc_get_virus_file "$tc" --exclude-files "*$T_file_excluded_suffix"
-  tc_get_virus_file "$tc" --exclude-files "*$T_file_excluded_suffix" --filename-suffix "$T_file_excluded_suffix"
-  tc_get_safe_files_on_a_session "$tc"
-  tc_get_safe_files_on_a_session "$tc" --filename-suffix "$T_file_excluded_suffix"
-  tc_get_virus_files_on_a_session "$tc" --exclude-files "*$T_file_excluded_suffix"
-  tc_get_virus_files_on_a_session "$tc" --exclude-files "*$T_file_excluded_suffix" --filename-suffix "$T_file_excluded_suffix"
+  tcx_connect_share "$tc"
+  tcx_get_safe_file "$tc"
+  tcx_get_safe_file "$tc" --filename-suffix "$T_file_excluded_suffix"
+  tcx_get_virus_file "$tc" --exclude-files "*$T_file_excluded_suffix"
+  tcx_get_virus_file "$tc" --exclude-files "*$T_file_excluded_suffix" --filename-suffix "$T_file_excluded_suffix"
+  tcx_get_safe_files_on_a_session "$tc"
+  tcx_get_safe_files_on_a_session "$tc" --filename-suffix "$T_file_excluded_suffix"
+  tcx_get_virus_files_on_a_session "$tc" --exclude-files "*$T_file_excluded_suffix"
+  tcx_get_virus_files_on_a_session "$tc" --exclude-files "*$T_file_excluded_suffix" --filename-suffix "$T_file_excluded_suffix"
 }
 
 function tc_option_minmax_file_size
@@ -54,15 +54,15 @@ function tc_option_minmax_file_size
   tu_reset
   tu_smb_conf_append_svf_option "min file size = $T_min_file_size"
   tu_smb_conf_append_svf_option "max file size = $T_max_file_size"
-  tc_connect_share "$tc"
-  tc_get_safe_file "$tc"
-  tc_get_safe_file "$tc" --filename-suffix "$T_file_excluded_suffix"
-  tc_get_virus_file "$tc" --min-file-size "$T_min_file_size" --max-file-size "$T_max_file_size"
-  tc_get_virus_file "$tc" --min-file-size "$T_min_file_size" --max-file-size "$T_max_file_size" --filename-suffix "$T_file_excluded_suffix"
-  tc_get_safe_files_on_a_session "$tc"
-  tc_get_safe_files_on_a_session "$tc" --filename-suffix "$T_file_excluded_suffix"
-  tc_get_virus_files_on_a_session "$tc" --min-file-size "$T_min_file_size" --max-file-size "$T_max_file_size"
-  tc_get_virus_files_on_a_session "$tc" --min-file-size "$T_min_file_size" --max-file-size "$T_max_file_size" --filename-suffix "$T_file_excluded_suffix"
+  tcx_connect_share "$tc"
+  tcx_get_safe_file "$tc"
+  tcx_get_safe_file "$tc" --filename-suffix "$T_file_excluded_suffix"
+  tcx_get_virus_file "$tc" --min-file-size "$T_min_file_size" --max-file-size "$T_max_file_size"
+  tcx_get_virus_file "$tc" --min-file-size "$T_min_file_size" --max-file-size "$T_max_file_size" --filename-suffix "$T_file_excluded_suffix"
+  tcx_get_safe_files_on_a_session "$tc"
+  tcx_get_safe_files_on_a_session "$tc" --filename-suffix "$T_file_excluded_suffix"
+  tcx_get_virus_files_on_a_session "$tc" --min-file-size "$T_min_file_size" --max-file-size "$T_max_file_size"
+  tcx_get_virus_files_on_a_session "$tc" --min-file-size "$T_min_file_size" --max-file-size "$T_max_file_size" --filename-suffix "$T_file_excluded_suffix"
 }
 
 function tc_option_infected_file_action_nothing
@@ -72,8 +72,8 @@ function tc_option_infected_file_action_nothing
   test_verbose 0 "Testing 'infected file action = none' option"
   tu_reset
   tu_smb_conf_append_svf_option "infected file action = nothing"
-  tc_get_virus_file "$tc" --infected-file-action nothing
-  tc_get_virus_files_on_a_session "$tc" --infected-file-action nothing
+  tcx_get_virus_file "$tc" --infected-file-action nothing
+  tcx_get_virus_files_on_a_session "$tc" --infected-file-action nothing
 }
 
 function tc_option_infected_file_action_delete
@@ -83,10 +83,10 @@ function tc_option_infected_file_action_delete
   test_verbose 0 "Testing 'infected file action = delete' option"
   tu_reset
   tu_smb_conf_append_svf_option "infected file action = delete"
-  tc_get_virus_file "$tc" --infected-file-action delete
+  tcx_get_virus_file "$tc" --infected-file-action delete
   tu_reset
   tu_smb_conf_append_svf_option "infected file action = delete"
-  tc_get_virus_files_on_a_session "$tc" --infected-file-action delete
+  tcx_get_virus_files_on_a_session "$tc" --infected-file-action delete
 }
 
 function tc_option_infected_file_action_quarantine
@@ -96,10 +96,10 @@ function tc_option_infected_file_action_quarantine
   test_verbose 0 "Testing 'infected file action = quarantine' option"
   tu_reset
   tu_smb_conf_append_svf_option "infected file action = quarantine"
-  tc_get_virus_file "$tc" --infected-file-action quarantine
+  tcx_get_virus_file "$tc" --infected-file-action quarantine
   tu_reset
   tu_smb_conf_append_svf_option "infected file action = quarantine"
-  tc_get_virus_files_on_a_session "$tc" --infected-file-action quarantine
+  tcx_get_virus_files_on_a_session "$tc" --infected-file-action quarantine
 }
 
 function tc_option_infected_file_command
@@ -110,7 +110,7 @@ function tc_option_infected_file_command
   tu_reset
   typeset command_out="$TEST_tmp_dir/command.out"
   tu_smb_conf_append_svf_option "infected file command = sh -c 'env >>$command_out'"
-  tc_get_virus_file "$tc" --infected-file-command-env-out "$command_out"
+  tcx_get_virus_file "$tc" --infected-file-command-env-out "$command_out"
 }
 
 function tc_scan_limit
@@ -120,13 +120,13 @@ function tc_scan_limit
   test_verbose 0 "Testing 'scan limit' option"
   tu_reset
   tu_smb_conf_append_svf_option "scan limit = 2"
-  tc_get_safe_files_on_a_session "$tc"
-  tc_get_virus_files_on_a_session "$tc"
+  tcx_get_safe_files_on_a_session "$tc"
+  tcx_get_virus_files_on_a_session "$tc"
 }
 
 ## ======================================================================
 
-function tc_connect_share
+function tcx_connect_share
 {
   typeset comment="$1"; shift
   typeset out
@@ -138,7 +138,7 @@ function tc_connect_share
   test_assert_match "$out" "*$T_file_marker*" "Connecting to share${comment:+ ($comment)}"
 }
 
-function tc_get_safe_file
+function tcx_get_safe_file
 {
   typeset comment="$1"; shift
   typeset out file size
@@ -167,7 +167,7 @@ function tc_get_safe_file
   done
 }
 
-function tc_get_virus_file
+function tcx_get_virus_file
 {
   typeset comment="$1"; shift
   typeset out file size
@@ -320,7 +320,7 @@ function tc_get_virus_file
   done
 }
 
-function tc_get_safe_files_on_a_session
+function tcx_get_safe_files_on_a_session
 {
   typeset comment="$1"; shift
   typeset out file size
@@ -351,7 +351,7 @@ function tc_get_safe_files_on_a_session
     "Getting MULTIPLE SAFE files is OK on A SESSION${comment:+ ($comment)}: $T_file_prefix.*$suffix"
 }
 
-function tc_get_virus_files_on_a_session
+function tcx_get_virus_files_on_a_session
 {
   typeset comment="$1"; shift
   typeset out file size
