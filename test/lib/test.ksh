@@ -165,6 +165,8 @@ function test_abort
 {
   eval print -r '"Abort: $@"' "1>&$TEST_fd_error"
 
+  test_do_exit
+
   exit 100
 }
 
