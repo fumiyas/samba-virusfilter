@@ -22,6 +22,16 @@
 /* Samba common include file */
 #include "includes.h"
 
+#if SAMBA_VERSION_NUMBER >= 30600
+#  include "smbd/smbd.h"
+#  include "smbd/globals.h"
+#  include "system/filesys.h"
+#  include "transfer_file.h"
+#  include "auth.h"
+#  include "passdb.h"
+#  include "../librpc/gen_ndr/ndr_netlogon.h"
+#endif
+
 #if (SMB_VFS_INTERFACE_VERSION < 27)
 #error "Samba 3.5+ required (SMB_VFS_INTERFACE_VERSION >= 27)"
 #endif
@@ -63,6 +73,22 @@ typedef enum {
 	/* FIXME: SVF_RESULT_SUSPECTED, */
 	/* FIXME: SVF_RESULT_RISKWARE, */
 } svf_result;
+
+#if SAMBA_VERSION_NUMBER >= 30600
+#  define conn_session_info(conn)	((conn)->session_info)
+#  define conn_socket(conn)		((conn)->sconn->sock)
+#  define conn_domain_name(conn)	((conn)->session_info->info3->base.domain.string)
+#  define conn_client_name(conn)	((conn)->sconn->client_id.name)
+#  define conn_client_addr(conn, addr)	((conn)->sconn->client_id.addr)
+#else
+#  define conn_session_info(conn)	((conn)->server_info)
+#  define conn_socket(conn)		(get_client_fd())
+#  define conn_domain_name(conn)	pdb_get_domain(((conn)->server_info->sam_account))
+#  define conn_client_name(conn)	(client_name(get_client_fd()))
+#  define conn_client_addr(conn, addr)	(client_addr(get_client_fd(), (addr), sizeof(addr)))
+#endif
+
+#define conn_server_addr(conn, addr)	client_socket_addr(conn_socket(conn), (addr), sizeof(addr));
 
 #endif /* _SVF_COMMON_H */
 

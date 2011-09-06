@@ -59,11 +59,11 @@ char *svf_string_sub(TALLOC_CTX *mem_ctx, connection_struct *conn, const char *s
 {
 	return talloc_sub_advanced(mem_ctx,
 		lp_servicename(SNUM(conn)),
-		conn->server_info->unix_name,
+		conn_session_info(conn)->unix_name,
 		conn->connectpath,
-		conn->server_info->utok.gid,
-		conn->server_info->sanitized_username,
-		pdb_get_domain(conn->server_info->sam_account),
+		conn_session_info(conn)->utok.gid,
+		conn_session_info(conn)->sanitized_username,
+		conn_domain_name(conn),
 		str);
 }
 
@@ -852,6 +852,7 @@ int svf_shell_set_conn_env(svf_env_struct *env_h, connection_struct *conn)
 {
 	int snum = SNUM(conn);
 	char addr[INET6_ADDRSTRLEN];
+	const char *addr_p;
 	const char *local_machine_name = get_local_machine_name();
 	fstring pidstr;
 
@@ -859,8 +860,11 @@ int svf_shell_set_conn_env(svf_env_struct *env_h, connection_struct *conn)
 		local_machine_name = global_myname();
 	}
 
-	client_socket_addr(get_client_fd(), addr, sizeof(addr));
-	svf_env_set(env_h, "SVF_COMMAND_SERVER_IP", addr + (strnequal(addr,"::ffff:",7) ? 7 : 0));
+	addr_p = conn_server_addr(conn, addr);
+	if (strncmp("::ffff:", addr_p, 7) == 0) {
+		addr_p += 7;
+	}
+	svf_env_set(env_h, "SVF_COMMAND_SERVER_IP", addr_p);
 	svf_env_set(env_h, "SVF_COMMAND_SERVER_NAME", myhostname());
 	svf_env_set(env_h, "SVF_COMMAND_SERVER_NETBIOS_NAME", local_machine_name);
 	slprintf(pidstr,sizeof(pidstr)-1, "%ld", (long)sys_getpid());
@@ -869,9 +873,12 @@ int svf_shell_set_conn_env(svf_env_struct *env_h, connection_struct *conn)
 	svf_env_set(env_h, "SVF_COMMAND_SERVICE_NAME", lp_servicename(snum));
 	svf_env_set(env_h, "SVF_COMMAND_SERVICE_PATH", conn->connectpath);
 
-	client_addr(get_client_fd(), addr, sizeof(addr));
-	svf_env_set(env_h, "SVF_COMMAND_CLIENT_IP", addr + (strnequal(addr,"::ffff:",7) ? 7 : 0));
-	svf_env_set(env_h, "SVF_COMMAND_CLIENT_NAME", client_name(get_client_fd()));
+	addr_p = conn_client_addr(conn, addr);
+	if (strncmp("::ffff:", addr_p, 7) == 0) {
+		addr_p += 7;
+	}
+	svf_env_set(env_h, "SVF_COMMAND_CLIENT_IP", addr_p);
+	svf_env_set(env_h, "SVF_COMMAND_CLIENT_NAME", conn_client_name(conn));
 	svf_env_set(env_h, "SVF_COMMAND_CLIENT_NETBIOS_NAME", get_remote_machine_name());
 
 	svf_env_set(env_h, "SVF_COMMAND_USER_NAME", get_current_username());
