@@ -186,13 +186,13 @@ subject="$subject_prefix$report"
 msg_header="\
 Subject: $subject
 Content-Type: $content_type; charset=$content_encoding
-X-SAV-Version: $SVF_VERSION
-X-SAV-Module-Name: $SVF_MODULE_NAME
+X-SVF-Version: $SVF_VERSION
+X-SVF-Module-Name: $SVF_MODULE_NAME
 "
 
 if [ -n "${SVF_MODULE_VERSION-}" ]; then
   msg_header="${msg_header}\
-X-SAV-Module-Version: $SVF_MODULE_VERSION
+X-SVF-Module-Version: $SVF_MODULE_VERSION
 "
 fi
 
