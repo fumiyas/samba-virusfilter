@@ -168,7 +168,7 @@ static int svf_vfs_connect(
 	svf_handle *svf_h;
 	char *exclude_files;
 #ifdef SVF_DEFAULT_SOCKET_PATH
-	int connect_timeout, timeout;
+	int connect_timeout, io_timeout;
 #endif
 
 
@@ -288,12 +288,12 @@ static int svf_vfs_connect(
 		snum, SVF_MODULE_NAME,
 		"connect timeout",
 		SVF_DEFAULT_CONNECT_TIMEOUT);
-        timeout = lp_parm_int(
+        io_timeout = lp_parm_int(
 		snum, SVF_MODULE_NAME,
-		"timeout",
+		"io timeout",
 		SVF_DEFAULT_TIMEOUT);
 
-	svf_h->io_h = svf_io_new(svf_h, connect_timeout, timeout);
+	svf_h->io_h = svf_io_new(svf_h, connect_timeout, io_timeout);
 	if (!svf_h->io_h) {
 		DEBUG(0,("svf_io_new failed"));
 		return -1;

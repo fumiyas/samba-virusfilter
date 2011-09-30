@@ -32,7 +32,7 @@
 typedef struct svf_io_handle {
 	int		socket;
 	int		connect_timeout;	/* msec */
-	int		timeout;		/* msec */
+	int		io_timeout;		/* msec */
 	char		w_eol[SVF_IO_EOL_SIZE];	/* end-of-line character(s) */
 	int		w_eol_size;
 	char		r_eol[SVF_IO_EOL_SIZE];	/* end-of-line character(s) */
@@ -82,7 +82,7 @@ int svf_vfs_next_move(
 /* Line-based socket I/O */
 svf_io_handle *svf_io_new(TALLOC_CTX *mem_ctx, int connect_timeout, int timeout);
 int svf_io_set_connect_timeout(svf_io_handle *io_h, int timeout);
-int svf_io_set_timeout(svf_io_handle *io_h, int timeout);
+int svf_io_set_io_timeout(svf_io_handle *io_h, int timeout);
 void svf_io_set_writel_eol(svf_io_handle *io_h, const char *eol, int eol_size);
 void svf_io_set_readl_eol(svf_io_handle *io_h, const char *eol, int eol_size);
 svf_result svf_io_connect_path(svf_io_handle *io_h, const char *path);

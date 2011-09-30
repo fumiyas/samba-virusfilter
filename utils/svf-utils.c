@@ -243,7 +243,7 @@ int svf_vfs_next_move(
 /* Line-based socket I/O
  * ====================================================================== */
 
-svf_io_handle *svf_io_new(TALLOC_CTX *mem_ctx, int connect_timeout, int timeout)
+svf_io_handle *svf_io_new(TALLOC_CTX *mem_ctx, int connect_timeout, int io_timeout)
 {
 	svf_io_handle *io_h = TALLOC_ZERO_P(mem_ctx, svf_io_handle);
 
@@ -253,7 +253,7 @@ svf_io_handle *svf_io_new(TALLOC_CTX *mem_ctx, int connect_timeout, int timeout)
 
 	io_h->socket = -1;
 	svf_io_set_connect_timeout(io_h, connect_timeout);
-	svf_io_set_timeout(io_h, timeout);
+	svf_io_set_io_timeout(io_h, io_timeout);
 	svf_io_set_writel_eol(io_h, "\x0A", 1);
 	svf_io_set_readl_eol(io_h, "\x0A", 1);
 
@@ -270,12 +270,12 @@ int svf_io_set_connect_timeout(svf_io_handle *io_h, int timeout)
 	return timeout_old;
 }
 
-int svf_io_set_timeout(svf_io_handle *io_h, int timeout)
+int svf_io_set_io_timeout(svf_io_handle *io_h, int timeout)
 {
-	int timeout_old = io_h->timeout;
+	int timeout_old = io_h->io_timeout;
 
 	/* timeout <= 0 means infinite */
-	io_h->timeout =  (timeout > 0) ? timeout : -1;
+	io_h->io_timeout =  (timeout > 0) ? timeout : -1;
 
 	return timeout_old;
 }
@@ -346,7 +346,7 @@ svf_result svf_io_write(svf_io_handle *io_h, const char *data, size_t data_size)
 	pollfd.events = POLLOUT;
 
 	while (data_size > 0) {
-		switch (poll(&pollfd, 1, io_h->timeout)) {
+		switch (poll(&pollfd, 1, io_h->io_timeout)) {
 		case -1:
 			if (errno == EINTR) {
 				errno = 0;
@@ -441,7 +441,7 @@ svf_result svf_io_writev(svf_io_handle *io_h, ...)
 	pollfd.events = POLLOUT;
 
 	for (iov_p = iov;;) {
-		switch (poll(&pollfd, 1, io_h->timeout)) {
+		switch (poll(&pollfd, 1, io_h->io_timeout)) {
 		case -1:
 			if (errno == EINTR) {
 				errno = 0;
@@ -513,7 +513,7 @@ svf_result svf_io_writevl(svf_io_handle *io_h, ...)
 	pollfd.events = POLLOUT;
 
 	for (iov_p = iov;;) {
-		switch (poll(&pollfd, 1, io_h->timeout)) {
+		switch (poll(&pollfd, 1, io_h->io_timeout)) {
 		case -1:
 			if (errno == EINTR) {
 				errno = 0;
@@ -597,7 +597,7 @@ svf_result svf_io_readl(svf_io_handle *io_h)
 	pollfd.events = POLLIN;
 
 	while (buffer_size > 0) {
-		switch (poll(&pollfd, 1, io_h->timeout)) {
+		switch (poll(&pollfd, 1, io_h->io_timeout)) {
 		case -1:
 			if (errno == EINTR) {
 				errno = 0;
