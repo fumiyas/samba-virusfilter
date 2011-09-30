@@ -32,7 +32,7 @@ function tcu_scanner_start
   ) &
   T_scanner_pid="$!"
 
-  sleep 1
+  sleep 5
   kill -0 "$T_scanner_pid" || test_abort "$0: Starting $T_scanner_name failed"
 }
 
@@ -166,7 +166,7 @@ function tc_option_infected_file_command
   tcx_get_virus_file "$tc" --infected-file-command-env-out "$command_out"
 }
 
-function tc_scan_limit
+function tc_option_scan_limit
 {
   typeset tc="scan limit"
 
@@ -175,6 +175,31 @@ function tc_scan_limit
   tu_smb_conf_append_svf_option "scan limit = 2"
   tcx_get_safe_files_on_a_session "$tc"
   tcx_get_virus_files_on_a_session "$tc"
+}
+
+function tc_option_io_timeout
+{
+  typeset tc="io timeout (no block access)"
+
+  test_verbose 0 "Testing 'io timeout' option (no block access)"
+  tu_reset
+  tcu_scanner_pause
+  tu_smb_conf_append_svf_option "io timeout = 1000" ## msec
+
+  tcx_connect_share "$tc"
+  tcx_get_safe_file "$tc"
+  tcx_get_virus_file "$tc" --no-failure
+
+  typeset tc="io timeout (block access)"
+
+  tu_smb_conf_append_svf_option "block access on error = yes"
+
+  test_verbose 0 "Testing 'io timeout' option (block access)"
+  tcx_connect_share "$tc"
+  tcx_get_safe_file "$tc" --fail-with ACCESS_DENIED
+  tcx_get_virus_file "$tc"
+
+  tcu_scanner_continue
 }
 
 ## ======================================================================
@@ -188,6 +213,7 @@ function tcs_common
   tc_option_infected_file_action_delete
   tc_option_infected_file_action_quarantine
   tc_option_infected_file_command
+  tc_option_io_timeout
 }
 
 ## ======================================================================
@@ -211,11 +237,15 @@ function tcx_get_safe_file
 
   typeset opt
   typeset suffix=""
+  typeset fail_with=""
   while [ "$#" -gt 0 ]; do
     opt="$1"; shift
     case "$opt" in
     --filename-suffix)
       suffix="$1"; shift
+      ;;
+    --fail-with)
+      fail_with="$1"; shift
       ;;
     *)
       test_abort "$0: Invalid option: $opt"
@@ -229,7 +259,12 @@ function tcx_get_safe_file
       print -r "get \"$file\" /dev/null" \
       |tu_smbclient
       )
-      test_assert_empty "$out" "Getting SAFE file is OK${comment:+ ($comment)}: $file"
+      if [ -z "$fail_with" ]; then
+	test_assert_empty "$out" "Getting SAFE file is OK${comment:+ ($comment)}: $file"
+      else
+	test_assert_match "$out" "NT_STATUS_$fail_with *" \
+	  "Getting SAFE file is DENIED${comment:+ ($comment)}: $file"
+      fi
   done
 }
 
@@ -240,12 +275,13 @@ function tcx_get_virus_file
 
   typeset opt
   typeset suffix=""
-  typeset excluded
+  typeset excluded=""
   typeset exclude_files=""
   typeset min_file_size=""
   typeset max_file_size=""
   typeset infected_file_action=""
   typeset infected_file_command_env_out=""
+  typeset no_failure=""
   typeset env env_expected env_ok
   typeset hostname=$(hostname |sed 's/\..*//')
   typeset -u hostname_upper="$hostname"
@@ -271,6 +307,9 @@ function tcx_get_virus_file
     --infected-file-command-env-out)
       infected_file_command_env_out="$1"; shift
       ;;
+    --no-failure)
+      no_failure="set"
+      ;;
     *)
       test_abort "$0: Invalid option: $opt"
       ;;
@@ -288,11 +327,10 @@ function tcx_get_virus_file
       |tu_smbclient
     )
 
-    excluded=
     [ -n "$min_file_size" ] && [ "$size" -lt "$min_file_size" ] && excluded="yes"
     [ -n "$max_file_size" ] && [ "$size" -gt "$max_file_size" ] && excluded="yes"
     [ -n "$exclude_files" ] && [ "$file" != "${file#$exclude_files}" ] && excluded="yes"
-    if [ -n "$excluded" ]; then
+    if [ -n "$excluded" ] || [ -n "$no_failure" ]; then
       test_assert_empty "$out" \
 	"Getting VIRUS file is OK${comment:+ ($comment)}: $file"
       continue
