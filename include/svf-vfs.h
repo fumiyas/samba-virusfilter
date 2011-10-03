@@ -273,11 +273,22 @@ static int svf_vfs_connect(
 		"quarantine prefix",
 		SVF_DEFAULT_QUARANTINE_PREFIX);
 
-	/* FIXME: Support lp_parm_enum(...) */
-        svf_h->infected_file_errno_on_open =SVF_DEFAULT_INFECTED_FILE_ERRNO_ON_OPEN;
-        svf_h->infected_file_errno_on_close = SVF_DEFAULT_INFECTED_FILE_ERRNO_ON_CLOSE;
-        svf_h->scan_error_errno_on_open = SVF_DEFAULT_SCAN_ERROR_ERRNO_ON_OPEN;
-        svf_h->scan_error_errno_on_close = SVF_DEFAULT_SCAN_ERROR_ERRNO_ON_CLOSE;
+        svf_h->infected_file_errno_on_open = lp_parm_int(
+		snum, SVF_MODULE_NAME,
+		"infected file errno on open",
+		SVF_DEFAULT_INFECTED_FILE_ERRNO_ON_OPEN);
+        svf_h->infected_file_errno_on_close = lp_parm_int(
+		snum, SVF_MODULE_NAME,
+		"infected file errno on close",
+		SVF_DEFAULT_INFECTED_FILE_ERRNO_ON_CLOSE);
+        svf_h->scan_error_errno_on_open = lp_parm_int(
+		snum, SVF_MODULE_NAME,
+		"scan error errno on open",
+		SVF_DEFAULT_SCAN_ERROR_ERRNO_ON_OPEN);
+        svf_h->scan_error_errno_on_close = lp_parm_int(
+		snum, SVF_MODULE_NAME,
+		"scan error errno on close",
+		SVF_DEFAULT_SCAN_ERROR_ERRNO_ON_CLOSE);
 
 #ifdef SVF_DEFAULT_SOCKET_PATH
         svf_h->socket_path = lp_parm_const_string(
