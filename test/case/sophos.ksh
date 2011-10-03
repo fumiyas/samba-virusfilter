@@ -7,6 +7,6 @@ T_scanner_pid=""
 function tc_all
 {
   tcs_common
-  ## FIXME: Extra test case for savdid specific options
+  tcs_scanner_socket
 }
 

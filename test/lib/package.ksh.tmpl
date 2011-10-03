@@ -151,6 +151,8 @@ function tu_reset
   tu_smb_conf_append "vfs objects = $T_svf_module"
   tu_smb_conf_append "$T_svf_module_name: quarantine directory = $T_quarantine_dir"
   tu_smb_conf_append "$T_svf_module_name: quarantine prefix = $T_quarantine_prefix"
+  tu_smb_conf_append_svf_option "connect timeout = 5000" ## msec
+  tu_smb_conf_append_svf_option "io timeout = 5000" ## msec
 
   for file in "$T_samba_data_dir"/*; do
     ln "$file" "$T_samba_share_dir/" \

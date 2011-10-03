@@ -177,13 +177,14 @@ function tc_option_scan_limit
   tcx_get_virus_files_on_a_session "$tc"
 }
 
-function tc_option_io_timeout
+function tc_option_scanner_timeout
 {
   typeset tc="io timeout (no block access)"
 
-  test_verbose 0 "Testing 'io timeout' option (no block access)"
+  test_verbose 0 "Testing 'connect/io timeout' option (no block access)"
   tu_reset
   tcu_scanner_pause
+  tu_smb_conf_append_svf_option "connect timeout = 1000" ## msec
   tu_smb_conf_append_svf_option "io timeout = 1000" ## msec
 
   tcx_connect_share "$tc"
@@ -194,7 +195,7 @@ function tc_option_io_timeout
 
   tu_smb_conf_append_svf_option "block access on error = yes"
 
-  test_verbose 0 "Testing 'io timeout' option (block access)"
+  test_verbose 0 "Testing 'connect/io timeout' option (block access)"
   tcx_connect_share "$tc"
   tcx_get_safe_file "$tc" --fail-with ACCESS_DENIED
   tcx_get_virus_file "$tc"
@@ -213,8 +214,13 @@ function tcs_common
   tc_option_infected_file_action_delete
   tc_option_infected_file_action_quarantine
   tc_option_infected_file_command
-  tc_option_io_timeout
 }
+
+function tcs_scanner_socket
+{
+  tc_option_scanner_timeout
+}
+
 
 ## ======================================================================
 
@@ -275,7 +281,6 @@ function tcx_get_virus_file
 
   typeset opt
   typeset suffix=""
-  typeset excluded=""
   typeset exclude_files=""
   typeset min_file_size=""
   typeset max_file_size=""
@@ -327,10 +332,12 @@ function tcx_get_virus_file
       |tu_smbclient
     )
 
-    [ -n "$min_file_size" ] && [ "$size" -lt "$min_file_size" ] && excluded="yes"
-    [ -n "$max_file_size" ] && [ "$size" -gt "$max_file_size" ] && excluded="yes"
-    [ -n "$exclude_files" ] && [ "$file" != "${file#$exclude_files}" ] && excluded="yes"
-    if [ -n "$excluded" ] || [ -n "$no_failure" ]; then
+    typeset assert_empty=""
+    [ -n "$no_failure" ] && assert_empty="set"
+    [ -n "$min_file_size" ] && [ "$size" -lt "$min_file_size" ] && assert_empty="set"
+    [ -n "$max_file_size" ] && [ "$size" -gt "$max_file_size" ] && assert_empty="set"
+    [ -n "$exclude_files" ] && [ "$file" != "${file#$exclude_files}" ] && assert_empty="set"
+    if [ -n "$assert_empty" ]; then
       test_assert_empty "$out" \
 	"Getting VIRUS file is OK${comment:+ ($comment)}: $file"
       continue

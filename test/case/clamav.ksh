@@ -7,5 +7,6 @@ T_scanner_pid=""
 function tc_all
 {
   tcs_common
+  tcs_scanner_socket
 }
 
