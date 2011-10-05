@@ -176,7 +176,7 @@ install-cmds: install-cmd-dir
 	done
 
 clean::
-	$(RM) $(BUILD_TARGETS) $(BUILD_TARGETS_POST) *.tmp
+	$(RM) $(BUILD_TARGETS) $(BUILD_TARGETS_POST) $(CLEAN_TARGETS) *.tmp
 
 distclean:: clean
 
