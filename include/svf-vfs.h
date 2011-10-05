@@ -348,6 +348,23 @@ static void svf_vfs_disconnect(vfs_handle_struct *vfs_h)
 	SMB_VFS_NEXT_DISCONNECT(vfs_h);
 }
 
+static int svf_set_module_env(svf_env_struct *env_h)
+{
+	if (svf_env_set(env_h, "SVF_VERSION", SVF_VERSION) == -1) {
+		return -1;
+	}
+	if (svf_env_set(env_h, "SVF_MODULE_NAME", SVF_MODULE_NAME) == -1) {
+		return -1;
+	}
+#ifdef SVF_MODULE_VERSION
+	if (svf_env_set(env_h, "SVF_MODULE_VERSION", SVF_MODULE_VERSION) == -1) {
+		return -1;
+	}
+#endif
+
+	return 0;
+}
+
 static svf_action svf_do_infected_file_action(
 	vfs_handle_struct *vfs_h,
 	svf_handle *svf_h,
@@ -483,17 +500,9 @@ static svf_action svf_treat_infected_file(
 		DEBUG(0,("svf_env_new failed\n"));
 		goto done;
 	}
-	if (svf_env_set(env_h, "SVF_VERSION", SVF_VERSION) == -1) {
+	if (svf_set_module_env(env_h) == -1) {
 		goto done;
 	}
-	if (svf_env_set(env_h, "SVF_MODULE_NAME", SVF_MODULE_NAME) == -1) {
-		goto done;
-	}
-#ifdef SVF_MODULE_VERSION
-	if (svf_env_set(env_h, "SVF_MODULE_VERSION", SVF_MODULE_VERSION) == -1) {
-		goto done;
-	}
-#endif
 	if (svf_env_set(env_h, "SVF_INFECTED_SERVICE_FILE_PATH", smb_fname->base_name) == -1) {
 		goto done;
 	}
@@ -555,6 +564,9 @@ static void svf_treat_scan_error(
 	env_h = svf_env_new(mem_ctx);
 	if (!env_h) {
 		DEBUG(0,("svf_env_new failed\n"));
+		goto done;
+	}
+	if (svf_set_module_env(env_h) == -1) {
 		goto done;
 	}
 	if (svf_env_set(env_h, "SVF_SCAN_ERROR_SERVICE_FILE_PATH", smb_fname->base_name) == -1) {
