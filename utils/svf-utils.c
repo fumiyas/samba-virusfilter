@@ -864,25 +864,25 @@ int svf_shell_set_conn_env(svf_env_struct *env_h, connection_struct *conn)
 	if (strncmp("::ffff:", addr_p, 7) == 0) {
 		addr_p += 7;
 	}
-	svf_env_set(env_h, "SVF_COMMAND_SERVER_IP", addr_p);
-	svf_env_set(env_h, "SVF_COMMAND_SERVER_NAME", myhostname());
-	svf_env_set(env_h, "SVF_COMMAND_SERVER_NETBIOS_NAME", local_machine_name);
+	svf_env_set(env_h, "SVF_SERVER_IP", addr_p);
+	svf_env_set(env_h, "SVF_SERVER_NAME", myhostname());
+	svf_env_set(env_h, "SVF_SERVER_NETBIOS_NAME", local_machine_name);
 	slprintf(pidstr,sizeof(pidstr)-1, "%ld", (long)sys_getpid());
-	svf_env_set(env_h, "SVF_COMMAND_SERVER_PID", pidstr);
+	svf_env_set(env_h, "SVF_SERVER_PID", pidstr);
 
-	svf_env_set(env_h, "SVF_COMMAND_SERVICE_NAME", lp_servicename(snum));
-	svf_env_set(env_h, "SVF_COMMAND_SERVICE_PATH", conn->connectpath);
+	svf_env_set(env_h, "SVF_SERVICE_NAME", lp_servicename(snum));
+	svf_env_set(env_h, "SVF_SERVICE_PATH", conn->connectpath);
 
 	addr_p = conn_client_addr(conn, addr);
 	if (strncmp("::ffff:", addr_p, 7) == 0) {
 		addr_p += 7;
 	}
-	svf_env_set(env_h, "SVF_COMMAND_CLIENT_IP", addr_p);
-	svf_env_set(env_h, "SVF_COMMAND_CLIENT_NAME", conn_client_name(conn));
-	svf_env_set(env_h, "SVF_COMMAND_CLIENT_NETBIOS_NAME", get_remote_machine_name());
+	svf_env_set(env_h, "SVF_CLIENT_IP", addr_p);
+	svf_env_set(env_h, "SVF_CLIENT_NAME", conn_client_name(conn));
+	svf_env_set(env_h, "SVF_CLIENT_NETBIOS_NAME", get_remote_machine_name());
 
-	svf_env_set(env_h, "SVF_COMMAND_USER_NAME", get_current_username());
-	svf_env_set(env_h, "SVF_COMMAND_USER_DOMAIN", current_user_info.domain);
+	svf_env_set(env_h, "SVF_USER_NAME", get_current_username());
+	svf_env_set(env_h, "SVF_USER_DOMAIN", current_user_info.domain);
 
 	return 0;
 }
