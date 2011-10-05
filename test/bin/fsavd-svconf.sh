@@ -26,7 +26,7 @@ sv_env="
   COREFILELIMIT
   COMMAND
   OPTIONS
-  CONFIG
+  CONFIGFILE
   SOCKET
 "
 
@@ -72,7 +72,7 @@ exec envdir ./env sh -c '
       ${COREFILELIMIT:+"-c$COREFILELIMIT"} \
     "$COMMAND" \
       --nodaemon \
-      ${CONFIG:+"--config=$CONFIG"} \
+      ${CONFIGFILE:+"--config=file:$CONFIGFILE"} \
       ${SOCKET:+"--socketname=$SOCKET"} \
       $OPTIONS \
     ;

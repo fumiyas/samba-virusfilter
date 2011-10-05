@@ -6,8 +6,10 @@ SOURCE_BUILD=	$(SOURCE_DIR)/build
 BUILD_TARGETS=		$(TEST_LIB_PACKAGE) \
 			etc/clamd.conf.test \
 			etc/savdid.conf.test \
+			etc/fsavd.conf.test \
 			bin/clamd-svconf.cmd \
 			bin/savdid-svconf.cmd \
+			bin/fsavd-svconf.cmd \
 
 CLEAN_TARGETS=		$(TEST_DIRS)
 

@@ -16,7 +16,7 @@ function tc_init
 
 function tc_reset
 {
-  tu_smb_conf_append_svf_option "socket path = $TEST_tmp_dir/$T_scanner_name.socket"
+  tu_smb_conf_append_svf_option "socket path = $TEST_tmp_dir/$T_scanner_name.socket${T_scanner_socket_suffix-}"
 }
 
 ## ======================================================================

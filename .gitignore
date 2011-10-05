@@ -28,7 +28,7 @@ config.h
 /include/svf-config.h
 /include/svf-config.h.in
 /test/lib/package.ksh
-/test/etc
+/test/etc/*.test
 /test/log
 /test/tmp
 
