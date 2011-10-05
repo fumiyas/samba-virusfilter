@@ -231,6 +231,7 @@ function tcs_common
   tc_option_infected_file_action_delete
   tc_option_infected_file_action_quarantine
   tc_option_infected_file_command
+  tc_option_scan_error_command
 }
 
 function tcs_scanner_socket
@@ -305,24 +306,24 @@ function tcx_get_safe_file
 	"Scan error triggers external command${comment:+ ($comment)}: $file"
 
       env_ok=
-      sed -n 's/^SVF_//p' "$scan_error_command_env_out" \
+      sed -n '/^SVF_/p' "$scan_error_command_env_out" \
       |sort \
       |for env_expected in \
-	COMMAND_CLIENT_IP="127.0.0.1" \
-	COMMAND_CLIENT_NAME="127.0.0.1" \
-	COMMAND_CLIENT_NETBIOS_NAME="$hostname" \
-	COMMAND_SERVER_IP="127.0.0.1" \
-	COMMAND_SERVER_NAME="$hostname" \
-	COMMAND_SERVER_NETBIOS_NAME="127.0.0.1" \
-	COMMAND_SERVER_PID="[0-9]*" \
-	COMMAND_SERVICE_NAME="$T_samba_share_name" \
-	COMMAND_SERVICE_PATH="$T_samba_share_dir" \
-	COMMAND_USER_DOMAIN="$hostname_upper" \
-	COMMAND_USER_NAME="nobody" \
-	MODULE_NAME="$T_svf_module_name" \
-	SCAN_ERROR_REPORT="*" \
-	SCAN_ERROR_SERVICE_FILE_PATH="$file" \
-	VERSION="$T_svf_version" \
+	SVF_CLIENT_IP="127.0.0.1" \
+	SVF_CLIENT_NAME="127.0.0.1" \
+	SVF_CLIENT_NETBIOS_NAME="$hostname" \
+	SVF_MODULE_NAME="$T_svf_module_name" \
+	SVF_SCAN_ERROR_REPORT="*" \
+	SVF_SCAN_ERROR_SERVICE_FILE_PATH="$file" \
+	SVF_SERVER_IP="127.0.0.1" \
+	SVF_SERVER_NAME="$hostname" \
+	SVF_SERVER_NETBIOS_NAME="127.0.0.1" \
+	SVF_SERVER_PID="[0-9]*" \
+	SVF_SERVICE_NAME="$T_samba_share_name" \
+	SVF_SERVICE_PATH="$T_samba_share_dir" \
+	SVF_USER_DOMAIN="$hostname_upper" \
+	SVF_USER_NAME="nobody" \
+	SVF_VERSION="$T_svf_version" \
 	END \
 	; do
 	read -r env
@@ -333,7 +334,7 @@ function tcx_get_safe_file
 	fi
 	case "$env" in
 	$env_expected)
-	  test_verbose 3 "Env mismatched"
+	  test_verbose 3 "Env matched"
 	  ;;
 	*)
 	  test_verbose 3 "Env mismatched"
@@ -459,35 +460,32 @@ function tcx_get_virus_file
 	"VIRUS file triggers external command${comment:+ ($comment)}: $file"
 
       env_ok=
-      sed -n 's/^SVF_//p' "$infected_file_command_env_out" \
+      sed -n '/^SVF_/p' "$infected_file_command_env_out" \
       |sort \
       |for env_expected in \
-	COMMAND_CLIENT_IP="127.0.0.1" \
-	COMMAND_CLIENT_NAME="127.0.0.1" \
-	COMMAND_CLIENT_NETBIOS_NAME="$hostname" \
-	COMMAND_SERVER_IP="127.0.0.1" \
-	COMMAND_SERVER_NAME="$hostname" \
-	COMMAND_SERVER_NETBIOS_NAME="127.0.0.1" \
-	COMMAND_SERVER_PID="[0-9]*" \
-	COMMAND_SERVICE_NAME="$T_samba_share_name" \
-	COMMAND_SERVICE_PATH="$T_samba_share_dir" \
-	COMMAND_USER_DOMAIN="$hostname_upper" \
-	COMMAND_USER_NAME="nobody" \
-	INFECTED_FILE_ACTION="${infected_file_action:-nothing}" \
-	INFECTED_FILE_REPORT="*" \
-	INFECTED_SERVICE_FILE_PATH="$file" \
-	MODULE_NAME="$T_svf_module_name" \
-	VERSION="$T_svf_version" \
+	SVF_CLIENT_IP="127.0.0.1" \
+	SVF_CLIENT_NAME="127.0.0.1" \
+	SVF_CLIENT_NETBIOS_NAME="$hostname" \
+	SVF_INFECTED_FILE_ACTION="${infected_file_action:-nothing}" \
+	SVF_INFECTED_FILE_REPORT="*" \
+	SVF_INFECTED_SERVICE_FILE_PATH="$file" \
+	SVF_MODULE_NAME="$T_svf_module_name" \
+	SVF_SERVER_IP="127.0.0.1" \
+	SVF_SERVER_NAME="$hostname" \
+	SVF_SERVER_NETBIOS_NAME="127.0.0.1" \
+	SVF_SERVER_PID="[0-9]*" \
+	SVF_SERVICE_NAME="$T_samba_share_name" \
+	SVF_SERVICE_PATH="$T_samba_share_dir" \
+	SVF_USER_DOMAIN="$hostname_upper" \
+	SVF_USER_NAME="nobody" \
+	SVF_VERSION="$T_svf_version" \
 	END \
 	; do
-	if ! read -r env; then
-	  if [ X"$env_expected" = X"END" ]; then
-	    env_ok="yes"
-	  fi
-	  break
-	fi
-	if [ X"$env_expected" = X"END" ]; then
-	  break
+	read -r env
+	test_verbose 3 "Env got:      [$env]"
+	test_verbose 3 "Env expected: [$env_expected]"
+	if [ X"$env_expected" = X"END" ] && [ -z "$env" ]; then
+	  env_ok="yes"
 	fi
 	case "$env" in
 	$env_expected)
