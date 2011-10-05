@@ -203,6 +203,23 @@ function tc_option_scanner_timeout
   tcu_scanner_continue
 }
 
+function tc_option_scan_error_command
+{
+  typeset tc="scan error command"
+
+  test_verbose 0 "Testing 'scan error command' option"
+  tu_reset
+  tcu_scanner_pause
+  tu_smb_conf_append_svf_option "connect timeout = 1" ## msec
+  tu_smb_conf_append_svf_option "io timeout = 1" ## msec
+
+  typeset command_out="$TEST_tmp_dir/command.out"
+  tu_smb_conf_append_svf_option "scan error command = sh -c 'env >>$command_out'"
+  tcx_get_safe_file "$tc" --scan-error-command-env-out "$command_out"
+
+  tcu_scanner_continue
+}
+
 ## ======================================================================
 
 function tcs_common
@@ -244,6 +261,9 @@ function tcx_get_safe_file
   typeset opt
   typeset suffix=""
   typeset fail_with=""
+  typeset scan_error_command_env_out=""
+  typeset hostname=$(hostname |sed 's/\..*//')
+  typeset -u hostname_upper="$hostname"
   while [ "$#" -gt 0 ]; do
     opt="$1"; shift
     case "$opt" in
@@ -253,6 +273,9 @@ function tcx_get_safe_file
     --fail-with)
       fail_with="$1"; shift
       ;;
+    --scan-error-command-env-out)
+      scan_error_command_env_out="$1"; shift
+      ;;
     *)
       test_abort "$0: Invalid option: $opt"
       ;;
@@ -260,17 +283,67 @@ function tcx_get_safe_file
   done
 
   for size in $T_file_size_list; do
+    if [ -n "$scan_error_command_env_out" ]; then
+      rm -f "$scan_error_command_env_out"
+    fi
+
     file="$T_file_prefix.$size$suffix"
     out=$(
       print -r "get \"$file\" /dev/null" \
       |tu_smbclient
-      )
-      if [ -z "$fail_with" ]; then
-	test_assert_empty "$out" "Getting SAFE file is OK${comment:+ ($comment)}: $file"
-      else
-	test_assert_match "$out" "NT_STATUS_$fail_with *" \
-	  "Getting SAFE file is DENIED${comment:+ ($comment)}: $file"
-      fi
+    )
+    if [ -z "$fail_with" ]; then
+      test_assert_empty "$out" "Getting SAFE file is OK${comment:+ ($comment)}: $file"
+    else
+      test_assert_match "$out" "NT_STATUS_$fail_with *" \
+	"Getting SAFE file is DENIED${comment:+ ($comment)}: $file"
+    fi
+
+    if [ -n "$scan_error_command_env_out" ]; then
+      [ -f "$scan_error_command_env_out" ]
+      test_assert_zero "$?" \
+	"Scan error triggers external command${comment:+ ($comment)}: $file"
+
+      env_ok=
+      sed -n 's/^SVF_//p' "$scan_error_command_env_out" \
+      |sort \
+      |for env_expected in \
+	COMMAND_CLIENT_IP="127.0.0.1" \
+	COMMAND_CLIENT_NAME="127.0.0.1" \
+	COMMAND_CLIENT_NETBIOS_NAME="$hostname" \
+	COMMAND_SERVER_IP="127.0.0.1" \
+	COMMAND_SERVER_NAME="$hostname" \
+	COMMAND_SERVER_NETBIOS_NAME="127.0.0.1" \
+	COMMAND_SERVER_PID="[0-9]*" \
+	COMMAND_SERVICE_NAME="$T_samba_share_name" \
+	COMMAND_SERVICE_PATH="$T_samba_share_dir" \
+	COMMAND_USER_DOMAIN="$hostname_upper" \
+	COMMAND_USER_NAME="nobody" \
+	MODULE_NAME="$T_svf_module_name" \
+	SCAN_ERROR_REPORT="*" \
+	SCAN_ERROR_SERVICE_FILE_PATH="$file" \
+	VERSION="$T_svf_version" \
+	END \
+	; do
+	read -r env
+	test_verbose 3 "Env got:      [$env]"
+	test_verbose 3 "Env expected: [$env_expected]"
+	if [ X"$env_expected" = X"END" ] && [ -z "$env" ]; then
+	  env_ok="yes"
+	fi
+	case "$env" in
+	$env_expected)
+	  test_verbose 3 "Env mismatched"
+	  ;;
+	*)
+	  test_verbose 3 "Env mismatched"
+	  cat >/dev/null
+	  break
+	  ;;
+	esac
+      done
+      test_assert_eq "$env_ok" "yes" "'scan error command' gets SVF_* environment vars: $file"
+    fi
   done
 }
 
@@ -426,7 +499,7 @@ function tcx_get_virus_file
 	  ;;
 	esac
       done
-      test_assert_eq "$env_ok" "yes" "The infected file command gets SVF_* environment vars: $file"
+      test_assert_eq "$env_ok" "yes" "'infected file command' gets SVF_* environment vars: $file"
     fi
   done
 }
