@@ -2,7 +2,7 @@
 ## ======================================================================
 
 CC=			$(SAMBA_CC)
-CPPFLAGS=		$(SVF_CPPFLAGS)
+CPPFLAGS=		$(SVF_CPPFLAGS) $(SAMBA_CPPFLAGS)
 CFLAGS=			$(SVF_CFLAGS)
 
 FLAGS=			$(SAMBA_FLAGS)

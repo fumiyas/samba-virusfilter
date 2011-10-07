@@ -29,7 +29,7 @@
 void *memmem(const void *m1, size_t m1_len, const void *m2, size_t m2_len)
 {
 	const char *m1_cur = (const char *)m1;
-	const char *m1_end = m1 + m1_len - m2_len;
+	const char *m1_end = (const char *)m1 + m1_len - m2_len;
 	const char *m2_cur = (const char *)m2;
 
 	if (m1_len == 0 || m2_len == 0 || m1_len < m2_len) {
@@ -478,8 +478,10 @@ svf_result svf_io_writev(svf_io_handle *io_h, ...)
 		}
 	}
 
-	/* Notreached */
+#if 0
+	/* Not reached */
 	return SVF_RESULT_OK;
+#endif
 }
 
 svf_result svf_io_writevl(svf_io_handle *io_h, ...)
@@ -550,8 +552,10 @@ svf_result svf_io_writevl(svf_io_handle *io_h, ...)
 		}
 	}
 
-	/* Notreached */
+#if 0
+	/* Not reached */
 	return SVF_RESULT_OK;
+#endif
 }
 
 svf_result svf_io_readl(svf_io_handle *io_h)
@@ -718,7 +722,7 @@ svf_cache_entry *svf_cache_entry_rename(
 	int fname_len)
 {
 	TALLOC_FREE(cache_e->fname);
-	cache_e->fname = -1;
+	cache_e->fname_len = -1;
 
 	cache_e->fname = talloc_strdup(cache_e, fname);
 	if (!cache_e->fname) {
@@ -1091,7 +1095,7 @@ int svf_shell_run(
 		SAFE_FREE(newcmd);
 	}
 
-	/* not reached */
+	/* Not reached */
 	exit(83);
 	return 1;
 }
