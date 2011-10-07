@@ -690,15 +690,9 @@ svf_scan_result_eval:
 
 	if (svf_h->cache_h && !is_cache && add_scan_cache) {
 		DEBUG(10, ("Adding new cache entry: %s, %d\n", fname, scan_result));
-		scan_cache_e = svf_cache_entry_new(svf_h->cache_h);
+		scan_cache_e = svf_cache_entry_new(svf_h->cache_h, fname, -1);
 		if (!scan_cache_e) {
 			DEBUG(0,("Cannot create cache entry: svf_cache_entry_new failed"));
-			goto svf_scan_return;
-		}
-		scan_cache_e->fname = talloc_strdup(scan_cache_e, fname);
-		if (!scan_cache_e->fname) {
-			DEBUG(0,("Cannot create cache entry: talloc_strdup failed"));
-			TALLOC_FREE(scan_cache_e);
 			goto svf_scan_return;
 		}
 		scan_cache_e->result = scan_result;
@@ -706,7 +700,7 @@ svf_scan_result_eval:
 			scan_cache_e->report = talloc_strdup(scan_cache_e, scan_report);
 			if (!scan_cache_e->report) {
 				DEBUG(0,("Cannot create cache entry: talloc_strdup failed"));
-				TALLOC_FREE(scan_cache_e);
+				svf_cache_entry_free(scan_cache_e);
 				goto svf_scan_return;
 			}
 		} else {
@@ -884,8 +878,8 @@ static int svf_vfs_unlink(
 {
 	int ret = SMB_VFS_NEXT_UNLINK(vfs_h, smb_fname);
 	svf_handle *svf_h;
-	char *fname = smb_fname->base_name;
-	svf_cache_entry *scan_cache_e = NULL;
+	char *fname;
+	svf_cache_entry *scan_cache_e;
 
 	if (ret != 0 && errno != ENOENT) {
 		return ret;
@@ -896,10 +890,53 @@ static int svf_vfs_unlink(
 				return -1);
 
 	if (svf_h->cache_h) {
+		fname = smb_fname->base_name;
 		DEBUG(10, ("Searching cache entry: fname: %s\n", fname));
 		scan_cache_e = svf_cache_get(svf_h->cache_h, fname, -1);
 		if (scan_cache_e) {
 			svf_cache_remove(svf_h->cache_h, scan_cache_e);
+			svf_cache_entry_free(scan_cache_e);
+		}
+	}
+
+	return ret;
+}
+
+static int svf_vfs_rename(
+	vfs_handle_struct *vfs_h,
+	const struct smb_filename *smb_fname_src,
+	const struct smb_filename *smb_fname_dst)
+{
+	int ret = SMB_VFS_NEXT_RENAME(vfs_h, smb_fname_src, smb_fname_dst);
+	svf_handle *svf_h;
+	char *fname;
+	svf_cache_entry *scan_cache_e;
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	SMB_VFS_HANDLE_GET_DATA(vfs_h, svf_h,
+				svf_handle,
+				return -1);
+
+	if (svf_h->cache_h) {
+		fname = smb_fname_dst->base_name;
+		DEBUG(10, ("Searching cache entry: fname: %s\n", fname));
+		scan_cache_e = svf_cache_get(svf_h->cache_h, fname, -1);
+		if (scan_cache_e) {
+			svf_cache_remove(svf_h->cache_h, scan_cache_e);
+		}
+
+		fname = smb_fname_src->base_name;
+		DEBUG(10, ("Searching cache entry: fname: %s\n", fname));
+		scan_cache_e = svf_cache_get(svf_h->cache_h, fname, -1);
+		if (scan_cache_e) {
+			if (!svf_cache_entry_rename(scan_cache_e, smb_fname_dst->base_name, -1)) {
+				DEBUG(0,("Cannot rename cache entry: svf_cache_entry_rename failed"));
+				svf_cache_remove(svf_h->cache_h, scan_cache_e);
+				svf_cache_entry_free(scan_cache_e);
+			}
 		}
 	}
 
@@ -917,6 +954,7 @@ static struct vfs_fn_pointers vfs_svf_fns = {
 #endif
 	.close_fn =	svf_vfs_close,
 	.unlink =	svf_vfs_unlink,
+	.rename =	svf_vfs_rename,
 };
 
 NTSTATUS init_samba_module(void)

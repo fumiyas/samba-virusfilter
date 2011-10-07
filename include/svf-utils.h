@@ -97,8 +97,10 @@ svf_result svf_io_readl(svf_io_handle *io_h);
 svf_result svf_io_writefl_readl(svf_io_handle *io_h, const char *fmt, ...);
 
 /* Scan result cache */
-#define svf_cache_entry_new(cache_h) TALLOC_ZERO_P(cache_h, svf_cache_entry)
 svf_cache_handle *svf_cache_new(TALLOC_CTX *ctx, int entry_limit, time_t time_limit);
+svf_cache_entry *svf_cache_entry_new(svf_cache_handle *cache_h, const char *fname, int fname_len);
+svf_cache_entry *svf_cache_entry_rename(svf_cache_entry *cache_e, const char *fname, int fname_len);
+#define svf_cache_entry_free(cache_e) TALLOC_FREE(cache_e)
 svf_cache_entry *svf_cache_get(svf_cache_handle *cache_h, const char *fname, int fname_len);
 void svf_cache_add(svf_cache_handle *cache_h, svf_cache_entry *cache_e);
 void svf_cache_remove(svf_cache_handle *cache_h, svf_cache_entry *cache_e);

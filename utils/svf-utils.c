@@ -690,6 +690,47 @@ svf_cache_handle *svf_cache_new(TALLOC_CTX *ctx, int entry_limit, time_t time_li
 	return cache_h;
 }
 
+svf_cache_entry *svf_cache_entry_new(
+	svf_cache_handle *cache_h,
+	const char *fname,
+	int fname_len)
+{
+	svf_cache_entry *cache_e = TALLOC_ZERO_P(cache_h, svf_cache_entry);
+
+	if (!cache_e) {
+		return NULL;
+	}
+
+	cache_e->fname = talloc_strdup(cache_e, fname);
+	if (!cache_e->fname) {
+		TALLOC_FREE(cache_e);
+		return NULL;
+	}
+
+	cache_e->fname_len = (fname_len >= 0) ? fname_len : strlen(fname);
+
+	return cache_e;
+}
+
+svf_cache_entry *svf_cache_entry_rename(
+	svf_cache_entry *cache_e,
+	const char *fname,
+	int fname_len)
+{
+	TALLOC_FREE(cache_e->fname);
+	cache_e->fname = -1;
+
+	cache_e->fname = talloc_strdup(cache_e, fname);
+	if (!cache_e->fname) {
+		TALLOC_FREE(cache_e);
+		return NULL;
+	}
+
+	cache_e->fname_len = (fname_len >= 0) ? fname_len : strlen(fname);
+
+	return cache_e;
+}
+
 void svf_cache_purge(svf_cache_handle *cache_h)
 {
 	svf_cache_entry *cache_e;
@@ -706,6 +747,7 @@ void svf_cache_purge(svf_cache_handle *cache_h)
 		}
 
 		svf_cache_remove(cache_h, cache_e);
+		svf_cache_entry_free(cache_e);
 	}
 }
 
@@ -758,7 +800,6 @@ void svf_cache_remove(svf_cache_handle *cache_h, svf_cache_entry *cache_e)
 	}
 	cache_h->entry_num--;
 	DLIST_REMOVE(cache_h->list, cache_e);
-	TALLOC_FREE(cache_e);
 }
 
 /* Environment variable handling for execle(2)
