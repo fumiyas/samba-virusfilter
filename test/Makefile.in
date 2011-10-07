@@ -4,6 +4,7 @@ SOURCE_BUILD=	$(SOURCE_DIR)/build
 ## ======================================================================
 
 BUILD_TARGETS=		$(TEST_LIB_PACKAGE) \
+			$(SMBD_WRAPPER) \
 			etc/clamd.conf.test \
 			etc/savdid.conf.test \
 			etc/fsavd.conf.test \
@@ -29,6 +30,7 @@ TEST_DIR=		$(PWD)
 TEST_DIRS=		tmp log
 
 TEST_LIB_PACKAGE=	lib/package.ksh
+SMBD_WRAPPER=		lib/smbd.wrapper
 
 ## ======================================================================
 
@@ -40,7 +42,14 @@ $(TEST_DIRS):
 
 $(TEST_LIB_PACKAGE):: $(TEST_LIB_PACKAGE).tmpl
 	@echo "Generating $@ ..."
-	@$(SUBST) <$(TEST_LIB_PACKAGE).tmpl >$@
+	@$(SUBST) <$@.tmpl >$@.tmp
+	mv $@.tmp $@
+
+$(SMBD_WRAPPER):: $(SMBD_WRAPPER).tmpl
+	@echo "Generating $@ ..."
+	@$(SUBST) <$@.tmpl >$@.tmp
+	chmod +x $@.tmp
+	mv $@.tmp $@
 
 test check: $(TEST_DIRS)
 	for module in $(TEST_MODULES); do \

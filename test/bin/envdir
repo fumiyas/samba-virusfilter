@@ -11,7 +11,8 @@ dir="$1"; shift
 for name in `ls "$dir" |grep '^[A-Za-z_][A-Za-z_0-9]*$'`; do
   [ -f "$dir/$name" ] || continue
   value=`head -n 1 "$dir/$name"`
-  eval "export $name=\"\$value\""
+  eval "$name=\"\$value\""
+  eval "export $name"
 done
 
 exec "$@"
