@@ -163,28 +163,6 @@ test -x "$CLAMD_COMMAND" && TEST_MODULES="$TEST_MODULES clamav"
 
 ## ----------------------------------------------------------------------
 
-AC_SUBST(FSAVD_COMMAND)
-AC_ARG_WITH(
-  fsavd,
-  AC_HELP_STRING(--with-fsavd=PATH, [Use specific F-Secure AV fsavd for test]),
-  [case "$withval" in
-    yes|no)
-      AC_ERROR([--with-fsavd requires an argument])
-      ;;
-    *)
-      FSAVD_COMMAND=$withval
-      ;;
-    esac
-  ],
-  [FSAVD_COMMAND=/opt/f-secure/fssp/sbin/fsavd]
-)
-
-AC_MSG_RESULT([using $FSAVD_COMMAND for F-Secure AV fsavd])
-
-test -x "$CLAMD_COMMAND" && TEST_MODULES="$TEST_MODULES f-secure"
-
-## ----------------------------------------------------------------------
-
 AC_SUBST(SAVDID_COMMAND)
 AC_ARG_WITH(
   savdid,
@@ -203,7 +181,29 @@ AC_ARG_WITH(
 
 AC_MSG_RESULT([using $SAVDID_COMMAND for Sophos AV savdid])
 
-test -x "$CLAMD_COMMAND" && TEST_MODULES="$TEST_MODULES sophos"
+test -x "$SAVDID_COMMAND" && TEST_MODULES="$TEST_MODULES sophos"
+
+## ----------------------------------------------------------------------
+
+AC_SUBST(FSAVD_COMMAND)
+AC_ARG_WITH(
+  fsavd,
+  AC_HELP_STRING(--with-fsavd=PATH, [Use specific F-Secure AV fsavd for test]),
+  [case "$withval" in
+    yes|no)
+      AC_ERROR([--with-fsavd requires an argument])
+      ;;
+    *)
+      FSAVD_COMMAND=$withval
+      ;;
+    esac
+  ],
+  [FSAVD_COMMAND=/opt/f-secure/fssp/sbin/fsavd]
+)
+
+AC_MSG_RESULT([using $FSAVD_COMMAND for F-Secure AV fsavd])
+
+test -x "$FSAVD_COMMAND" && TEST_MODULES="$TEST_MODULES f-secure"
 
 ## Perl
 ## ======================================================================
