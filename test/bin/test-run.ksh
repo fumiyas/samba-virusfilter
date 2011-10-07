@@ -1,7 +1,7 @@
-#!/bin/ksh
+#!@KSH_COMMAND@
 ##
-## test.ksh: Provides a simple framework for writing test scripts
-##           (Test::More Perl module clone)
+## test-run.ksh: Provides a simple framework for writing test scripts
+##               (Test::More Perl module clone)
 ##
 ## Copyright (C) 2010-2011 SATOH Fumiyasu @ OSS Technology, Inc.
 ## Copyright (C) 2003-2004 SATOH Fumiyasu @ MIRACLE LINUX Corporation

@@ -10,8 +10,8 @@ MAKE_DIRS=		utils clamav f-secure sophos bin etc test
 include $(SOURCE_BUILD)/Makefile.common
 include $(SOURCE_BUILD)/Makefile.top
 
-.PHONY: test
+.PHONY: test check
 
-test:
+test check:
 	cd test && $(MAKE) $@
 

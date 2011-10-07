@@ -16,6 +16,7 @@ AC_CONFIG_FILES(
   build/Makefile.package
   build/Makefile.top
   build/subst
+  test/Makefile
 )
 
 ## Installation directories
@@ -39,75 +40,6 @@ AC_CONFIG_FILES(
 #      ;;
 #    esac
 #  ])
-
-## ======================================================================
-
-AC_SUBST(CLAMD_COMMAND)
-AC_ARG_WITH(
-  clamd,
-  AC_HELP_STRING(--with-clamd=PATH, [Use specific ClamAV clamd for test]),
-  [case "$withval" in
-    yes|no)
-      ;;
-    *)
-      CLAMD_COMMAND=$withval
-      AC_MSG_RESULT([using $PERL_COMMAND for perl])
-      ;;
-    esac
-  ],
-  [CLAMD_COMMAND=/usr/sbin/clamd]
-)
-
-AC_SUBST(FSAVD_COMMAND)
-AC_ARG_WITH(
-  fsavd,
-  AC_HELP_STRING(--with-fsavd=PATH, [Use specific F-Secure AV fsavd for test]),
-  [case "$withval" in
-    yes|no)
-      ;;
-    *)
-      FSAVD_COMMAND=$withval
-      AC_MSG_RESULT([using $PERL_COMMAND for perl])
-      ;;
-    esac
-  ],
-  [FSAVD_COMMAND=/opt/f-secure/fssp/sbin/fsavd]
-)
-
-AC_SUBST(SAVDID_COMMAND)
-AC_ARG_WITH(
-  savdid,
-  AC_HELP_STRING(--with-savdid=PATH, [Use specific Sophos AV savdid for test]),
-  [case "$withval" in
-    yes|no)
-      ;;
-    *)
-      SAVDID_COMMAND=$withval
-      AC_MSG_RESULT([using $PERL_COMMAND for perl])
-      ;;
-    esac
-  ],
-  [SAVDID_COMMAND=/usr/local/bin/savdid]
-)
-
-## Perl
-## ======================================================================
-
-AC_SUBST(PERL_COMMAND)
-AC_ARG_WITH(
-  perl,
-  AC_HELP_STRING(--with-perl=PATH, [Use specific perl command]),
-  [case "$withval" in
-    yes|no)
-      ;;
-    *)
-      PERL_COMMAND=$withval
-      AC_MSG_RESULT([using $PERL_COMMAND for perl])
-      ;;
-    esac
-  ],
-  [AC_PATH_PROG(PERL_COMMAND, perl, not found)]
-)
 
 ## Samba
 ## ======================================================================
@@ -202,6 +134,115 @@ SAMBA_CPPFLAGS="`echo \" $SAMBA_CPPFLAGS \" |sed 's#-I. #-I\$(SAMBA_SOURCE_DIR) 
 AC_SUBST(CFLAGS)
 AC_SUBST(CPPFLAGS)
 CPPFLAGS="$CPPFLAGS -I\$(SOURCE_DIR)/include"
+
+## ======================================================================
+
+AC_SUBST(TEST_MODULES)
+TEST_MODULES=""
+
+AC_SUBST(CLAMD_COMMAND)
+AC_ARG_WITH(
+  clamd,
+  AC_HELP_STRING(--with-clamd=PATH, [Use specific ClamAV clamd for test]),
+  [case "$withval" in
+    yes|no)
+      AC_ERROR([--with-clamd requires an argument])
+      ;;
+    *)
+      CLAMD_COMMAND=$withval
+      ;;
+    esac
+  ],
+  [CLAMD_COMMAND=/usr/sbin/clamd]
+)
+
+AC_MSG_RESULT([using $CLAMD_COMMAND for ClamaAV clamd])
+
+test -x "$CLAMD_COMMAND" && TEST_MODULES="$TEST_MODULES clamav"
+
+## ----------------------------------------------------------------------
+
+AC_SUBST(FSAVD_COMMAND)
+AC_ARG_WITH(
+  fsavd,
+  AC_HELP_STRING(--with-fsavd=PATH, [Use specific F-Secure AV fsavd for test]),
+  [case "$withval" in
+    yes|no)
+      AC_ERROR([--with-fsavd requires an argument])
+      ;;
+    *)
+      FSAVD_COMMAND=$withval
+      ;;
+    esac
+  ],
+  [FSAVD_COMMAND=/opt/f-secure/fssp/sbin/fsavd]
+)
+
+AC_MSG_RESULT([using $FSAVD_COMMAND for F-Secure AV fsavd])
+
+test -x "$CLAMD_COMMAND" && TEST_MODULES="$TEST_MODULES f-secure"
+
+## ----------------------------------------------------------------------
+
+AC_SUBST(SAVDID_COMMAND)
+AC_ARG_WITH(
+  savdid,
+  AC_HELP_STRING(--with-savdid=PATH, [Use specific Sophos AV savdid for test]),
+  [case "$withval" in
+    yes|no)
+      AC_ERROR([--with-savdid requires an argument])
+      ;;
+    *)
+      SAVDID_COMMAND=$withval
+      ;;
+    esac
+  ],
+  [SAVDID_COMMAND=/usr/local/bin/savdid]
+)
+
+AC_MSG_RESULT([using $SAVDID_COMMAND for Sophos AV savdid])
+
+test -x "$CLAMD_COMMAND" && TEST_MODULES="$TEST_MODULES sophos"
+
+## Perl
+## ======================================================================
+
+AC_SUBST(PERL_COMMAND)
+AC_ARG_WITH(
+  perl,
+  AC_HELP_STRING(--with-perl=PATH, [Use specific perl command]),
+  [case "$withval" in
+    yes|no)
+      ;;
+    *)
+      PERL_COMMAND=$withval
+      AC_MSG_RESULT([using $PERL_COMMAND for perl])
+      ;;
+    esac
+  ],
+  [AC_PATH_PROG(PERL_COMMAND, perl, not found)]
+)
+
+## ksh (for test)
+## ======================================================================
+
+AC_SUBST(KSH_COMMAND)
+AC_ARG_WITH(
+  ksh,
+  AC_HELP_STRING(--with-ksh=PATH, [Use specific ksh (Korn shell) for test]),
+  [case "$withval" in
+    yes|no)
+      ;;
+    *)
+      KSH_COMMAND=$withval
+      AC_MSG_RESULT([using $PERL_COMMAND for perl])
+      ;;
+    esac
+  ],
+  [KSH_COMMAND=/bin/ksh]
+)
+
+AC_MSG_RESULT([using $KSH_COMMAND for Korn shell])
 
 ## Output
 ## ======================================================================

@@ -7,6 +7,7 @@ BUILD_TARGETS=		$(TEST_LIB_PACKAGE) \
 			etc/clamd.conf.test \
 			etc/savdid.conf.test \
 			etc/fsavd.conf.test \
+			bin/test-run.cmd \
 			bin/clamd-svconf.cmd \
 			bin/savdid-svconf.cmd \
 			bin/fsavd-svconf.cmd \
@@ -23,6 +24,7 @@ SUBST_ARGS=		TEST_DIR="$(TEST_DIR)" \
 			TEST_SAMBA_SBIN_DIR="$(SAMBA_SOURCE_DIR)/bin" \
 			TEST_SAMBA_LIB_DIR="$(SAMBA_SOURCE_DIR)/bin" \
 
+TEST_MODULES=		@TEST_MODULES@
 TEST_DIR=		$(PWD)
 TEST_DIRS=		tmp log
 
@@ -32,8 +34,6 @@ TEST_LIB_PACKAGE=	lib/package.ksh
 
 include $(SOURCE_BUILD)/Makefile.common
 
-test check: $(TEST_DIRS)
-
 $(TEST_DIRS):
 	@echo "Creating $@ ..."
 	@mkdir -p -m 0755 $@
@@ -41,4 +41,13 @@ $(TEST_DIRS):
 $(TEST_LIB_PACKAGE):: $(TEST_LIB_PACKAGE).tmpl
 	@echo "Generating $@ ..."
 	@$(SUBST) <$(TEST_LIB_PACKAGE).tmpl >$@
+
+test check:
+	for module in $(TEST_MODULES); do \
+	  echo "Testing $$module ..."; \
+	  ./bin/test-run.cmd case/$$module.ksh || { \
+	    echo "Testing $$module failed." 1>&2; \
+	    exit 1; \
+	  }; \
+	done
 

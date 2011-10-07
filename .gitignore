@@ -27,6 +27,7 @@ config.h
 /etc/*.example
 /include/svf-config.h
 /include/svf-config.h.in
+/test/Makefile
 /test/lib/package.ksh
 /test/etc/*.test
 /test/log
