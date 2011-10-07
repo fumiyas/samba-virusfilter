@@ -10,8 +10,8 @@ BUILD_VFS=		svf-fsav.so
 BUILD_TARGETS=		$(BUILD_OBJS) $(BUILD_VFS)
 BUILD_TARGETS_POST=
 
-INSTALL_DIR=		$(SAMBA_VFSLIBDIR)
-INSTALL_EXES=		$(BUILD_VFS)
+INSTALL_CMD_DIR=	$(SAMBA_VFSLIBDIR)
+INSTALL_CMDS=		$(BUILD_VFS)
 
 ## ======================================================================
 
@@ -22,5 +22,5 @@ $(BUILD_OBJS):: $(SAV_VFS_HEADERS)
 $(BUILD_VFS):: $(BUILD_OBJS) $(SAV_VFS_OBJS)
 	$(SHLD) $(LDSHFLAGS_MODULES) -o $@ $(BUILD_OBJS) $(SAV_VFS_OBJS)
 
-install:: install-exes
+install:: install-cmds
 

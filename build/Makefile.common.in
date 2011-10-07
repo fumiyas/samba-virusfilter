@@ -47,7 +47,6 @@ RM=			rm -rf
 LN_S=			ln -s
 INSTALL=		$(SOURCE_BUILD)/install-sh -c
 CHMOD_FILES=		chmod 0644
-CHMOD_EXES=		chmod 0755
 CHMOD_CMDS=		chmod 0755
 
 ## Package local
