@@ -101,6 +101,7 @@ svf_result svf_io_writefl_readl(svf_io_handle *io_h, const char *fmt, ...);
 svf_cache_handle *svf_cache_new(TALLOC_CTX *ctx, int entry_limit, time_t time_limit);
 svf_cache_entry *svf_cache_get(svf_cache_handle *cache_h, const char *fname, int fname_len);
 void svf_cache_add(svf_cache_handle *cache_h, svf_cache_entry *cache_e);
+void svf_cache_remove(svf_cache_handle *cache_h, svf_cache_entry *cache_e);
 
 /* Environment variable handling for execle(2) */
 svf_env_struct *svf_env_new(TALLOC_CTX *ctx);

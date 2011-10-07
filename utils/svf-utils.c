@@ -705,11 +705,7 @@ void svf_cache_purge(svf_cache_handle *cache_h)
 			break;
 		}
 
-		DEBUG(10,("Purging cache entry: %s\n", cache_e->fname));
-		cache_h->end = cache_e->prev;
-		cache_h->entry_num--;
-		DLIST_REMOVE(cache_h->list, cache_e);
-		TALLOC_FREE(cache_e);
+		svf_cache_remove(cache_h, cache_e);
 	}
 }
 
@@ -748,6 +744,21 @@ void svf_cache_add(svf_cache_handle *cache_h, svf_cache_entry *cache_e)
 	}
 
 	svf_cache_purge(cache_h);
+}
+
+void svf_cache_remove(svf_cache_handle *cache_h, svf_cache_entry *cache_e)
+{
+	cache_e->fname_len = strlen(cache_e->fname);
+	cache_e->time = time(NULL);
+
+	DEBUG(10,("Purging cache entry: %s\n", cache_e->fname));
+
+	if (cache_h->end == cache_e) {
+		cache_h->end = cache_e->prev;
+	}
+	cache_h->entry_num--;
+	DLIST_REMOVE(cache_h->list, cache_e);
+	TALLOC_FREE(cache_e);
 }
 
 /* Environment variable handling for execle(2)

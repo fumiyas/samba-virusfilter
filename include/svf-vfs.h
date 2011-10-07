@@ -624,8 +624,6 @@ static svf_result svf_scan(
 			goto svf_scan_result_eval;
 		}
 		DEBUG(10, ("Cache entry not found\n"));
-	} else {
-		DEBUG(10, ("Cache disabled\n"));
 	}
 
 #ifdef svf_module_scan_init
@@ -880,6 +878,34 @@ svf_vfs_close_fail:
 	return close_result;
 }
 
+static int svf_vfs_unlink(
+	vfs_handle_struct *vfs_h,
+	const struct smb_filename *smb_fname)
+{
+	int ret = SMB_VFS_NEXT_UNLINK(vfs_h, smb_fname);
+	svf_handle *svf_h;
+	char *fname = smb_fname->base_name;
+	svf_cache_entry *scan_cache_e = NULL;
+
+	if (ret != 0 && errno != ENOENT) {
+		return ret;
+	}
+
+	SMB_VFS_HANDLE_GET_DATA(vfs_h, svf_h,
+				svf_handle,
+				return -1);
+
+	if (svf_h->cache_h) {
+		DEBUG(10, ("Searching cache entry: fname: %s\n", fname));
+		scan_cache_e = svf_cache_get(svf_h->cache_h, fname, -1);
+		if (scan_cache_e) {
+			svf_cache_remove(svf_h->cache_h, scan_cache_e);
+		}
+	}
+
+	return ret;
+}
+
 /* VFS operations */
 static struct vfs_fn_pointers vfs_svf_fns = {
 	.connect_fn =	svf_vfs_connect,
@@ -890,6 +916,7 @@ static struct vfs_fn_pointers vfs_svf_fns = {
 	.open =		svf_vfs_open,
 #endif
 	.close_fn =	svf_vfs_close,
+	.unlink =	svf_vfs_unlink,
 };
 
 NTSTATUS init_samba_module(void)
