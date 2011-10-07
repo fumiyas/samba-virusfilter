@@ -9,5 +9,5 @@ BUILD_TARGETS= svf-utils.o
 
 include $(SOURCE_BUILD)/Makefile.common
 
-svf-utils.o:: $(SOURCE_DIR)/include/svf-utils.h $(SAV_COMMON_HEADERS)
+svf-utils.o:: $(SOURCE_DIR)/include/svf-utils.h $(SVF_COMMON_HEADERS)
 

@@ -2,8 +2,8 @@
 ## ======================================================================
 
 CC=			$(SAMBA_CC)
-CPPFLAGS=		$(SAV_CPPFLAGS)
-CFLAGS=			$(SAV_CFLAGS)
+CPPFLAGS=		$(SVF_CPPFLAGS)
+CFLAGS=			$(SVF_CFLAGS)
 
 FLAGS=			$(SAMBA_FLAGS)
 PICFLAG=		$(SAMBA_PICFLAG)
@@ -46,15 +46,15 @@ SAMBA_LOCKDIR=		@SAMBA_LOCKDIR@
 
 ## ======================================================================
 
-SAV_CPPFLAGS=		@CPPFLAGS@ \
+SVF_CPPFLAGS=		@CPPFLAGS@ \
 			-DVARDIR='"$(SAMBA_LOCKDIR)"' \
 			-DSAMBA_VERSION_NUMBER='$(SAMBA_VERSION_NUMBER)'
-SAV_CFLAGS=		@CFLAGS@
+SVF_CFLAGS=		@CFLAGS@
 
-SAV_COMMON_HEADERS=	$(SOURCE_DIR)/include/svf-common.h
-SAV_VFS_HEADERS=	$(SOURCE_DIR)/include/svf-vfs.h \
-			$(SAV_COMMON_HEADERS)
-SAV_VFS_OBJS=		$(SOURCE_DIR)/utils/svf-utils.o
+SVF_COMMON_HEADERS=	$(SOURCE_DIR)/include/svf-common.h
+SVF_VFS_HEADERS=	$(SOURCE_DIR)/include/svf-vfs.h \
+			$(SVF_COMMON_HEADERS)
+SVF_VFS_OBJS=		$(SOURCE_DIR)/utils/svf-utils.o
 
 ## ======================================================================
 
