@@ -15,7 +15,8 @@ AC_CONFIG_FILES(
   build/Makefile.common
   build/Makefile.package
   build/Makefile.top
-  build/subst
+  build/subst.pl
+  build/subst.vars
   test/Makefile
 )
 
@@ -248,8 +249,6 @@ AC_MSG_RESULT([using $KSH_COMMAND for Korn shell])
 ## ======================================================================
 
 AC_OUTPUT
-
-chmod +x build/subst
 
 AC_MSG_RESULT([
 Configuration summary for $PACKAGE_NAME $PACKAGE_VERSION:

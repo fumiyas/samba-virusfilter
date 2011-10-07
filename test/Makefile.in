@@ -42,7 +42,7 @@ $(TEST_LIB_PACKAGE):: $(TEST_LIB_PACKAGE).tmpl
 	@echo "Generating $@ ..."
 	@$(SUBST) <$(TEST_LIB_PACKAGE).tmpl >$@
 
-test check:
+test check: $(TEST_DIRS)
 	for module in $(TEST_MODULES); do \
 	  echo "Testing $$module ..."; \
 	  ./bin/test-run.cmd case/$$module.ksh || { \

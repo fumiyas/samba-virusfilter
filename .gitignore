@@ -22,7 +22,9 @@ config.h
 /build/Makefile.package
 /build/Makefile.top
 /build/subst
-/build/subst.in
+/build/subst.pl
+/build/subst.vars
+/build/subst.vars.in
 
 /etc/*.example
 /include/svf-config.h

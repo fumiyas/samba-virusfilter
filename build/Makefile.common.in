@@ -33,8 +33,10 @@ logdir=			$(localstatedir)/log$(package_subdir)
 ## Commands, Flags and so on
 ## ----------------------------------------------------------------------
 
+SUBST_SRC=		$(SOURCE_BUILD)/subst.pl
+SUBST_VARS=		$(SOURCE_BUILD)/subst.vars
 SUBST_COMMAND=		$(SOURCE_BUILD)/subst
-SUBST=			$(SUBST_COMMAND) $(SUBST_ARGS)
+SUBST=			@PERL_COMMAND@ $(SUBST_COMMAND) $(SUBST_ARGS)
 
 CC=			@CC@
 CPPFLAGS=		@CPPFLAGS@
@@ -191,4 +193,14 @@ build install clean distclean::
 build:: $(BUILD_TARGETS_POST)
 
 $(BUILD_TARGETS):: $(SUBST_COMMAND)
+
+$(SUBST_COMMAND): $(SUBST_SRC) $(SUBST_VARS) $(SOURCE_BUILD)/Makefile.common $(SOURCE_BUILD)/Makefile.package
+	cp $< $@.tmp
+	cat $(SUBST_VARS) >>$@.tmp
+	sed -n 's/^\([A-Za-z_][A-Za-z_0-9]*\)[ 	]*=[ 	]*\(.*\)/\1=\2/p' \
+	  $(SOURCE_BUILD)/Makefile.common \
+	  $(SOURCE_BUILD)/Makefile.package \
+	  >>$@.tmp
+	chmod 0755 $@.tmp
+	mv $@.tmp $@
 
