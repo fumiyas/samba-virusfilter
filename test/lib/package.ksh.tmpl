@@ -31,7 +31,7 @@ T_samba_sysconf_dir="$T_tmp_dir/etc"
 T_samba_log_dir="$T_tmp_dir/log"
 T_samba_var_dir="$T_tmp_dir/var"
 T_samba_data_dir="$T_tmp_dir/data"
-T_samba_share_dir="$T_tmp_dir/share"
+T_samba_share_dir="$(cd "$T_tmp_dir" && pwd -P)/share"
 T_samba_share_name="share"
 
 T_smbd_log_file="$T_samba_log_dir/log.smbd"
