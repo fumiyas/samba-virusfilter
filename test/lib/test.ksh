@@ -271,17 +271,17 @@ function test_result
   typeset result="$1"; shift
   typeset name="$1"; shift
 
-  let TEST_count++
+  let TEST_count+=1
 
   case "$result" in
   OK)
-    let TEST_count_ok++
+    let TEST_count_ok+=1
     ;;
   Skip)
-    let TEST_count_skipped++
+    let TEST_count_skipped+=1
     ;;
   *)
-    let TEST_count_ng++
+    let TEST_count_ng+=1
     ;;
   esac
 

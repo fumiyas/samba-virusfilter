@@ -585,7 +585,7 @@ function tcx_get_virus_files_on_a_session
     [ -n "$max_file_size" ] && [ "$size" -gt "$max_file_size" ] && excluded="yes"
     [ -n "$exclude_files" ] && [ "$file" != "${file#$exclude_files}" ] && excluded="yes"
     if [ -n "$excluded" ]; then
-      let excluded_num++
+      let excluded_num+=1
     fi
   done
 
