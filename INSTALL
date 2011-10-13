@@ -1,7 +1,14 @@
 Installation instructions for Samba-VirusFilter VFS modules
 ======================================================================
 
-Basic install procedure
+Requirements
+======================================================================
+
+  * Samba 3.5+ source tree
+  * Samba build environment
+  * GNU make
+
+Basic build and install procedure
 ======================================================================
 
   $ ./configure --with-samba-source=/path/to/samba-3.5.x
@@ -14,10 +21,3 @@ Basic install procedure
   Password: xxxxxxxx
   # make install
   ...
-
-Requirements
-======================================================================
-
-  * Samba 3.5+ source tree
-  * Samba build environment
-
