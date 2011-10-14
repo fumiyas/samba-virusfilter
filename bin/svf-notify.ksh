@@ -50,16 +50,16 @@ else
   report="$SVF_SCAN_ERROR_REPORT"
 fi
 
-if [ X"$SVF_COMMAND_SERVER_NAME" != X"$SVF_COMMAND_SERVER_IP" ]; then
-  server_name="$SVF_COMMAND_SERVER_NAME"
+if [ X"$SVF_SERVER_NAME" != X"$SVF_SERVER_IP" ]; then
+  server_name="$SVF_SERVER_NAME"
 else
-  server_name="$SVF_COMMAND_SERVER_NETBIOS_NAME"
+  server_name="$SVF_SERVER_NETBIOS_NAME"
 fi
 
-if [ X"$SVF_COMMAND_CLIENT_NAME" != X"$SVF_COMMAND_CLIENT_IP" ]; then
-  client_name="$SVF_COMMAND_CLIENT_NAME"
+if [ X"$SVF_CLIENT_NAME" != X"$SVF_CLIENT_IP" ]; then
+  client_name="$SVF_CLIENT_NAME"
 else
-  client_name="$SVF_COMMAND_CLIENT_NETBIOS_NAME"
+  client_name="$SVF_CLIENT_NETBIOS_NAME"
 fi
 
 mail_to=""
@@ -231,24 +231,24 @@ if [ -n "${header_file-}" ] && [ -f "$header_file" ]; then
 fi
 
 msg_body="${msg_body}\
-Server: $server_name ($SVF_COMMAND_SERVER_IP)
-Server PID: $SVF_COMMAND_SERVER_PID
-Service name: $SVF_COMMAND_SERVICE_NAME
-Service path: $SVF_COMMAND_SERVICE_PATH
-Client: $client_name ($SVF_COMMAND_CLIENT_IP)
-User: $SVF_COMMAND_USER_DOMAIN\\$SVF_COMMAND_USER_NAME
+Server: $server_name ($SVF_SERVER_IP)
+Server PID: $SVF_SERVER_PID
+Service name: $SVF_SERVICE_NAME
+Service path: $SVF_SERVICE_PATH
+Client: $client_name ($SVF_CLIENT_IP)
+User: $SVF_USER_DOMAIN\\$SVF_USER_NAME
 "
 
 if [ -n "${SVF_INFECTED_FILE_ACTION-}" ]; then
   msg_body="${msg_body}\
 Infected file report: $SVF_INFECTED_FILE_REPORT
-Infected file path: $SVF_COMMAND_SERVICE_PATH/$SVF_INFECTED_SERVICE_FILE_PATH
+Infected file path: $SVF_SERVICE_PATH/$SVF_INFECTED_SERVICE_FILE_PATH
 Infected file action: $SVF_INFECTED_FILE_ACTION
 "
 else
   msg_body="${msg_body}\
 Scan error report: $SVF_SCAN_ERROR_REPORT
-Scan error file path: $SVF_COMMAND_SERVICE_PATH/$SVF_SCAN_ERROR_SERVICE_FILE_PATH
+Scan error file path: $SVF_SERVICE_PATH/$SVF_SCAN_ERROR_SERVICE_FILE_PATH
 "
 fi
 
