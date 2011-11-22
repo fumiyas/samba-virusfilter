@@ -23,7 +23,7 @@ AC_CONFIG_FILES(
 ## Installation directories
 ## ======================================================================
 
-#AC_SUBST(package_subdir)
+AC_SUBST(package_subdir)
 #package_subdir=
 #AC_ARG_WITH(
 #  subdir,
