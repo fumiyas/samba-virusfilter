@@ -1,6 +1,6 @@
 Samba-VirusFilter 0.1.3 (2011-11-22)
 
-  * INSTALL: Add short description abount etc/smb.*.conf.example
+  * INSTALL: Add short description about etc/smb.*.conf.example
   * configure:
     * @package_subdir@ is not used, but must be replaced with null
     * --with-samba-source=PATH accepts a relative path
