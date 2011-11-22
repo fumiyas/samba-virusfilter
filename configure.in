@@ -4,7 +4,7 @@
 # FIXME
 AC_PREREQ(2.54)
 
-AC_INIT(samba-virusfilter, 0.1.0)
+AC_INIT(samba-virusfilter, 0.1.2)
 
 AC_CONFIG_HEADER(include/svf-config.h)
 AC_SUBST(CONFIG_HEADERS)
@@ -64,6 +64,16 @@ AC_ARG_WITH(
 if test -z "$SAMBA_SOURCE_DIR"; then
   AC_ERROR([You must specify --with-samba-source=PATH])
 fi
+
+case "$SAMBA_SOURCE_DIR" in
+/*)
+  ## OK, $SAMBA_SOURCE_DIR has absolute path
+  ;;
+*)
+  AC_MSG_RESULT([converting the specified Samba source path into absolute path])
+  SAMBA_SOURCE_DIR=`cd "$SAMBA_SOURCE_DIR" && pwd`
+  ;;
+esac
 
 AC_SUBST(SAMBA_TOP_DIR)
 case "$SAMBA_SOURCE_DIR" in
