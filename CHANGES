@@ -1,0 +1,19 @@
+Samba-VirusFilter 0.1.3 (2011-11-22)
+
+  * INSTALL: Add short description abount etc/smb.*.conf.example
+  * configure:
+    * @package_subdir@ is not used, but must be replaced with null
+    * --with-samba-source=PATH accepts a relative path
+
+Samba-VirusFilter 0.1.2 (2011-11-02)
+
+  * svf-notify: Fix typo: s/SVF_COMMAND_/SVF_/g
+
+Samba-VirusFilter 0.1.1 (not released)
+
+Samba-VirusFilter 0.1.0 (2011-10-13)
+
+  * Initial release
+  * Samba 3.5.x and 3.6.x support
+  * ClamAV clamd, F-Secure AV fsavd support, Sophos AV savdid
+
