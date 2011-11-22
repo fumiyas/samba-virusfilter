@@ -21,3 +21,9 @@ Basic build and install procedure
   Password: xxxxxxxx
   # make install
   ...
+
+Usage
+======================================================================
+
+See etc/smb.*.conf.example files to configure your smb.conf(5) file.
+
