@@ -1,7 +1,7 @@
 #!/bin/sh
 ##
 ## Setup a supervised ClamAV clamd service
-## Copyright (c) 2009 SATOH Fumiyasu @ OSS Technology, Inc.
+## Copyright (c) 2009 SATOH Fumiyasu @ OSS Technology Corp., Japan
 ##               <http://www.osstech.co.jp/>
 ##
 ## License: GNU General Public License version 2 or later

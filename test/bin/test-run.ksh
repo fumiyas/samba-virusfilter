@@ -3,7 +3,7 @@
 ## test-run.ksh: Provides a simple framework for writing test scripts
 ##               (Test::More Perl module clone)
 ##
-## Copyright (C) 2010-2011 SATOH Fumiyasu @ OSS Technology, Inc.
+## Copyright (C) 2010-2011 SATOH Fumiyasu @ OSS Technology Corp., Japan
 ## Copyright (C) 2003-2004 SATOH Fumiyasu @ MIRACLE LINUX Corporation
 ##
 ## This program is free software; you can redistribute it and/or modify
