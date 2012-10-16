@@ -837,6 +837,12 @@ static int svf_vfs_close(
 		return close_result;
 	}
 
+	if (svf_h->exclude_files && is_in_path(fname, svf_h->exclude_files, false)) {
+                DEBUG(5, ("Not scanned: exclude files: %s/%s\n",
+			conn->connectpath, fname));
+		return close_result;
+	}
+
 	scan_result = svf_scan(vfs_h, svf_h, fsp->fsp_name);
 
 	switch (scan_result) {
