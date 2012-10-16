@@ -154,8 +154,6 @@ static int svf_destruct_config(svf_handle *svf_h)
 	svf_module_destruct_config(svf_h);
 #endif
 
-	TALLOC_FREE(svf_h);
-
 	return 0;
 }
 
