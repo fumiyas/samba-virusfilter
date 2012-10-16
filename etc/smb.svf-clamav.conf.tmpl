@@ -6,6 +6,9 @@
 
 vfs objects = svf-clamav
 
+## ClamAV clamd local socket
+svf-clamav:socket path = /var/run/clamav/clamd.ctl
+
 ## Scan files while opening
 ## default: yes
 svf-clamav:scan on open = yes
