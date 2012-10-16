@@ -181,7 +181,7 @@ static int svf_vfs_connect(
 	SMB_VFS_HANDLE_SET_DATA(vfs_h,
 		svf_h,
 		NULL,
-		svf_handle *,
+		svf_handle,
 		return -1);
 
 #ifdef SVF_DEFAULT_SCAN_REQUEST_LIMIT
