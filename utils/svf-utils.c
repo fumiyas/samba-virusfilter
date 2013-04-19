@@ -800,7 +800,12 @@ void svf_cache_remove(svf_cache_handle *cache_h, svf_cache_entry *cache_e)
 	DEBUG(10,("Purging cache entry: %s\n", cache_e->fname));
 
 	if (cache_h->end == cache_e) {
-		cache_h->end = cache_e->prev;
+                if (cache_e = cache_e-> prev) {
+                        // its the last entry in the list
+                        cache_h->end = NULL;
+                } else {
+                        cache_h->end = cache_e->prev;
+                }
 	}
 	cache_h->entry_num--;
 	DLIST_REMOVE(cache_h->list, cache_e);
