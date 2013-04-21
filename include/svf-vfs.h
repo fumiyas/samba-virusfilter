@@ -930,6 +930,7 @@ static int svf_vfs_rename(
 		scan_cache_e = svf_cache_get(svf_h->cache_h, fname, -1);
 		if (scan_cache_e) {
 			svf_cache_remove(svf_h->cache_h, scan_cache_e);
+			svf_cache_entry_free(scan_cache_e);
 		}
 
 		fname = smb_fname_src->base_name;
