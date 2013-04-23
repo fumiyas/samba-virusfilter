@@ -1,9 +1,10 @@
 SATOH Fumiyasu:
 
+  * Replace own "stupid" result cache implementation with
+    Samba memcache implementation
   * Support other anti-virus engines:
     * External command
     * ... and so on
-  * Samba 3.6+ support
   * Extend quarantine options:
     * quarantine keep tree = yes
     * quarantine keep name = yes
