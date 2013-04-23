@@ -307,8 +307,10 @@ function test_assert_zero
   typeset name="$1"; shift
 
   if [ x"$got" = x"0" ]; then
+    test_verbose 3 "test_assert_zero: $name: expected=0"
     test_result "OK" "$name"
   else
+    test_verbose 1 "test_assert_zero: $name: expected=0: got=$got"
     test_result "Not OK" "$name"
   fi
 }
@@ -320,8 +322,10 @@ function test_assert_not_zero
   typeset name="$1"; shift
 
   if [ x"$got" != x"0" ]; then
+    test_verbose 3 "test_assert_not_zero: $name: expected!=0"
     test_result "OK" "$name"
   else
+    test_verbose 1 "test_assert_not_zero: $name: expected!=0: got=$got"
     test_result "Not OK" "$name"
   fi
 }
@@ -332,8 +336,10 @@ function test_assert_empty
   typeset name="$1"; shift
 
   if [ x"$got" = x"" ]; then
+    test_verbose 3 "test_assert_empty: $name: expected=EMPTY"
     test_result "OK" "$name"
   else
+    test_verbose 1 "test_assert_empty: $name: expected=EMPTY: got=$got"
     test_result "Not OK" "$name"
   fi
 }
@@ -346,8 +352,10 @@ function test_assert_eq
   typeset name="$1"; shift
 
   if [ x"$got" = x"$expected" ]; then
+    test_verbose 3 "test_assert_eq: $name: expected=$expected"
     test_result "OK" "$name"
   else
+    test_verbose 1 "test_assert_eq: $name: expected=$expected: got=$got"
     test_result "Not OK" "$name"
   fi
 }
@@ -360,8 +368,10 @@ function test_assert_not_eq
   typeset name="$1"; shift
 
   if [ x"$got" != x"not_expected" ]; then
+    test_verbose 3 "test_assert_not_eq: $name: expected!=$expected"
     test_result "OK" "$name"
   else
+    test_verbose 1 "test_assert_not_eq: $name: expected!=$expected: got=$got"
     test_result "Not OK" "$name"
   fi
 }
@@ -374,9 +384,11 @@ function test_assert_match
 
   case X"$got" in
   X$expected)
+    test_verbose 3 "test_assert_match: $name: expected=$expected"
     test_result "OK" "$name"
     ;;
   *)
+    test_verbose 1 "test_assert_match: $name: expected=$expected: got=$got"
     test_result "Not OK" "$name"
     ;;
   esac
@@ -390,9 +402,11 @@ function test_assert_not_match
 
   case X"$got" in
   X$expected)
+    test_verbose 1 "test_assert_not_match: $name: expected!=$expected: got=$got"
     test_result "Not OK" "$name"
     ;;
   *)
+    test_verbose 3 "test_assert_not_match: $name: expected!=$expected"
     test_result "OK" "$name"
     ;;
   esac

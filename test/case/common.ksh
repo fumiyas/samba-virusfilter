@@ -220,6 +220,20 @@ function tc_option_scan_error_command
   tcu_scanner_continue
 }
 
+function tc_option_cache_time_limit
+{
+  typeset tc="cache time limit"
+
+  test_verbose 0 "Testing 'cache time limit' option"
+  tu_reset
+
+  tu_smb_conf_append_svf_option "cache time limit = 999"
+  tcx_get_safe_file "$tc" --get-count 2
+
+  tu_smb_conf_append_svf_option "cache time limit = 1"
+  tcx_get_safe_file "$tc exceeded" --get-count 2 --get-count-interval 2
+}
+
 ## ======================================================================
 
 function tcs_common
@@ -232,6 +246,7 @@ function tcs_common
   tc_option_infected_file_action_quarantine
   tc_option_infected_file_command
   tc_option_scan_error_command
+  tc_option_cache_time_limit
 }
 
 function tcs_scanner_socket
@@ -262,6 +277,8 @@ function tcx_get_safe_file
   typeset opt
   typeset suffix=""
   typeset fail_with=""
+  typeset get_count="1"
+  typeset get_count_interval="0"
   typeset scan_error_command_env_out=""
   typeset hostname=$(hostname |sed 's/\..*//')
   typeset -u hostname_upper="$hostname"
@@ -273,6 +290,12 @@ function tcx_get_safe_file
       ;;
     --fail-with)
       fail_with="$1"; shift
+      ;;
+    --get-count)
+      get_count="$1"; shift
+      ;;
+    --get-count-interval)
+      get_count_interval="$1"; shift
       ;;
     --scan-error-command-env-out)
       scan_error_command_env_out="$1"; shift
@@ -290,7 +313,13 @@ function tcx_get_safe_file
 
     file="$T_file_prefix.$size$suffix"
     out=$(
-      print -r "get \"$file\" /dev/null" \
+      while [ $get_count -gt 0 ]; do
+	print -r "get \"$file\" /dev/null"
+	if [ "$get_count" -gt 1 ] && [ "$get_count_interval" -gt 0 ]; then
+	  sleep "$get_count_interval"
+	fi
+	let get_count-=1
+      done \
       |tu_smbclient
     )
     if [ -z "$fail_with" ]; then
