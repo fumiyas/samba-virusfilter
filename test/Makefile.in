@@ -25,6 +25,7 @@ SUBST_ARGS=		TEST_DIR="$(TEST_DIR)" \
 			TEST_SAMBA_SBIN_DIR="$(SAMBA_SOURCE_DIR)/bin" \
 			TEST_SAMBA_LIB_DIR="$(SAMBA_SOURCE_DIR)/bin" \
 
+TEST_OPTIONS=
 TEST_MODULES=		@TEST_MODULES@
 TEST_DIR=		$(PWD)
 TEST_DIRS=		tmp log
@@ -54,7 +55,7 @@ $(SMBD_WRAPPER):: $(SMBD_WRAPPER).tmpl
 test check: $(TEST_DIRS)
 	for module in $(TEST_MODULES); do \
 	  echo "Testing $$module ..."; \
-	  ./bin/test-run.cmd case/$$module.ksh || { \
+	  ./bin/test-run.cmd $(TEST_OPTIONS) case/$$module.ksh || { \
 	    echo "Testing $$module failed." 1>&2; \
 	    exit 1; \
 	  }; \
