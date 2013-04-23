@@ -309,7 +309,7 @@ static int svf_vfs_connect(
 	}
 #endif
 
-	if (svf_h->cache_entry_limit >= 0) {
+	if (svf_h->cache_entry_limit > 0) {
 		svf_h->cache_h = svf_cache_new(vfs_h,
 			svf_h->cache_entry_limit, svf_h->cache_time_limit);
 		if (!svf_h->cache_h) {
