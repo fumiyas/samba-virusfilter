@@ -234,6 +234,29 @@ function tc_option_cache_time_limit
   tcx_get_safe_file "$tc exceeded" --get-count 2 --get-count-interval 2
 }
 
+function tc_option_cache_entry_limit
+{
+  typeset tc="cache entry limit"
+
+  test_verbose 0 "Testing 'cache entry limit' option"
+  tu_reset
+
+  typeset limit
+  for limit in 1 5 1000; do
+    tu_smb_conf_append_svf_option "cache entry limit = $limit"
+    tcx_get_safe_files_on_a_session "$tc=$limit"
+    tcx_get_safe_files_on_a_session "$tc=$limit, 2 times" \
+      --file-size-list "$T_file_size_list $T_file_size_list"
+    tcx_get_safe_files_on_a_session "$tc=$limit, 2 times in series" \
+      --file-size-list "`echo $T_file_size_list $T_file_size_list |tr ' ' '\n' |sort -n`"
+    tcx_get_virus_files_on_a_session "$tc=$limit"
+    tcx_get_virus_files_on_a_session "$tc=$limit, 2 times" \
+      --file-size-list "$T_file_size_list $T_file_size_list"
+    tcx_get_virus_files_on_a_session "$tc=$limit, 2 times in series" \
+      --file-size-list "`echo $T_file_size_list $T_file_size_list |tr ' ' '\n' |sort -n`"
+  done
+}
+
 ## ======================================================================
 
 function tcs_common
@@ -537,10 +560,14 @@ function tcx_get_safe_files_on_a_session
   typeset out file size
 
   typeset opt
+  typeset size_list="$T_file_size_list"
   typeset suffix=""
   while [ "$#" -gt 0 ]; do
     opt="$1"; shift
     case "$opt" in
+    --file-size-list)
+      size_list="$1"; shift
+      ;;
     --filename-suffix)
       suffix="$1"; shift
       ;;
@@ -551,7 +578,7 @@ function tcx_get_safe_files_on_a_session
   done
 
   out=$(
-    for size in $T_file_size_list; do
+    for size in $size_list; do
       file="$T_file_prefix.$size$suffix"
       print -r "get \"$file\" /dev/null"
     done \
@@ -569,6 +596,7 @@ function tcx_get_virus_files_on_a_session
   typeset file_num deneied_num unknown_num
 
   typeset opt
+  typeset size_list="$T_file_size_list"
   typeset suffix=""
   typeset exclude_files=""
   typeset min_file_size=""
@@ -577,6 +605,9 @@ function tcx_get_virus_files_on_a_session
   while [ "$#" -gt 0 ]; do
     opt="$1"; shift
     case "$opt" in
+    --file-size-list)
+      size_list="$1"; shift
+      ;;
     --filename-suffix)
       suffix="$1"; shift
       ;;
@@ -599,7 +630,7 @@ function tcx_get_virus_files_on_a_session
   done
 
   out=$(
-    for size in $T_file_size_list; do
+    for size in $size_list; do
       file="$T_file_virus.$size$suffix"
       print -r "get \"$file\" /dev/null"
     done \
@@ -607,7 +638,7 @@ function tcx_get_virus_files_on_a_session
   )
 
   typeset excluded_num=0
-  for size in $T_file_size_list; do
+  for size in $size_list; do
     file="$T_file_virus.$size$suffix"
     typeset excluded=
     [ -n "$min_file_size" ] && [ "$size" -lt "$min_file_size" ] && excluded="yes"
@@ -618,7 +649,7 @@ function tcx_get_virus_files_on_a_session
     fi
   done
 
-  file_num=$(set -- $T_file_size_list; echo $#)
+  file_num=$(set -- $size_list; echo $#)
   deneied_num=$(print -nr "$out" |grep '^NT_STATUS_ACCESS_DENIED ' |wc -l)
   unknown_num=$(print -nr "$out" |grep -v '^NT_STATUS_ACCESS_DENIED ' |wc -l)
   [ "$deneied_num" -eq $((file_num - excluded_num)) ] && [ "$unknown_num" -eq 0 ]
