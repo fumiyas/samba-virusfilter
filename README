@@ -24,8 +24,13 @@ Supported Anti-Virus engines
 Source repository
 ======================================================================
 
-  https://bitbucket.org/fumiyas/samba-virusfilter (primary)
-  https://github.com/fumiyas/samba-virusfilter    (backup)
+  https://github.com/fumiyas/samba-virusfilter    (primary)
+  https://bitbucket.org/fumiyas/samba-virusfilter (backup)
+
+Downloads
+======================================================================
+
+  https://bitbucket.org/fumiyas/samba-virusfilter/downloads
 
 Commercial support for Samba & Samba-VirusFilter
 ======================================================================
