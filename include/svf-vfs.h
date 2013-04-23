@@ -952,11 +952,7 @@ static int svf_vfs_rename(
 static struct vfs_fn_pointers vfs_svf_fns = {
 	.connect_fn =	svf_vfs_connect,
 	.disconnect =	svf_vfs_disconnect,
-#if SAMBA_VERSION_NUMBER >= 30600
 	.open_fn =	svf_vfs_open,
-#else
-	.open =		svf_vfs_open,
-#endif
 	.close_fn =	svf_vfs_close,
 	.unlink =	svf_vfs_unlink,
 	.rename =	svf_vfs_rename,

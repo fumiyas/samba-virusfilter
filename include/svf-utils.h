@@ -54,7 +54,7 @@ typedef struct svf_cache_entry {
 } svf_cache_entry;
 
 typedef struct {
-	svf_cache_entry *list, *end;
+	svf_cache_entry *list;
 	int entry_num;
 	int entry_limit;
 	time_t time_limit;
@@ -70,14 +70,10 @@ typedef struct {
 
 char *svf_string_sub(TALLOC_CTX *mem_ctx, connection_struct *conn, const char *str);
 int svf_url_quote(const char *src, char *dst, int dst_size);
-#if SAMBA_VERSION_NUMBER >= 30600
 int svf_vfs_next_move(
 	vfs_handle_struct *handle,
 	const struct smb_filename *smb_fname_src,
 	const struct smb_filename *smb_fname_dst);
-#else
-#define svf_vfs_next_move SMB_VFS_NEXT_RENAME
-#endif
 
 /* Line-based socket I/O */
 svf_io_handle *svf_io_new(TALLOC_CTX *mem_ctx, int connect_timeout, int timeout);

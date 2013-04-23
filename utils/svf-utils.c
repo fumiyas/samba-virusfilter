@@ -740,7 +740,7 @@ void svf_cache_purge(svf_cache_handle *cache_h)
 
 	DEBUG(10,("Crawling cache entries to find purge entry\n"));
 
-	for (cache_e = cache_h->end; cache_e; cache_e = cache_h->end) {
+	while ((cache_e = DLIST_TAIL(cache_h->list)) != NULL) {
 		time_t time_age = time_now - cache_e->time;
 		DEBUG(10,("Checking cache entry: fname=%s, age=%ld\n", cache_e->fname, (long)time_age));
 		if (cache_h->entry_num <= cache_h->entry_limit &&
@@ -781,11 +781,7 @@ void svf_cache_add(svf_cache_handle *cache_h, svf_cache_entry *cache_e)
 	cache_e->time = time(NULL);
 
 	DLIST_ADD(cache_h->list, cache_e);
-
 	cache_h->entry_num++;
-	if (!cache_h->end) {
-		cache_h->end = cache_e;
-	}
 
 	svf_cache_purge(cache_h);
 }
@@ -794,9 +790,6 @@ void svf_cache_remove(svf_cache_handle *cache_h, svf_cache_entry *cache_e)
 {
 	DEBUG(10,("Purging cache entry: %s\n", cache_e->fname));
 
-	if (cache_h->end == cache_e) {
-		cache_h->end = cache_e->prev;
-	}
 	cache_h->entry_num--;
 	DLIST_REMOVE(cache_h->list, cache_e);
 }
