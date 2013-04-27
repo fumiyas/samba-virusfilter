@@ -1,6 +1,8 @@
-Samba-VirusFilter 0.1.4 (not yet released)
+Samba-VirusFilter 0.1.4 (2013-04-28)
   * Drop Samba 3.5.x support
   * Fix SEGV when the result cache becomes empty
+    (Thanks to @steve999lee for reporting this issue #2)
+  * Fix memory leak on rename
 
 Samba-VirusFilter 0.1.3 (2011-11-22)
 
