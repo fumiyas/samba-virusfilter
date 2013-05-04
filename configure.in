@@ -57,8 +57,7 @@ AC_ARG_WITH(
       AC_MSG_RESULT([using $SAMBA_SOURCE_DIR for the Samba source])
       ;;
     esac
-  ],
-  []
+  ]
 )
 
 if test -z "$SAMBA_SOURCE_DIR"; then
