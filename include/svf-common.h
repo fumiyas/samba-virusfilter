@@ -19,6 +19,8 @@
 #ifndef _SVF_COMMON_H
 #define _SVF_COMMON_H
 
+#include <stdint.h>
+#include <time.h>
 /* Samba common include file */
 #include "includes.h"
 
@@ -29,6 +31,7 @@
 #include "auth.h"
 #include "passdb.h"
 #include "../librpc/gen_ndr/ndr_netlogon.h"
+#include "../lib/tsocket/tsocket.h"
 
 #if (SMB_VFS_INTERFACE_VERSION < 28)
 #error "Samba 3.6+ required (SMB_VFS_INTERFACE_VERSION >= 28)"
@@ -73,12 +76,16 @@ typedef enum {
 } svf_result;
 
 #define conn_session_info(conn)		((conn)->session_info)
-#define conn_socket(conn)		((conn)->sconn->sock)
-#define conn_domain_name(conn)		((conn)->session_info->info3->base.domain.string)
-#define conn_client_name(conn)		((conn)->sconn->client_id.name)
-#define conn_client_addr(conn, addr)	((conn)->sconn->client_id.addr)
+#if SAMBA_VERSION_NUMBER >= 40200
+# define conn_socket(conn)		((conn)->transport.sock)
+#else
+# define conn_socket(conn)		((conn)->sconn->sock)
+#endif
+#define conn_domain_name(conn)		((conn)->session_info->info->domain_name)
+#define conn_client_name(conn)		((conn)->sconn->remote_hostname)
+#define conn_client_addr(conn)		tsocket_address_inet_addr_string((conn)->sconn->remote_address, talloc_tos())
 
-#define conn_server_addr(conn, addr)	client_socket_addr(conn_socket(conn), (addr), sizeof(addr));
+#define conn_server_addr(conn)	tsocket_address_inet_addr_string((conn)->sconn->local_address, talloc_tos())
 
 #endif /* _SVF_COMMON_H */
 

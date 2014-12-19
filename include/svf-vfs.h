@@ -22,7 +22,7 @@
 #include "svf-common.h"
 #include "svf-utils.h"
 
-#define SVF_MODULE_NAME "svf-" SVF_MODULE_ENGINE
+#define SVF_MODULE_NAME "svf_" SVF_MODULE_ENGINE
 
 /* Default configuration values
  * ====================================================================== */
@@ -164,15 +164,15 @@ static int svf_vfs_connect(
 {
 	int snum = SNUM(vfs_h->conn);
 	svf_handle *svf_h;
-	char *exclude_files;
+	const char *exclude_files;
 #ifdef SVF_DEFAULT_SOCKET_PATH
 	int connect_timeout, io_timeout;
 #endif
 
 
-	svf_h = TALLOC_ZERO_P(vfs_h, svf_handle);
+	svf_h = talloc_zero(vfs_h, svf_handle);
 	if (!svf_h) {
-		DEBUG(0, ("TALLOC_ZERO_P failed\n"));
+		DEBUG(0, ("talloc_zero failed\n"));
 		return -1;
 	}
 
@@ -227,13 +227,12 @@ static int svf_vfs_connect(
 		"min file size",
 		SVF_DEFAULT_MIN_FILE_SIZE);
 
-        exclude_files = lp_parm_talloc_string(
+        exclude_files = lp_parm_const_string(
 		snum, SVF_MODULE_NAME,
 		"exclude files",
 		SVF_DEFAULT_EXCLUDE_FILES);
 	if (exclude_files) {
 		set_namearray(&svf_h->exclude_files, exclude_files);
-		TALLOC_FREE(exclude_files);
 	}
 
         svf_h->cache_entry_limit = lp_parm_int(
@@ -377,7 +376,6 @@ static svf_action svf_do_infected_file_action(
 	char *q_prefix;
 	char *q_filepath;
 	int q_fd;
-	NTSTATUS status;
 
 	switch (svf_h->infected_file_action) {
 	case SVF_ACTION_QUARANTINE:
@@ -408,7 +406,7 @@ static svf_action svf_do_infected_file_action(
 		if (q_fd == -1) {
 			unbecome_root();
 			DEBUG(0,("Quarantine failed: %s/%s: "
-				"Cannot open destination: %s: %s",
+				"Cannot open destination: %s: %s\n",
 				conn->connectpath,
 				smb_fname->base_name,
 				q_filepath, strerror(errno)));
@@ -416,12 +414,18 @@ static svf_action svf_do_infected_file_action(
 		}
 		close(q_fd);
 
+#if SAMBA_VERSION_NUMBER >= 40100
+		q_smb_fname = synthetic_smb_fname(mem_ctx, q_filepath, smb_fname->stream_name, NULL);
+		if (q_smb_fname == NULL) {
+#else
+		NTSTATUS status;
 		status = create_synthetic_smb_fname(mem_ctx,
 			q_filepath,
 			smb_fname->stream_name,
 			NULL,
 			&q_smb_fname);
 		if (!NT_STATUS_IS_OK(status)) {
+#endif
 			unlink(q_filepath);
 			unbecome_root();
 			return SVF_ACTION_DO_NOTHING;
@@ -429,7 +433,7 @@ static svf_action svf_do_infected_file_action(
 
 		if (svf_vfs_next_move(vfs_h, smb_fname, q_smb_fname) == -1) {
 			unbecome_root();
-			DEBUG(0,("Quarantine failed: %s/%s: Rename failed: %s",
+			DEBUG(0,("Quarantine failed: %s/%s: Rename failed: %s\n",
 				conn->connectpath,
 				smb_fname->base_name,
 				strerror(errno)));
@@ -445,7 +449,7 @@ static svf_action svf_do_infected_file_action(
 		become_root();
 		if (SMB_VFS_NEXT_UNLINK(vfs_h, smb_fname) == -1) {
 			unbecome_root();
-			DEBUG(0,("Delete failed: %s/%s: Unlink failed: %s",
+			DEBUG(0,("Delete failed: %s/%s: Unlink failed: %s\n",
 				conn->connectpath,
 				smb_fname->base_name,
 				strerror(errno)));
@@ -821,12 +825,14 @@ static int svf_vfs_close(
 	if (fsp->is_directory) {
                 DEBUG(5, ("Not scanned: Directory: %s/%s\n",
 			conn->connectpath, fname));
+		TALLOC_FREE(mem_ctx);
 		return close_result;
 	}
 
 	if (!svf_h->scan_on_close) {
                 DEBUG(5, ("Not scanned: scan on close is disabled: %s/%s\n",
 			conn->connectpath, fname));
+		TALLOC_FREE(mem_ctx);
 		return close_result;
 	}
 
@@ -834,12 +840,14 @@ static int svf_vfs_close(
 		DEBUG(3, ("Not scanned: File not modified: %s/%s\n",
 			conn->connectpath, fname));
 
+		TALLOC_FREE(mem_ctx);
 		return close_result;
 	}
 
 	if (svf_h->exclude_files && is_in_path(fname, svf_h->exclude_files, false)) {
                 DEBUG(5, ("Not scanned: exclude files: %s/%s\n",
 			conn->connectpath, fname));
+		TALLOC_FREE(mem_ctx);
 		return close_result;
 	}
 
@@ -951,14 +959,14 @@ static int svf_vfs_rename(
 /* VFS operations */
 static struct vfs_fn_pointers vfs_svf_fns = {
 	.connect_fn =	svf_vfs_connect,
-	.disconnect =	svf_vfs_disconnect,
+	.disconnect_fn =svf_vfs_disconnect,
 	.open_fn =	svf_vfs_open,
 	.close_fn =	svf_vfs_close,
-	.unlink =	svf_vfs_unlink,
-	.rename =	svf_vfs_rename,
+	.unlink_fn =	svf_vfs_unlink,
+	.rename_fn =	svf_vfs_rename,
 };
 
-NTSTATUS init_samba_module(void)
+NTSTATUS samba_init_module(void)
 {
 	NTSTATUS ret;
 
