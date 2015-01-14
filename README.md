@@ -46,3 +46,26 @@ Contributors
   * Luke Dixon <luke.dixon@zynstra.com>
     * Samba 4 support
 
+TODO
+---------------------------------------------------------------------
+
+  * Remove a cache entry on close if file was modified
+  * Replace own "stupid" result cache implementation with
+    Samba memcache implementation or others
+  * Support other anti-virus engines:
+    * External command
+    * misc.
+  * Extend quarantine options:
+    * `svf-*:quarantine keep tree = yes`
+    * `svf-*:quarantine keep name = yes`
+    * `svf-*:quarantine suffix = .infected`
+  * Support "rename" action:
+    * `svf-*:infected file action = rename`
+    * `svf-*:rename prefix = svf.`
+    * `svf-*:rename suffix = .infected`
+  * More test cases
+    * Use Bats? (https://github.com/sstephenson/bats)
+  * Documentation
+  * clamd privileges (root or group that has rights to access Samba shares)
+  * How to determine `svf-*.so` is affected or not by reading Samba log file
+
