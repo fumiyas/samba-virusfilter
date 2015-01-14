@@ -58,11 +58,11 @@ void *memmem(const void *m1, size_t m1_len, const void *m2, size_t m2_len)
 char *svf_string_sub(TALLOC_CTX *mem_ctx, connection_struct *conn, const char *str)
 {
 	return talloc_sub_advanced(mem_ctx,
-		lp_servicename(SNUM(conn)),
-		conn_session_info(conn)->unix_name,
+		lp_servicename(mem_ctx, SNUM(conn)),
+		conn_session_info(conn)->unix_info->unix_name,
 		conn->connectpath,
-		conn_session_info(conn)->utok.gid,
-		conn_session_info(conn)->sanitized_username,
+		conn_session_info(conn)->unix_token->gid,
+		conn_session_info(conn)->unix_info->sanitized_username,
 		conn_domain_name(conn),
 		str);
 }
@@ -129,16 +129,16 @@ static int svf_copy_reg(const char *source, const char *dest)
 	}
 #endif
 
-	if((ifd = sys_open (source, O_RDONLY, 0)) < 0)
+	if((ifd = open (source, O_RDONLY, 0)) < 0)
 		return -1;
 
 	if (unlink (dest) && errno != ENOENT)
 		return -1;
 
 #ifdef O_NOFOLLOW
-	if((ofd = sys_open (dest, O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW, 0600)) < 0 )
+	if((ofd = open (dest, O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW, 0600)) < 0 )
 #else
-	if((ofd = sys_open (dest, O_WRONLY | O_CREAT | O_TRUNC , 0600)) < 0 )
+	if((ofd = open (dest, O_WRONLY | O_CREAT | O_TRUNC , 0600)) < 0 )
 #endif
 		goto err;
 
@@ -245,7 +245,7 @@ int svf_vfs_next_move(
 
 svf_io_handle *svf_io_new(TALLOC_CTX *mem_ctx, int connect_timeout, int io_timeout)
 {
-	svf_io_handle *io_h = TALLOC_ZERO_P(mem_ctx, svf_io_handle);
+	svf_io_handle *io_h = talloc_zero(mem_ctx, svf_io_handle);
 
 	if (!io_h) {
 		return NULL;
@@ -668,10 +668,13 @@ svf_result svf_io_writefl_readl(svf_io_handle *io_h, const char *fmt, ...)
 		}
 	}
 
-	if (svf_io_readl(io_h) != SVF_RESULT_OK) {
+	svf_result result = svf_io_readl(io_h);
+	if (result != SVF_RESULT_OK) {
+		DEBUG(0,("svf_io_readl not OK: %d\n", result));
 		return SVF_RESULT_ERROR;
 	}
 	if (io_h->r_size == 0) { /* EOF */
+		DEBUG(0,("svf_io_readl EOF\n"));
 		return SVF_RESULT_ERROR; /* FIXME: SVF_RESULT_EOF? */
 	}
 
@@ -683,9 +686,9 @@ svf_result svf_io_writefl_readl(svf_io_handle *io_h, const char *fmt, ...)
 
 svf_cache_handle *svf_cache_new(TALLOC_CTX *ctx, int entry_limit, time_t time_limit)
 {
-	svf_cache_handle *cache_h = TALLOC_ZERO_P(ctx, svf_cache_handle);
+	svf_cache_handle *cache_h = talloc_zero(ctx, svf_cache_handle);
 	if (!cache_h) {
-		DEBUG(0,("TALLOC_ZERO_P failed\n"));
+		DEBUG(0,("talloc_zero failed\n"));
 		return NULL;
 	}
 	cache_h->entry_limit = entry_limit;
@@ -699,7 +702,7 @@ svf_cache_entry *svf_cache_entry_new(
 	const char *fname,
 	int fname_len)
 {
-	svf_cache_entry *cache_e = TALLOC_ZERO_P(cache_h, svf_cache_entry);
+	svf_cache_entry *cache_e = talloc_zero(cache_h, svf_cache_entry);
 
 	if (!cache_e) {
 		return NULL;
@@ -799,15 +802,15 @@ void svf_cache_remove(svf_cache_handle *cache_h, svf_cache_entry *cache_e)
 
 svf_env_struct *svf_env_new(TALLOC_CTX *ctx)
 {
-	svf_env_struct *env_h = TALLOC_ZERO_P(ctx, svf_env_struct);
+	svf_env_struct *env_h = talloc_zero(ctx, svf_env_struct);
 	if (!env_h) {
-		DEBUG(0, ("TALLOC_ZERO_P failed\n"));
+		DEBUG(0, ("talloc_zero failed\n"));
 		goto svf_env_init_failed;
 	}
 
 	env_h->env_num = 0;
 	env_h->env_size = SVF_ENV_SIZE_CHUNK;
-	env_h->env_list = TALLOC_ARRAY(env_h, char *, env_h->env_size);
+	env_h->env_list = talloc_array(env_h, char *, env_h->env_size);
 	if (!env_h->env_list) {
 		DEBUG(0, ("TALLOC_ARRAY failed\n"));
 		goto svf_env_init_failed;
@@ -847,7 +850,7 @@ int svf_env_set(svf_env_struct *env_h, const char *name, const char *value)
 		if (env_h->env_size == env_h->env_num + 1) {
 			/* Enlarge env_h->env_list */
 			size_t env_size_new = env_h->env_size + SVF_ENV_SIZE_CHUNK;
-			char **env_list_new = TALLOC_REALLOC_ARRAY(
+			char **env_list_new = talloc_realloc(
 				env_h, env_h->env_list, char *, env_size_new);
 			if (!env_list_new) {
 				DEBUG(0,("TALLOC_REALLOC_ARRAY failed\n"));
@@ -895,33 +898,33 @@ int svf_env_set(svf_env_struct *env_h, const char *name, const char *value)
 int svf_shell_set_conn_env(svf_env_struct *env_h, connection_struct *conn)
 {
 	int snum = SNUM(conn);
-	char addr[INET6_ADDRSTRLEN];
-	const char *addr_p;
-	const char *local_machine_name = get_local_machine_name();
+	const char *server_addr_p;
+	char *client_addr_p;
+	char *local_machine_name = (char *)get_local_machine_name();
 	fstring pidstr;
 
 	if (!local_machine_name || !*local_machine_name) {
-		local_machine_name = global_myname();
+		local_machine_name = (char *)lp_netbios_name();
 	}
 
-	addr_p = conn_server_addr(conn, addr);
-	if (strncmp("::ffff:", addr_p, 7) == 0) {
-		addr_p += 7;
+	server_addr_p = conn_server_addr(conn);
+	if (strncmp("::ffff:", server_addr_p, 7) == 0) {
+		server_addr_p += 7;
 	}
-	svf_env_set(env_h, "SVF_SERVER_IP", addr_p);
+	svf_env_set(env_h, "SVF_SERVER_IP", server_addr_p);
 	svf_env_set(env_h, "SVF_SERVER_NAME", myhostname());
 	svf_env_set(env_h, "SVF_SERVER_NETBIOS_NAME", local_machine_name);
-	slprintf(pidstr,sizeof(pidstr)-1, "%ld", (long)sys_getpid());
+	slprintf(pidstr,sizeof(pidstr)-1, "%ld", (long)getpid());
 	svf_env_set(env_h, "SVF_SERVER_PID", pidstr);
 
-	svf_env_set(env_h, "SVF_SERVICE_NAME", lp_servicename(snum));
+	svf_env_set(env_h, "SVF_SERVICE_NAME", lp_const_servicename(snum));
 	svf_env_set(env_h, "SVF_SERVICE_PATH", conn->connectpath);
 
-	addr_p = conn_client_addr(conn, addr);
-	if (strncmp("::ffff:", addr_p, 7) == 0) {
-		addr_p += 7;
+	client_addr_p = conn_client_addr(conn);
+	if (strncmp("::ffff:", client_addr_p, 7) == 0) {
+		client_addr_p += 7;
 	}
-	svf_env_set(env_h, "SVF_CLIENT_IP", addr_p);
+	svf_env_set(env_h, "SVF_CLIENT_IP", client_addr_p);
 	svf_env_set(env_h, "SVF_CLIENT_NAME", conn_client_name(conn));
 	svf_env_set(env_h, "SVF_CLIENT_NETBIOS_NAME", get_remote_machine_name());
 
@@ -970,7 +973,7 @@ int svf_shell_run(
 
 	CatchChildLeaveStatus();
 
-	if ((pid=sys_fork()) < 0) {
+	if ((pid=fork()) < 0) {
 		DEBUG(0,("svf_run: fork failed with error %s\n", strerror(errno)));
 		CatchChild();
 #ifdef SVF_RUN_OUTFD_SUPPORT
