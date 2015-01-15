@@ -49,9 +49,11 @@ Contributors
 TODO
 ---------------------------------------------------------------------
 
+  * More enhancements, fixes and others for Samba 4.x
   * Remove a cache entry on close if file was modified
+    when `svf-*:scan on open = yes` and `svf-*:scan on close = no`
   * Replace own "stupid" result cache implementation with
-    Samba memcache implementation or others
+    Samba memcache implementation or another
   * Support other anti-virus engines:
     * External command
     * misc.
