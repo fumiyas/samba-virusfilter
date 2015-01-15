@@ -49,11 +49,16 @@ Contributors
 TODO
 ---------------------------------------------------------------------
 
+For Samba 4 integration / inclusion:
+
   * More enhancements, fixes and others for Samba 4.x
-  * Remove a cache entry on close if file was modified
-    when `svf-*:scan on open = yes` and `svf-*:scan on close = no`
   * Replace own "stupid" result cache implementation with
     Samba memcache implementation or another
+
+For general:
+
+  * Remove a cache entry on close if file was modified
+    when `svf-*:scan on open = yes` and `svf-*:scan on close = no`
   * Support other anti-virus engines:
     * External command
     * misc.
@@ -69,5 +74,4 @@ TODO
     * Use Bats? (https://github.com/sstephenson/bats)
   * Documentation
   * clamd privileges (root or group that has rights to access Samba shares)
-  * How to determine `svf-*.so` is affected or not by reading Samba log file
 
