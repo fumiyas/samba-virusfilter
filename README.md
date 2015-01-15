@@ -51,7 +51,10 @@ TODO
 
 For Samba 4 integration / inclusion:
 
-  * More enhancements, fixes and others for Samba 4.x
+  * More enhancements, fixes and others for Samba 4.x and
+    remove Samba 3.x support
+  * Use and add test suite in Samba source
+  * Write manpages
   * Replace own "stupid" result cache implementation with
     Samba memcache implementation or another
 
@@ -72,6 +75,5 @@ For general:
     * `svf-*:rename suffix = .infected`
   * More test cases
     * Use Bats? (https://github.com/sstephenson/bats)
-  * Documentation
   * clamd privileges (root or group that has rights to access Samba shares)
 
