@@ -48,6 +48,7 @@
 
 #define SVF_DEFAULT_QUARANTINE_DIRECTORY	VARDIR "/svf/quarantine"
 #define SVF_DEFAULT_QUARANTINE_PREFIX		"svf."
+#define SVF_DEFAULT_QUARANTINE_SUFFIX		".infected"
 
 /* ====================================================================== */
 
@@ -102,6 +103,7 @@ typedef struct {
 	/* Quarantine infected files */
 	const char *			quarantine_dir;
 	const char *			quarantine_prefix;
+	const char *			quarantine_suffix;
 	/* Network options */
 #ifdef SVF_DEFAULT_SOCKET_PATH
         const char *			socket_path;
@@ -269,6 +271,10 @@ static int svf_vfs_connect(
 		snum, SVF_MODULE_NAME,
 		"quarantine prefix",
 		SVF_DEFAULT_QUARANTINE_PREFIX);
+        svf_h->quarantine_suffix = lp_parm_const_string(
+		snum, SVF_MODULE_NAME,
+		"quarantine suffix",
+		SVF_DEFAULT_QUARANTINE_SUFFIX);
 
         svf_h->infected_file_errno_on_open = lp_parm_int(
 		snum, SVF_MODULE_NAME,
@@ -727,11 +733,21 @@ static int svf_vfs_open(
 	svf_handle *svf_h;
 	svf_result scan_result;
 	char *fname = smb_fname->base_name;
+	char *dir_name = NULL;
+	const char *base_name = NULL;
 	int scan_errno = 0;
+	int test_prefix;
+	int test_suffix;
+	int rename_trap_count = 0;
 
 	SMB_VFS_HANDLE_GET_DATA(vfs_h, svf_h,
 				svf_handle,
 				return -1);
+
+	test_prefix = strlen(svf_h->quarantine_prefix);
+	test_suffix = strlen(svf_h->quarantine_suffix);
+	if (test_prefix) rename_trap_count++;
+	if (test_suffix) rename_trap_count++;
 
         if (!svf_h->scan_on_open) {
                 DEBUG(5, ("Not scanned: scan on open is disabled: %s/%s\n",
@@ -769,6 +785,30 @@ static int svf_vfs_open(
                 DEBUG(5, ("Not scanned: exclude files: %s/%s\n",
 			vfs_h->conn->connectpath, fname));
 		goto svf_vfs_open_next;
+	}
+
+	if (test_prefix || test_suffix)
+	{
+		if(parent_dirname(mem_ctx, smb_fname->base_name, &dir_name, &base_name)) {
+			if (test_prefix) {
+				if (strncmp(base_name, svf_h->quarantine_prefix, test_prefix) != 0) {
+					test_prefix = 0;
+				}
+			}
+			if (test_suffix) {
+				if (strcmp(base_name + (strlen(base_name) - test_suffix), svf_h->quarantine_suffix) != 0)
+				{
+					test_suffix = 0;
+				}
+			}
+
+			TALLOC_FREE(dir_name);
+
+			if ((rename_trap_count == 2 && test_prefix && test_suffix) || (rename_trap_count == 1 && (test_prefix || test_suffix))) {
+				scan_errno = svf_h->infected_file_errno_on_open;
+				goto svf_vfs_open_fail;
+			}
+		}
 	}
 
 	scan_result = svf_scan(vfs_h, svf_h, smb_fname);
