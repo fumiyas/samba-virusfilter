@@ -45,6 +45,9 @@ Contributors
 
   * Luke Dixon <luke.dixon@zynstra.com>
     * Samba 4 support
+  * Trever L. Adams
+    * Documentation
+    * Code contributions
 
 TODO
 ---------------------------------------------------------------------
@@ -54,14 +57,11 @@ For Samba 4 integration / inclusion:
   * More enhancements, fixes and others for Samba 4.x and
     remove Samba 3.x support
   * Use and add test suite in Samba source
-  * Write manpages
   * Replace own "stupid" result cache implementation with
     Samba memcache implementation or another
 
 For general:
 
-  * Remove a cache entry on close if file was modified
-    when `svf-*:scan on open = yes` and `svf-*:scan on close = no`
   * Support other anti-virus engines:
     * External command
     * misc.

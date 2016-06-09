@@ -771,11 +771,11 @@ svf_cache_entry *svf_cache_get(svf_cache_handle *cache_h, const char *fname, int
 	for (cache_e = cache_h->list; cache_e; cache_e = cache_e->next) {
 		DEBUG(10,("Checking cache entry: fname=%s\n", cache_e->fname));
 		if (cache_e->fname_len == fname_len && str_eq(cache_e->fname, fname)) {
-			break;
+			return cache_e;
 		}
 	}
 
-	return cache_e;
+	return NULL;
 }
 
 void svf_cache_add(svf_cache_handle *cache_h, svf_cache_entry *cache_e)

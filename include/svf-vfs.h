@@ -812,6 +812,7 @@ static int svf_vfs_close(
 	int close_result, close_errno;
 	svf_result scan_result;
 	int scan_errno = 0;
+	svf_cache_entry *scan_cache_e = NULL;
 
 	SMB_VFS_HANDLE_GET_DATA(vfs_h, svf_h,
 				svf_handle,
@@ -830,6 +831,17 @@ static int svf_vfs_close(
 	}
 
 	if (!svf_h->scan_on_close) {
+                if(svf_h->scan_on_open && fsp->modified)
+                {
+			if (svf_h->cache_h) {
+				DEBUG(10, ("Searching cache entry: fname: %s\n", fname));
+				scan_cache_e = svf_cache_get(svf_h->cache_h, fname, -1);
+				if (scan_cache_e) {
+					svf_cache_remove(svf_h->cache_h, scan_cache_e);
+					svf_cache_entry_free(scan_cache_e);
+				}
+			}
+                }
                 DEBUG(5, ("Not scanned: scan on close is disabled: %s/%s\n",
 			conn->connectpath, fname));
 		TALLOC_FREE(mem_ctx);
