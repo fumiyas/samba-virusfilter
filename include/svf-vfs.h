@@ -49,6 +49,8 @@
 #define SVF_DEFAULT_QUARANTINE_DIRECTORY	VARDIR "/svf/quarantine"
 #define SVF_DEFAULT_QUARANTINE_PREFIX		"svf."
 #define SVF_DEFAULT_QUARANTINE_SUFFIX		".infected"
+#define SVF_DEFAULT_QUARANTINE_KEEP_NAME	false
+#define SVF_DEFAULT_QUARANTINE_KEEP_TREE	false
 
 /* ====================================================================== */
 
@@ -56,6 +58,7 @@ int svf_debug_level = DBGC_VFS;
 
 static const struct enum_list svf_actions[] = {
 	{ SVF_ACTION_QUARANTINE,	"quarantine" },
+	{ SVF_ACTION_RENAME,		"rename" },	/* fixup for "quarantine" */
 	{ SVF_ACTION_DELETE,		"delete" },
 	{ SVF_ACTION_DELETE,		"remove" },	/* alias for "delete" */
 	{ SVF_ACTION_DELETE,		"unlink" },	/* alias for "delete" */
@@ -104,6 +107,8 @@ typedef struct {
 	const char *			quarantine_dir;
 	const char *			quarantine_prefix;
 	const char *			quarantine_suffix;
+	bool				quarantine_keep_name;
+	bool				quarantine_keep_tree;
 	/* Network options */
 #ifdef SVF_DEFAULT_SOCKET_PATH
         const char *			socket_path;
@@ -275,6 +280,22 @@ static int svf_vfs_connect(
 		snum, SVF_MODULE_NAME,
 		"quarantine suffix",
 		SVF_DEFAULT_QUARANTINE_SUFFIX);
+        svf_h->quarantine_keep_tree = lp_parm_bool(
+		snum, SVF_MODULE_NAME,
+		"quarantine keep tree",
+		SVF_DEFAULT_QUARANTINE_KEEP_TREE);
+        svf_h->quarantine_keep_name = lp_parm_bool(
+		snum, SVF_MODULE_NAME,
+		"quarantine keep name",
+		SVF_DEFAULT_QUARANTINE_KEEP_NAME);
+        svf_h->quarantine_prefix = lp_parm_const_string(
+		snum, SVF_MODULE_NAME,
+		"rename prefix",
+		SVF_DEFAULT_QUARANTINE_PREFIX);
+        svf_h->quarantine_suffix = lp_parm_const_string(
+		snum, SVF_MODULE_NAME,
+		"rename suffix",
+		SVF_DEFAULT_QUARANTINE_SUFFIX);
 
         svf_h->infected_file_errno_on_open = lp_parm_int(
 		snum, SVF_MODULE_NAME,
@@ -313,6 +334,14 @@ static int svf_vfs_connect(
 		return -1;
 	}
 #endif
+
+	/* Fixup SVF_ACTION_RENAME as it is simply an alias that *
+	 * forces keep name and keep tree for QUARANTINE. */
+	if (svf_h->infected_file_action == SVF_ACTION_RENAME){
+		svf_h->infected_file_action = SVF_ACTION_QUARANTINE;
+                svf_h->quarantine_keep_name = true;
+                svf_h->quarantine_keep_tree = true;
+	}
 
 	if (svf_h->cache_entry_limit > 0) {
 		svf_h->cache_h = svf_cache_new(vfs_h,
