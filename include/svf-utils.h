@@ -20,6 +20,11 @@
 #define _SVF_UTILS_H
 
 #include "svf-common.h"
+#include "../lib/util/memcache.h"
+
+#ifndef SVF_SCAN_RESULTS_CACHE_TALLOC
+#define SVF_SCAN_RESULTS_CACHE_TALLOC SINGLETON_CACHE_TALLOC
+#endif
 
 #define str_eq(s1, s2)		((strcmp((s1), (s2)) == 0) ? true : false)
 #define strn_eq(s1, s2, n)	((strncmp((s1), (s2), (n)) == 0) ? true : false)
@@ -45,18 +50,14 @@ typedef struct svf_io_handle {
 } svf_io_handle;
 
 typedef struct svf_cache_entry {
-	struct svf_cache_entry *prev, *next;
 	time_t time;
-	char *fname;
-	int fname_len;
 	svf_result result;
-	const char *report;
+	char *report;
 } svf_cache_entry;
 
-typedef struct {
-	svf_cache_entry *list;
-	int entry_num;
-	int entry_limit;
+typedef struct svf_cache_handle {
+	struct memcache *cache;
+	TALLOC_CTX *ctx;
 	time_t time_limit;
 } svf_cache_handle;
 
@@ -94,12 +95,12 @@ svf_result svf_io_writefl_readl(svf_io_handle *io_h, const char *fmt, ...);
 
 /* Scan result cache */
 svf_cache_handle *svf_cache_new(TALLOC_CTX *ctx, int entry_limit, time_t time_limit);
-svf_cache_entry *svf_cache_entry_new(svf_cache_handle *cache_h, const char *fname, int fname_len);
-svf_cache_entry *svf_cache_entry_rename(svf_cache_entry *cache_e, const char *fname, int fname_len);
-#define svf_cache_entry_free(cache_e) TALLOC_FREE(cache_e)
-svf_cache_entry *svf_cache_get(svf_cache_handle *cache_h, const char *fname, int fname_len);
-void svf_cache_add(svf_cache_handle *cache_h, svf_cache_entry *cache_e);
-void svf_cache_remove(svf_cache_handle *cache_h, svf_cache_entry *cache_e);
+int svf_cache_entry_add(svf_cache_handle *cache_h, const char *fname, svf_result result, const char *report);
+int svf_cache_entry_rename(svf_cache_handle *cache_h, const char *old_fname, const char *new_fname);
+void svf_cache_entry_free(svf_cache_entry *cache_e);
+svf_cache_entry *svf_cache_get(svf_cache_handle *cache_h, const char *fname);
+void svf_cache_remove(svf_cache_handle *cache_h, const char *fname);
+void svf_cache_purge(svf_cache_handle *cache_h);
 
 /* Environment variable handling for execle(2) */
 svf_env_struct *svf_env_new(TALLOC_CTX *ctx);

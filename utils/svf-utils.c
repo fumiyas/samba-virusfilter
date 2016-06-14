@@ -686,115 +686,137 @@ svf_result svf_io_writefl_readl(svf_io_handle *io_h, const char *fmt, ...)
 
 svf_cache_handle *svf_cache_new(TALLOC_CTX *ctx, int entry_limit, time_t time_limit)
 {
-	svf_cache_handle *cache_h = talloc_zero(ctx, svf_cache_handle);
+	svf_cache_handle *cache_h;
+
+	if(time_limit == 0) return NULL;
+
+	cache_h = talloc_zero(ctx, svf_cache_handle);
 	if (!cache_h) {
-		DEBUG(0,("talloc_zero failed\n"));
+		DEBUG(0,("talloc_zero failed.\n"));
 		return NULL;
 	}
-	cache_h->entry_limit = entry_limit;
+
+	cache_h->cache = memcache_init(cache_h->ctx, entry_limit * (sizeof(svf_cache_entry) + 128));
+	if (!cache_h->cache) {
+		DEBUG(0,("memcache_init failed.\n"));
+		return NULL;
+	}
+	cache_h->ctx = ctx;
 	cache_h->time_limit = time_limit;
 
 	return cache_h;
 }
 
-svf_cache_entry *svf_cache_entry_new(
+int svf_cache_entry_add(
 	svf_cache_handle *cache_h,
 	const char *fname,
-	int fname_len)
+	svf_result result,
+	const char *report)
 {
-	svf_cache_entry *cache_e = talloc_zero(cache_h, svf_cache_entry);
+	int blob_size = sizeof(svf_cache_entry);
+	svf_cache_entry *cache_e = talloc_zero_size(NULL, blob_size);
+	int fname_len = strlen(fname);
 
-	if (!cache_e) {
-		return NULL;
+	if (!cache_e || cache_h->time_limit == 0) {
+		return 0;
 	}
 
-	cache_e->fname = talloc_strdup(cache_e, fname);
-	if (!cache_e->fname) {
-		TALLOC_FREE(cache_e);
-		return NULL;
+	cache_e->result = result;
+	if (report)
+	{
+		cache_e->report = talloc_strdup(cache_e, report);
+	}
+	if (cache_h->time_limit > 0) {
+		cache_e->time = time(NULL);
 	}
 
-	cache_e->fname_len = (fname_len >= 0) ? fname_len : strlen(fname);
+	memcache_add_talloc(cache_h->cache, SVF_SCAN_RESULTS_CACHE_TALLOC,
+			 data_blob_const(fname, fname_len), &cache_e);
 
-	return cache_e;
+	return 1;
 }
 
-svf_cache_entry *svf_cache_entry_rename(
-	svf_cache_entry *cache_e,
-	const char *fname,
-	int fname_len)
+int svf_cache_entry_rename(
+	svf_cache_handle *cache_h,
+	const char *old_fname,
+	const char *new_fname)
 {
-	TALLOC_FREE(cache_e->fname);
-	cache_e->fname = talloc_strdup(cache_e, fname);
-	if (!cache_e->fname) {
-		TALLOC_FREE(cache_e);
-		return NULL;
+	int old_fname_len = strlen(old_fname);
+	int new_fname_len = strlen(new_fname);
+	svf_cache_entry *new_data;
+
+	svf_cache_entry *old_data = memcache_lookup_talloc(cache_h->cache, SVF_SCAN_RESULTS_CACHE_TALLOC,
+			     data_blob_const(old_fname, old_fname_len));
+
+	if (!old_data)
+	{
+		return 0;
 	}
 
-	cache_e->fname_len = (fname_len >= 0) ? fname_len : strlen(fname);
+	new_data = talloc_memdup(cache_h->ctx, old_data, sizeof(svf_cache_entry));
+	if (!new_data)
+	{
+		return 0;
+	}
+	new_data->report = talloc_strdup(new_data, old_data->report);
 
-	return cache_e;
+	memcache_add_talloc(cache_h->cache, SVF_SCAN_RESULTS_CACHE_TALLOC,
+			  data_blob_const(new_fname, new_fname_len), &new_data);
+
+	memcache_delete(cache_h->cache, SVF_SCAN_RESULTS_CACHE_TALLOC,
+		     data_blob_const(old_fname, old_fname_len));
+
+	return 1;
 }
 
 void svf_cache_purge(svf_cache_handle *cache_h)
 {
-	svf_cache_entry *cache_e;
-	time_t time_now = time(NULL);
+	memcache_flush(cache_h->cache, SVF_SCAN_RESULTS_CACHE_TALLOC);
+}
 
-	DEBUG(10,("Crawling cache entries to find purge entry\n"));
+svf_cache_entry *svf_cache_get(svf_cache_handle *cache_h, const char *fname)
+{
+	int fname_len = strlen(fname);
+	svf_cache_entry *cache_e = NULL;
+	svf_cache_entry *data = memcache_lookup_talloc(cache_h->cache, SVF_SCAN_RESULTS_CACHE_TALLOC,
+			     data_blob_const(fname, fname_len));
 
-	while ((cache_e = DLIST_TAIL(cache_h->list)) != NULL) {
-		time_t time_age = time_now - cache_e->time;
-		DEBUG(10,("Checking cache entry: fname=%s, age=%ld\n", cache_e->fname, (long)time_age));
-		if (cache_h->entry_num <= cache_h->entry_limit &&
-		    time_age < cache_h->time_limit) {
-			break;
+	if (data) {
+		if (cache_h->time_limit > 0) {
+			data->time;
+			if (time(NULL) - data->time  > cache_h->time_limit)
+			{
+				DEBUG(10,("Cache entry is too old: %s\n", fname));
+				svf_cache_remove(cache_h, fname);
+				return cache_e;
+			}
 		}
-
-		svf_cache_remove(cache_h, cache_e);
-		svf_cache_entry_free(cache_e);
-	}
-}
-
-svf_cache_entry *svf_cache_get(svf_cache_handle *cache_h, const char *fname, int fname_len)
-{
-	svf_cache_entry *cache_e;
-
-	svf_cache_purge(cache_h);
-
-	if (fname_len <= 0) {
-		fname_len = strlen(fname);
-	}
-
-	DEBUG(10,("Searching cache entry: fname=%s\n", fname));
-
-	for (cache_e = cache_h->list; cache_e; cache_e = cache_e->next) {
-		DEBUG(10,("Checking cache entry: fname=%s\n", cache_e->fname));
-		if (cache_e->fname_len == fname_len && str_eq(cache_e->fname, fname)) {
-			return cache_e;
+		cache_e = talloc_memdup(cache_h->ctx, data, sizeof(svf_cache_entry));
+		if (!cache_e) return cache_e;
+		if (data->report) {
+			cache_e->report = talloc_strdup(cache_e, data->report);
 		}
+		else cache_e->report = NULL;
 	}
 
-	return NULL;
+	return cache_e;
 }
 
-void svf_cache_add(svf_cache_handle *cache_h, svf_cache_entry *cache_e)
+void svf_cache_remove(svf_cache_handle *cache_h, const char *fname)
 {
-	cache_e->fname_len = strlen(cache_e->fname);
-	cache_e->time = time(NULL);
+	DEBUG(10,("Purging cache entry: %s\n", fname));
 
-	DLIST_ADD(cache_h->list, cache_e);
-	cache_h->entry_num++;
-
-	svf_cache_purge(cache_h);
+	memcache_delete(cache_h->cache, SVF_SCAN_RESULTS_CACHE_TALLOC,
+		     data_blob_const(fname, strlen(fname)));
 }
 
-void svf_cache_remove(svf_cache_handle *cache_h, svf_cache_entry *cache_e)
+void svf_cache_entry_free(svf_cache_entry *cache_e)
 {
-	DEBUG(10,("Purging cache entry: %s\n", cache_e->fname));
-
-	cache_h->entry_num--;
-	DLIST_REMOVE(cache_h->list, cache_e);
+	if(cache_e->report) {
+		TALLOC_FREE(cache_e->report);
+		cache_e->report = NULL;
+	}
+	TALLOC_FREE(cache_e);
 }
 
 /* Environment variable handling for execle(2)

@@ -312,7 +312,7 @@ static int svf_vfs_connect(
 		svf_h->cache_h = svf_cache_new(vfs_h,
 			svf_h->cache_entry_limit, svf_h->cache_time_limit);
 		if (!svf_h->cache_h) {
-			DEBUG(0,("Initializing cache failed: Cache disabled"));
+			DEBUG(0,("Initializing cache failed: Cache disabled\n"));
 		}
 	}
 
@@ -612,12 +612,12 @@ static svf_result svf_scan(
 	char *fname = smb_fname->base_name;
 	svf_cache_entry *scan_cache_e = NULL;
 	bool is_cache = false;
-	svf_action file_action;
-	bool add_scan_cache;
+	svf_action file_action = SVF_ACTION_DO_NOTHING;
+	bool add_scan_cache = true;
 
 	if (svf_h->cache_h) {
 		DEBUG(10, ("Searching cache entry: fname: %s\n", fname));
-		scan_cache_e = svf_cache_get(svf_h->cache_h, fname, -1);
+		scan_cache_e = svf_cache_get(svf_h->cache_h, fname);
 		if (scan_cache_e) {
 			DEBUG(10, ("Cache entry found: cached result: %d\n", scan_cache_e->result));
 			is_cache = true;
@@ -654,9 +654,6 @@ static svf_result svf_scan(
 
 svf_scan_result_eval:
 
-	file_action = SVF_ACTION_DO_NOTHING;
-	add_scan_cache = true;
-
 	switch (scan_result) {
 	case SVF_RESULT_CLEAN:
 		DEBUG(5, ("Scan result: Clean: %s/%s\n",
@@ -679,6 +676,7 @@ svf_scan_result_eval:
 			fname,
 			scan_report));
 		svf_treat_scan_error(vfs_h, svf_h, smb_fname, scan_report, is_cache);
+		add_scan_cache = false;
 		break;
 	default:
 		DEBUG(0, ("Scan result: Unknown result code %d: %s/%s: %s\n",
@@ -687,29 +685,22 @@ svf_scan_result_eval:
 			fname,
 			scan_report));
 		svf_treat_scan_error(vfs_h, svf_h, smb_fname, scan_report, is_cache);
+		add_scan_cache = false;
 		break;
 	}
 
-	if (svf_h->cache_h && !is_cache && add_scan_cache) {
-		DEBUG(10, ("Adding new cache entry: %s, %d\n", fname, scan_result));
-		scan_cache_e = svf_cache_entry_new(svf_h->cache_h, fname, -1);
-		if (!scan_cache_e) {
-			DEBUG(0,("Cannot create cache entry: svf_cache_entry_new failed"));
-			goto svf_scan_return;
-		}
-		scan_cache_e->result = scan_result;
-		if (scan_report) {
-			scan_cache_e->report = talloc_strdup(scan_cache_e, scan_report);
-			if (!scan_cache_e->report) {
-				DEBUG(0,("Cannot create cache entry: talloc_strdup failed"));
-				svf_cache_entry_free(scan_cache_e);
+	if (svf_h->cache_h) {
+		if (!is_cache && add_scan_cache) {
+			DEBUG(10, ("Adding new cache entry: %s, %d\n", fname, scan_result));
+			if (!svf_cache_entry_add(svf_h->cache_h, fname, scan_result, scan_report)) {
+				DEBUG(0,("Cannot create cache entry: svf_cache_entry_new failed"));
 				goto svf_scan_return;
 			}
-		} else {
-			scan_cache_e->report = NULL;
 		}
-
-		svf_cache_add(svf_h->cache_h, scan_cache_e);
+		else if (is_cache)
+		{
+			svf_cache_entry_free(scan_cache_e);
+		}
 	}
 
 svf_scan_return:
@@ -834,12 +825,8 @@ static int svf_vfs_close(
                 if(svf_h->scan_on_open && fsp->modified)
                 {
 			if (svf_h->cache_h) {
-				DEBUG(10, ("Searching cache entry: fname: %s\n", fname));
-				scan_cache_e = svf_cache_get(svf_h->cache_h, fname, -1);
-				if (scan_cache_e) {
-					svf_cache_remove(svf_h->cache_h, scan_cache_e);
-					svf_cache_entry_free(scan_cache_e);
-				}
+				DEBUG(10, ("Removing cache entry (if existant): fname: %s\n", fname));
+				svf_cache_remove(svf_h->cache_h, fname);
 			}
                 }
                 DEBUG(5, ("Not scanned: scan on close is disabled: %s/%s\n",
@@ -915,12 +902,8 @@ static int svf_vfs_unlink(
 
 	if (svf_h->cache_h) {
 		fname = smb_fname->base_name;
-		DEBUG(10, ("Searching cache entry: fname: %s\n", fname));
-		scan_cache_e = svf_cache_get(svf_h->cache_h, fname, -1);
-		if (scan_cache_e) {
-			svf_cache_remove(svf_h->cache_h, scan_cache_e);
-			svf_cache_entry_free(scan_cache_e);
-		}
+		DEBUG(10, ("Removing cache entry (if existant): fname: %s\n", fname));
+		svf_cache_remove(svf_h->cache_h, fname);
 	}
 
 	return ret;
@@ -946,23 +929,12 @@ static int svf_vfs_rename(
 
 	if (svf_h->cache_h) {
 		fname = smb_fname_dst->base_name;
-		DEBUG(10, ("Searching cache entry: fname: %s\n", fname));
-		scan_cache_e = svf_cache_get(svf_h->cache_h, fname, -1);
-		if (scan_cache_e) {
-			svf_cache_remove(svf_h->cache_h, scan_cache_e);
-			svf_cache_entry_free(scan_cache_e);
-		}
+		DEBUG(10, ("Removing cache entry (if existant): fname: %s\n", fname));
+		svf_cache_remove(svf_h->cache_h, fname);
 
 		fname = smb_fname_src->base_name;
-		DEBUG(10, ("Searching cache entry: fname: %s\n", fname));
-		scan_cache_e = svf_cache_get(svf_h->cache_h, fname, -1);
-		if (scan_cache_e) {
-			if (!svf_cache_entry_rename(scan_cache_e, smb_fname_dst->base_name, -1)) {
-				DEBUG(0,("Cannot rename cache entry: svf_cache_entry_rename failed"));
-				svf_cache_remove(svf_h->cache_h, scan_cache_e);
-				svf_cache_entry_free(scan_cache_e);
-			}
-		}
+		DEBUG(10, ("Renaming cache entry: fname: %s to: %s\n", fname, smb_fname_dst->base_name));
+		svf_cache_entry_rename(svf_h->cache_h, fname, smb_fname_dst->base_name);
 	}
 
 	return ret;
