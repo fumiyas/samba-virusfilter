@@ -130,43 +130,46 @@
                <varlistentry>
                 <term>svf_fsav:quarantine prefix = svf.</term>
                 <listitem>
-                <para>Prefix for quarantined files. This option conflicts with svf_fsav:rename prefix.</para>
+                <para>Prefix for quarantined files.</para>
                 <para>If this option is not set, the default is "svf.".</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
                 <term>svf_fsav:quarantine suffix = .infected</term>
                 <listitem>
-                <para>Suffix for quarantined files. This option conflicts with svf_fsav:rename suffix.
+                <para>Suffix for quarantined files.
 		This option is only used if keep name is true. Otherwise it is ignored.</para>
                 <para>If this option is not set, the default is ".infected".</para>
                 </listitem>
                 </varlistentry>
                 <term>svf_fsav:rename prefix = svf.</term>
                 <listitem>
-                <para>Prefix for infected files. This option conflicts with svf_fsav:quarantine prefix.</para>
+                <para>Prefix for infected files.</para>
                 <para>If this option is not set, the default is "svf.".</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
                 <term>svf_fsav:rename suffix = .infected</term>
                 <listitem>
-                <para>Suffix for infected files. This option conflicts with svf_fsav:quarantine suffix.</para>
+                <para>Suffix for infected files.</para>
                 <para>If this option is not set, the default is ".infected".</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
                 <term>svf_fsav:quarantine keep tree = yes</term>
                 <listitem>
-                <para>Should the file simply be renamed in place.</para>
+                <para>If keep tree is set, the directory structure relative
+                to the share is maintained in the quarantine directory.
+                </para>
                 <para>If this option is not set, the default is no.</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
                 <term>svf_fsav:quarantine keep name = yes</term>
                 <listitem>
-                <para>Should the file name be left unmodified other than adding a suffix and/or prefix as
-		defined in svf_fsav:rename prefix and svf_fsav:rename suffix.</para>
+                <para>Should the file name be left unmodified other than adding a suffix
+                and/or prefix and a random suffix name as defined in svf_fsav:rename prefix
+                and svf_fsav:rename suffix.</para>
                 <para>If this option is not set, the default is no.</para>
                 </listitem>
                 </varlistentry>
