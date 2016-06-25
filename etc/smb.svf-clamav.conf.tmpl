@@ -1,57 +1,57 @@
-## Sample smb.conf configuration file for svf-clamav
+## Sample smb.conf configuration file for vfs_svf_clamav(8)
 ##
 ## You can use this file in your smb.conf as the following:
 ## [global]
-## include = @SAMBA_CONFIGDIR@/smb.svf-clamav.conf
+## include = @SAMBA_CONFIGDIR@/smb.svf_clamav.conf
 
-vfs objects = svf-clamav
+vfs objects = svf_clamav
 
 ## ClamAV clamd local socket
-svf-clamav:socket path = /var/run/clamav/clamd.ctl
+svf_clamav:socket path = /var/run/clamav/clamd.ctl
 
 ## Scan files while opening
 ## default: yes
-svf-clamav:scan on open = yes
+svf_clamav:scan on open = yes
 
 ## Scan files while closing
 ## default: no
-svf-clamav:scan on close = no
+svf_clamav:scan on close = no
 
 ## Do not scan files larger than X bytes
 ## default: 100000000 (100MB)
-svf-clamav:max file size = 100000000
+svf_clamav:max file size = 100000000
 
 ## Do not scan files smaller than X bytes
 ## default: 0
-svf-clamav:min file size = 10
+svf_clamav:min file size = 10
 
 ## What to do with an infected file
 ## nothing:	Do nothing (default)
 ## quarantine:	Try to move to quantine directory
 ## delete:	Delete infected file
-svf-clamav:infected file action = nothing
+svf_clamav:infected file action = nothing
 
 ## Where to move infected files
-svf-clamav:quarantine directory  = @SAMBA_LOCKDIR@/svf/quarantine
+svf_clamav:quarantine directory  = @SAMBA_LOCKDIR@/svf/quarantine
 ## Prefix for files in quarantine directory
-svf-clamav:quarantine prefix = svf.
+svf_clamav:quarantine prefix = svf.
 ## Suffix for files in quarantine directory
-svf-clamav:quarantine suffix = .infected
+svf_clamav:quarantine suffix = .infected
 ## If keep tree is set, the directory structure relative
 ## to the share is maintained in the quarantine directory
-svf-clamav:quarantine keep tree = yes
+svf_clamav:quarantine keep tree = yes
 ## If keep tree is set, the original file name is kept, with a random suffix.
-svf-clamav:quarantine keep name = yes
+svf_clamav:quarantine keep name = yes
 ## Prefix for files in rename action
-svf-clamav:rename prefix = svf.
+svf_clamav:rename prefix = svf.
 ## Suffix for files in rename action
-svf-clamav:rename suffix = .infected
+svf_clamav:rename suffix = .infected
 
 ## External command to run on an infected file is found
 ## default: none
-;svf-clamav:infected file command = @SAMBA_DATADIR@/bin/svf-notify --mail-to virusmaster@example.com --cc "%U@example.com" --from samba@example.com --subject-prefix "Samba: Infected File: "
+;svf_clamav:infected file command = @SAMBA_DATADIR@/bin/svf-notify --mail-to virusmaster@example.com --cc "%U@example.com" --from samba@example.com --subject-prefix "Samba: Infected File: "
 
 ## External command to run on scan error
 ## default: none
-;svf-clamav:scan error command = @SAMBA_DATADIR@/bin/svf-notify --mail-to virusmaster@example.com --from samba@example.com --subject-prefix "Samba: Scan Error: "
+;svf_clamav:scan error command = @SAMBA_DATADIR@/bin/svf-notify --mail-to virusmaster@example.com --from samba@example.com --subject-prefix "Samba: Scan Error: "
 

@@ -1,58 +1,58 @@
-## Sample smb.conf configuration file for svf-sophos
+## Sample smb.conf configuration file for vfs_svf_sophos(8)
 ##
 ## You can use this file in your smb.conf as the following:
 ## [global]
-## include = @SAMBA_CONFIGDIR@/smb.svf-sophos.conf
+## include = @SAMBA_CONFIGDIR@/smb.svf_sophos.conf
 
-vfs objects = svf-sophos
+vfs objects = svf_sophos
 
 ## Scan files while opening
 ## default: yes
-svf-sophos:scan on open = yes
+svf_sophos:scan on open = yes
 
 ## Scan files while closing
 ## default: no
-svf-sophos:scan on close = no
+svf_sophos:scan on close = no
 
 ## Scan archived files (Tar, ZIP and so on)
 ## default: no
-svf-sophos:scan archive = no
+svf_sophos:scan archive = no
 
 ## Do not scan files larger than X bytes
 ## default: 100000000 (100MB)
-svf-sophos:max file size = 100000000
+svf_sophos:max file size = 100000000
 
 ## Do not scan files smaller than X bytes
 ## default: 0
-svf-sophos:min file size = 10
+svf_sophos:min file size = 10
 
 ## What to do with an infected file
 ## nothing:	Do nothing (default)
 ## quarantine:	Try to move to quantine directory
 ## delete:	Delete infected file
-svf-sophos:infected file action = nothing
+svf_sophos:infected file action = nothing
 
 ## Where to move infected files
-svf-sophos:quarantine directory  = @SAMBA_LOCKDIR@/svf/quarantine
+svf_sophos:quarantine directory  = @SAMBA_LOCKDIR@/svf/quarantine
 ## Prefix for files in quarantine directory
-svf-sophos:quarantine prefix = svf.
+svf_sophos:quarantine prefix = svf.
 ## Suffix for files in quarantine directory
-svf-sophos:quarantine suffix = .infected
+svf_sophos:quarantine suffix = .infected
 ## If keep tree is set, the directory structure relative
 ## to the share is maintained in the quarantine directory
-svf-sophos:quarantine keep tree = yes
+svf_sophos:quarantine keep tree = yes
 ## If keep tree is set, the original file name is kept, with a random suffix.
-svf-sophos:quarantine keep name = yes
+svf_sophos:quarantine keep name = yes
 ## Prefix for files in rename action
-svf-sophos:rename prefix = svf.
+svf_sophos:rename prefix = svf.
 ## Suffix for files in rename action
-svf-sophos:rename suffix = .infected
+svf_sophos:rename suffix = .infected
 
 ## External command to run on an infected file is found
 ## default: none
-;svf-sophos:infected file command = @SAMBA_DATADIR@/bin/svf-notify --mail-to virusmaster@example.com --cc "%U@example.com" --from samba@example.com --subject-prefix "Samba: Infected File: "
+;svf_sophos:infected file command = @SAMBA_DATADIR@/bin/svf-notify --mail-to virusmaster@example.com --cc "%U@example.com" --from samba@example.com --subject-prefix "Samba: Infected File: "
 
 ## External command to run on scan error
 ## default: none
-;svf-sophos:scan error command = @SAMBA_DATADIR@/bin/svf-notify --mail-to virusmaster@example.com --from samba@example.com --subject-prefix "Samba: Scan Error: "
+;svf_sophos:scan error command = @SAMBA_DATADIR@/bin/svf-notify --mail-to virusmaster@example.com --from samba@example.com --subject-prefix "Samba: Scan Error: "
 
