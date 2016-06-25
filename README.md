@@ -1,7 +1,7 @@
 Samba-VirusFilter - On-access anti-virus filter for Samba
 ======================================================================
 
-  * Copyright (C) 2010-2015 SATOH Fumiyasu @ OSS Technology Corp., Japan
+  * Copyright (C) 2010-2016 SATOH Fumiyasu @ OSS Technology Corp., Japan
   * License: GNU General Public License version 3
   * Development home: <https://github.com/fumiyas/samba-virusfilter>
   * Author's home: <https://fumiyas.github.io/>
@@ -37,7 +37,7 @@ Commercial support for Samba & Samba-VirusFilter
 ---------------------------------------------------------------------
 
   * Japan
-    * Open Source Solution Technology Corp., Japan  
+    * Open Source Solution Technology Corp., Japan
       http://www.OSSTech.co.jp/
 
 Contributors
