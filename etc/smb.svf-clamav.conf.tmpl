@@ -35,6 +35,17 @@ svf-clamav:infected file action = nothing
 svf-clamav:quarantine directory  = @SAMBA_LOCKDIR@/svf/quarantine
 ## Prefix for files in quarantine directory
 svf-clamav:quarantine prefix = svf.
+## Suffix for files in quarantine directory
+svf-clamav:quarantine suffix = .infected
+## If keep tree is set, the directory structure relative
+## to the share is maintained in the quarantine directory
+svf-clamav:quarantine keep tree = yes
+## If keep tree is set, the original file name is kept, with a random suffix.
+svf-clamav:quarantine keep name = yes
+## Prefix for files in rename action
+svf-clamav:rename prefix = svf.
+## Suffix for files in rename action
+svf-clamav:rename suffix = .infected
 
 ## External command to run on an infected file is found
 ## default: none
