@@ -18,7 +18,7 @@
 
 <refsynopsisdiv>
 	<cmdsynopsis>
-		<command>vfs objects = svf-clamav</command>
+		<command>vfs objects = svf_clamav</command>
 	</cmdsynopsis>
 </refsynopsisdiv>
 
@@ -37,7 +37,7 @@
 
         <variablelist>
                <varlistentry>
-                <term>svf-clamav:socket path = PATH</term>
+                <term>svf_clamav:socket path = PATH</term>
                 <listitem>
                 <para>Path of local socket for the virus scanner.
                 </para>
@@ -45,7 +45,7 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf-clamav:connect timeout = 30000</term>
+                <term>svf_clamav:connect timeout = 30000</term>
                 <listitem>
                 <para>Controls how long to wait on connecting to the virus
 		scanning process before timing out. Value is in milliseconds.
@@ -54,7 +54,7 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf-clamav:io timeout = 60000</term>
+                <term>svf_clamav:io timeout = 60000</term>
                 <listitem>
                 <para>Controls how long to wait on communications with the virus
 		scanning process before timing out. Value is in milliseconds.
@@ -63,7 +63,7 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf-clamav:scan on open = yes</term>
+                <term>svf_clamav:scan on open = yes</term>
                 <listitem>
                 <para>This option controls whether files are scanned on open.
                 </para>
@@ -71,7 +71,7 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf-clamav:scan on close = no</term>
+                <term>svf_clamav:scan on close = no</term>
                 <listitem>
                 <para>This option controls whether files are scanned on open.
                 </para>
@@ -79,7 +79,7 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf-clamav:max file size = 100000000</term>
+                <term>svf_clamav:max file size = 100000000</term>
                 <listitem>
                 <para>This is the largest sized file, in bytes, which will be scanned.
                 </para>
@@ -87,7 +87,7 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf-clamav:min file size = 10</term>
+                <term>svf_clamav:min file size = 10</term>
                 <listitem>
                 <para>This is the largest sized file, in bytes, which will be scanned.
                 </para>
@@ -95,7 +95,7 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf-clamav:infected file action = nothing</term>
+                <term>svf_clamav:infected file action = nothing</term>
                 <listitem>
                 <para>What to do with an infected file. The options are
 		nothing, quarantine, rename, delete. Rename is alias for quarantine
@@ -105,7 +105,7 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf-clamav:infected file errno on close = 0</term>
+                <term>svf_clamav:infected file errno on close = 0</term>
                 <listitem>
                 <para>What errno to return on close if the file is infected.
 		</para>
@@ -113,7 +113,7 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf-clamav:infected file errno on open = EACCES</term>
+                <term>svf_clamav:infected file errno on open = EACCES</term>
                 <listitem>
                 <para>What errno to return on close if the file is infected.
 		</para>
@@ -121,77 +121,77 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf-clamav:quarantine directory  = PATH</term>
+                <term>svf_clamav:quarantine directory  = PATH</term>
                 <listitem>
                 <para>Where to move infected files.</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf-clamav:quarantine prefix = svf.</term>
+                <term>svf_clamav:quarantine prefix = svf.</term>
                 <listitem>
-                <para>Prefix for quarantined files. This option conflicts with svf-clamav:rename prefix.</para>
+                <para>Prefix for quarantined files. This option conflicts with svf_clamav:rename prefix.</para>
                 <para>If this option is not set, the default is "svf.".</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf-clamav:quarantine suffix = .infected</term>
+                <term>svf_clamav:quarantine suffix = .infected</term>
                 <listitem>
-                <para>Suffix for quarantined files. This option conflicts with svf-clamav:rename suffix.
+                <para>Suffix for quarantined files. This option conflicts with svf_clamav:rename suffix.
 		This option is only used if keep name is true. Otherwise it is ignored.</para>
                 <para>If this option is not set, the default is ".infected".</para>
                 </listitem>
                 </varlistentry>
-                <term>svf-clamav:rename prefix = svf.</term>
+                <term>svf_clamav:rename prefix = svf.</term>
                 <listitem>
-                <para>Prefix for infected files. This option conflicts with svf-clamav:quarantine prefix.</para>
+                <para>Prefix for infected files. This option conflicts with svf_clamav:quarantine prefix.</para>
                 <para>If this option is not set, the default is "svf.".</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf-clamav:rename suffix = .infected</term>
+                <term>svf_clamav:rename suffix = .infected</term>
                 <listitem>
-                <para>Suffix for infected files. This option conflicts with svf-clamav:quarantine suffix.</para>
+                <para>Suffix for infected files. This option conflicts with svf_clamav:quarantine suffix.</para>
                 <para>If this option is not set, the default is ".infected".</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf-clamav:quarantine keep tree = yes</term>
+                <term>svf_clamav:quarantine keep tree = yes</term>
                 <listitem>
                 <para>Should the file simply be renamed in place.</para>
                 <para>If this option is not set, the default is no.</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf-clamav:quarantine keep name = yes</term>
+                <term>svf_clamav:quarantine keep name = yes</term>
                 <listitem>
                 <para>Should the file name be left unmodified other than adding a suffix and/or prefix as
-		defined in svf-clamav:rename prefix and svf-clamav:rename suffix.</para>
+		defined in svf_clamav:rename prefix and svf_clamav:rename suffix.</para>
                 <para>If this option is not set, the default is no.</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf-clamav:infected file command = @SAMBA_DATADIR@/bin/svf-notify --mail-to virusmaster@example.com --cc "%U@example.com" --from samba@example.com --subject-prefix "Samba: Infected File: "</term>
+                <term>svf_clamav:infected file command = @SAMBA_DATADIR@/bin/svf-notify --mail-to virusmaster@example.com --cc "%U@example.com" --from samba@example.com --subject-prefix "Samba: Infected File: "</term>
                 <listitem>
                 <para>External command to run on an infected file is found.</para>
                 <para>If this option is not set, the default is none.</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf-clamav:scan error command = @SAMBA_DATADIR@/bin/svf-notify --mail-to virusmaster@example.com --from samba@example.com --subject-prefix "Samba: Scan Error: "</term>
+                <term>svf_clamav:scan error command = @SAMBA_DATADIR@/bin/svf-notify --mail-to virusmaster@example.com --from samba@example.com --subject-prefix "Samba: Scan Error: "</term>
                 <listitem>
                 <para>External command to run on scan error.</para>
                 <para>If this option is not set, the default is none.</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf-clamav:exclude files = empty</term>
+                <term>svf_clamav:exclude files = empty</term>
                 <listitem>
                 <para>Files to exclude from scanning.</para>
                 <para>If this option is not set, the default is empty.</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf-clamav:block access on error = false</term>
+                <term>svf_clamav:block access on error = false</term>
                 <listitem>
                 <para>Controls whether or not access should be blocked on
 		a scanning error.</para>
@@ -199,7 +199,7 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf-clamav:scan error errno on close = 0</term>
+                <term>svf_clamav:scan error errno on close = 0</term>
                 <listitem>
                 <para>What errno to return on close if there is an error in
 		scanning the file and block access on error is true.
@@ -208,7 +208,7 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf-clamav:scan error errno on open = EACCES</term>
+                <term>svf_clamav:scan error errno on open = EACCES</term>
                 <listitem>
                 <para>What errno to return on open if there is an error in
 		scanning the file and block access on error is true.
@@ -217,18 +217,19 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf-clamav:cache entry limit = 100</term>
+                <term>svf_clamav:cache entry limit = 100</term>
                 <listitem>
                 <para>The maximum number of entries in the scanning results
-		cache.</para>
+		cache. Due to how Samba's memcache works, this is approximate.</para>
                 <para>If this option is not set, the default is 100.</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf-clamav:cache time limit = 10</term>
+                <term>svf_clamav:cache time limit = 10</term>
                 <listitem>
                 <para>The maximum number of seconds that a scanning result
-		will stay in the results cache..</para>
+		will stay in the results cache. -1 disables the limit.
+		0 disables caching.</para>
                 <para>If this option is not set, the default is 10.</para>
                 </listitem>
                 </varlistentry>
