@@ -23,6 +23,7 @@
 #include "svf-utils.h"
 
 #define SVF_MODULE_NAME "svf_" SVF_MODULE_ENGINE
+#define ALLOC_CHECK(ptr, label) do { if ((ptr) == NULL) { DEBUG(0, ("svf-vfs: out of memory!\n")); errno = ENOMEM; goto label; } } while(0)
 
 /* Default configuration values
  * ====================================================================== */
@@ -51,6 +52,10 @@
 #define SVF_DEFAULT_QUARANTINE_SUFFIX		".infected"
 #define SVF_DEFAULT_QUARANTINE_KEEP_NAME	false
 #define SVF_DEFAULT_QUARANTINE_KEEP_TREE	false
+#define SVF_DEFAULT_QUARANTINE_DIR_MODE		"700" /* S_IRUSR | S_IWUSR | S_IXUSR */
+
+#define SVF_DEFAULT_RENAME_PREFIX		"svf."
+#define SVF_DEFAULT_RENAME_SUFFIX		".infected"
 
 /* ====================================================================== */
 
@@ -58,7 +63,7 @@ int svf_debug_level = DBGC_VFS;
 
 static const struct enum_list svf_actions[] = {
 	{ SVF_ACTION_QUARANTINE,	"quarantine" },
-	{ SVF_ACTION_RENAME,		"rename" },	/* fixup for "quarantine" */
+	{ SVF_ACTION_RENAME,		"rename" },
 	{ SVF_ACTION_DELETE,		"delete" },
 	{ SVF_ACTION_DELETE,		"remove" },	/* alias for "delete" */
 	{ SVF_ACTION_DELETE,		"unlink" },	/* alias for "delete" */
@@ -109,6 +114,10 @@ typedef struct {
 	const char *			quarantine_suffix;
 	bool				quarantine_keep_name;
 	bool				quarantine_keep_tree;
+	mode_t				quarantine_dir_mode;
+	/* Rename infected files */
+	const char *			rename_prefix;
+	const char *			rename_suffix;
 	/* Network options */
 #ifdef SVF_DEFAULT_SOCKET_PATH
         const char *			socket_path;
@@ -164,6 +173,109 @@ static int svf_destruct_config(svf_handle *svf_h)
 	return 0;
 }
 
+// This is adapted from vfs_recycle module.
+static bool quarantine_directory_exist(vfs_handle_struct *handle, const char *dname)
+{
+	struct smb_filename smb_fname = {
+		.base_name = discard_const_p(char, dname)
+	};
+
+	if (SMB_VFS_STAT(handle->conn, &smb_fname) == 0) {
+		if (S_ISDIR(smb_fname.st.st_ex_mode)) {
+			return True;
+		}
+	}
+
+	return False;
+}
+
+/**
+ * Create directory tree
+ * @param conn connection
+ * @param dname Directory tree to be created
+ * @return Returns True for success
+ * This is adapted from vfs_recycle module.
+ **/
+static bool quarantine_create_dir(vfs_handle_struct *handle, svf_handle *svf_h, const char *dname)
+{
+	size_t len;
+	mode_t mode;
+	char *new_dir = NULL;
+	char *tmp_str = NULL;
+	char *token;
+	char *tok_str;
+	bool ret = False;
+	char *saveptr;
+
+	mode = svf_h->quarantine_dir_mode;
+
+	tmp_str = SMB_STRDUP(dname);
+	ALLOC_CHECK(tmp_str, done);
+	tok_str = tmp_str;
+
+	len = strlen(dname)+1;
+	new_dir = (char *)SMB_MALLOC(len + 1);
+	ALLOC_CHECK(new_dir, done);
+	*new_dir = '\0';
+	if (dname[0] == '/') {
+	/* Absolute path. */
+		if (strlcat(new_dir,"/",len+1) >= len+1) {
+			goto done;
+		}
+	}
+
+	become_root();
+	/* Create directory tree if neccessary */
+	for(token = strtok_r(tok_str, "/", &saveptr); token;
+		token = strtok_r(NULL, "/", &saveptr)) {
+		if (strlcat(new_dir, token, len+1) >= len+1) {
+			goto done;
+		}
+		if (quarantine_directory_exist(handle, new_dir))
+			DEBUG(10, ("quarantine: dir %s already exists\n", new_dir));
+		else {
+#if SAMBA_VERSION_NUMBER < 40100
+			struct smb_filename *smb_fname = NULL;
+#endif
+
+			DEBUG(5, ("quarantine: creating new dir %s\n", new_dir));
+
+#if SAMBA_VERSION_NUMBER >= 40100
+			if (SMB_VFS_NEXT_MKDIR(handle, new_dir, mode) != 0) {
+#else
+			smb_fname = synthetic_smb_fname(talloc_tos(),
+					new_dir,
+					NULL, NULL,
+					0);
+			if (smb_fname == NULL) {
+				goto done;
+			}
+
+			if (SMB_VFS_NEXT_MKDIR(handle, smb_fname, mode) != 0) {
+				TALLOC_FREE(smb_fname);
+#endif
+				DEBUG(1,("quarantine: mkdir failed for %s with error: %s\n", new_dir, strerror(errno)));
+				ret = False;
+				goto done;
+			}
+#if SAMBA_VERSION_NUMBER < 40100
+			TALLOC_FREE(smb_fname);
+#endif
+		}
+		if (strlcat(new_dir, "/", len+1) >= len+1) {
+			goto done;
+		}
+		mode = svf_h->quarantine_dir_mode;
+	}
+
+	ret = True;
+	done:
+		unbecome_root();
+		SAFE_FREE(tmp_str);
+		SAFE_FREE(new_dir);
+		return ret;
+}
+
 static int svf_vfs_connect(
 	vfs_handle_struct *vfs_h,
 	const char *svc,
@@ -172,6 +284,7 @@ static int svf_vfs_connect(
 	int snum = SNUM(vfs_h->conn);
 	svf_handle *svf_h;
 	const char *exclude_files;
+	const char *temp_quarantine_dir_mode = NULL;
 #ifdef SVF_DEFAULT_SOCKET_PATH
 	int connect_timeout, io_timeout;
 #endif
@@ -272,6 +385,13 @@ static int svf_vfs_connect(
 		snum, SVF_MODULE_NAME,
 		"quarantine directory",
 		SVF_DEFAULT_QUARANTINE_DIRECTORY);
+        temp_quarantine_dir_mode = lp_parm_const_string(
+		snum, SVF_MODULE_NAME,
+		"quarantine directory mode",
+		SVF_DEFAULT_QUARANTINE_DIR_MODE);
+        if (temp_quarantine_dir_mode) {
+                sscanf(temp_quarantine_dir_mode, "%o", &svf_h->quarantine_dir_mode);
+        }
         svf_h->quarantine_prefix = lp_parm_const_string(
 		snum, SVF_MODULE_NAME,
 		"quarantine prefix",
@@ -288,14 +408,15 @@ static int svf_vfs_connect(
 		snum, SVF_MODULE_NAME,
 		"quarantine keep name",
 		SVF_DEFAULT_QUARANTINE_KEEP_NAME);
-        svf_h->quarantine_prefix = lp_parm_const_string(
+
+        svf_h->rename_prefix = lp_parm_const_string(
 		snum, SVF_MODULE_NAME,
 		"rename prefix",
-		SVF_DEFAULT_QUARANTINE_PREFIX);
-        svf_h->quarantine_suffix = lp_parm_const_string(
+		SVF_DEFAULT_RENAME_PREFIX);
+        svf_h->rename_suffix = lp_parm_const_string(
 		snum, SVF_MODULE_NAME,
 		"rename suffix",
-		SVF_DEFAULT_QUARANTINE_SUFFIX);
+		SVF_DEFAULT_RENAME_SUFFIX);
 
         svf_h->infected_file_errno_on_open = lp_parm_int(
 		snum, SVF_MODULE_NAME,
@@ -335,14 +456,6 @@ static int svf_vfs_connect(
 	}
 #endif
 
-	/* Fixup SVF_ACTION_RENAME as it is simply an alias that *
-	 * forces keep name and keep tree for QUARANTINE. */
-	if (svf_h->infected_file_action == SVF_ACTION_RENAME){
-		svf_h->infected_file_action = SVF_ACTION_QUARANTINE;
-                svf_h->quarantine_keep_name = true;
-                svf_h->quarantine_keep_tree = true;
-	}
-
 	if (svf_h->cache_entry_limit > 0) {
 		svf_h->cache_h = svf_cache_new(vfs_h,
 			svf_h->cache_entry_limit, svf_h->cache_time_limit);
@@ -356,6 +469,21 @@ static int svf_vfs_connect(
 		return -1;
 	}
 #endif
+
+	/* Check quarantine directory now to save processing
+         * and becoming root over and over. */
+	if (svf_h->infected_file_action == SVF_ACTION_QUARANTINE)
+	{
+		/* Do SMB_VFS_NEXT_MKDIR(svf_h->quarantine_dir) hierarchy */
+		become_root();
+		if(!quarantine_directory_exist(vfs_h, svf_h->quarantine_dir))
+		{
+			unbecome_root();
+			DEBUG(10, ("Creating quarantine directory: %s\n", svf_h->quarantine_dir));
+			quarantine_create_dir(vfs_h, svf_h, svf_h->quarantine_dir);
+		}
+		else unbecome_root();
+	}
 
 	return SMB_VFS_NEXT_CONNECT(vfs_h, svc, user);
 }
@@ -409,24 +537,167 @@ static svf_action svf_do_infected_file_action(
 	struct smb_filename *q_smb_fname = NULL;
 	char *q_dir;
 	char *q_prefix;
+	char *q_suffix;
 	char *q_filepath;
+	char *dir_name = NULL;
+	char *temp_path;
+	const char *base_name = NULL;
 	int q_fd;
+	bool exist;
 
 	switch (svf_h->infected_file_action) {
+	case SVF_ACTION_RENAME:
+		q_prefix = svf_string_sub(mem_ctx, conn, svf_h->rename_prefix);
+		q_suffix = svf_string_sub(mem_ctx, conn, svf_h->rename_suffix);
+		if (!q_prefix || !q_suffix) {
+			DEBUG(0,("Rename failed: %s/%s: "
+				"Cannot allocate memory\n",
+				conn->connectpath,
+				smb_fname->base_name));
+			if (q_prefix) TALLOC_FREE(q_prefix);
+			if (q_suffix) TALLOC_FREE(q_suffix);
+			return SVF_ACTION_DO_NOTHING;
+		}
+
+		if (!parent_dirname(mem_ctx, smb_fname->base_name, &q_dir, &base_name)) {
+			DEBUG(0,("Rename failed: %s/%s: "
+				"Cannot allocate memory\n",
+				conn->connectpath,
+				smb_fname->base_name));
+			TALLOC_FREE(q_prefix);
+			TALLOC_FREE(q_suffix);
+			return SVF_ACTION_DO_NOTHING;
+		}
+
+		if (!q_dir) {
+			DEBUG(0,("Rename failed: %s/%s: "
+				"Cannot allocate memory\n",
+				conn->connectpath,
+				smb_fname->base_name));
+			TALLOC_FREE(q_prefix);
+			TALLOC_FREE(q_suffix);
+			return SVF_ACTION_DO_NOTHING;
+		}
+
+		q_filepath = talloc_asprintf(talloc_tos(), "%s/%s%s%s", q_dir, q_prefix, base_name, q_suffix);
+
+		TALLOC_FREE(q_dir);
+		TALLOC_FREE(q_prefix);
+		TALLOC_FREE(q_suffix);
+
+		become_root();
+
+#if SAMBA_VERSION_NUMBER >= 40100
+		q_smb_fname = synthetic_smb_fname(mem_ctx, q_filepath, smb_fname->stream_name, NULL);
+		if (q_smb_fname == NULL) {
+#else
+		NTSTATUS status;
+		status = create_synthetic_smb_fname(mem_ctx,
+			q_filepath,
+			smb_fname->stream_name,
+			NULL,
+			&q_smb_fname);
+		if (!NT_STATUS_IS_OK(status)) {
+#endif
+			unlink(q_filepath);
+			unbecome_root();
+			return SVF_ACTION_DO_NOTHING;
+		}
+
+		if (svf_vfs_next_move(vfs_h, smb_fname, q_smb_fname) == -1) {
+			unbecome_root();
+			DEBUG(0,("Rename failed: %s/%s: Rename failed: %s\n",
+				conn->connectpath,
+				smb_fname->base_name,
+				strerror(errno)));
+			return SVF_ACTION_DO_NOTHING;
+		}
+		unbecome_root();
+
+		*filepath_newp = q_filepath;
+
+		return SVF_ACTION_RENAME;
+
 	case SVF_ACTION_QUARANTINE:
-		/* FIXME: Do SMB_VFS_NEXT_MKDIR(svf_h->quarantine_dir) hierarchy */
 		q_dir = svf_string_sub(mem_ctx, conn, svf_h->quarantine_dir);
 		q_prefix = svf_string_sub(mem_ctx, conn, svf_h->quarantine_prefix);
-		if (!q_dir || !q_prefix) {
+		q_suffix = svf_string_sub(mem_ctx, conn, svf_h->quarantine_suffix);
+		if (!q_dir || !q_prefix || !q_suffix) {
 			DEBUG(0,("Quarantine failed: %s/%s: "
 				"Cannot allocate memory\n",
 				conn->connectpath,
 				smb_fname->base_name));
+			if (q_dir) TALLOC_FREE(q_dir);
+			if (q_prefix) TALLOC_FREE(q_prefix);
+			if (q_suffix) TALLOC_FREE(q_suffix);
 			return SVF_ACTION_DO_NOTHING;
 		}
-		q_filepath = talloc_asprintf(talloc_tos(), "%s/%sXXXXXX", q_dir, q_prefix);
+
+		if(svf_h->quarantine_keep_name || svf_h->quarantine_keep_tree)
+                {
+			if (!parent_dirname(mem_ctx, smb_fname->base_name, &dir_name, &base_name)) {
+				DEBUG(0,("Quarantine failed: %s/%s: "
+					"Cannot allocate memory\n",
+					conn->connectpath,
+					smb_fname->base_name));
+				TALLOC_FREE(q_dir);
+				TALLOC_FREE(q_prefix);
+				TALLOC_FREE(q_suffix);
+				return SVF_ACTION_DO_NOTHING;
+			}
+
+			if(svf_h->quarantine_keep_tree)
+			{
+				temp_path = talloc_asprintf(mem_ctx, "%s/%s", q_dir, dir_name);
+				if (!temp_path)
+				{
+					DEBUG(0,("Quarantine failed: %s/%s: "
+						"Cannot allocate memory\n",
+						conn->connectpath,
+						smb_fname->base_name));
+					TALLOC_FREE(q_dir);
+					TALLOC_FREE(q_prefix);
+					TALLOC_FREE(q_suffix);
+					return SVF_ACTION_DO_NOTHING;
+				}
+
+				become_root();
+				if(quarantine_directory_exist(vfs_h, temp_path))
+				{
+					unbecome_root();
+					DEBUG(10, ("quarantine: Directory already exists\n"));
+					TALLOC_FREE(q_dir);
+					q_dir = temp_path;
+				}
+				else {
+					unbecome_root();
+					DEBUG(10, ("quarantine: Creating directory %s\n", temp_path));
+					if (quarantine_create_dir(vfs_h, svf_h, temp_path) == False) {
+						DEBUG(3, ("quarantine: Could not create directory "
+							"ignoring for %s...\n",
+							smb_fname_str_dbg(smb_fname)));
+						TALLOC_FREE(temp_path);
+					}
+					else
+					{
+						TALLOC_FREE(q_dir);
+						q_dir = temp_path;
+					}
+				}
+			}
+		}
+		if(svf_h->quarantine_keep_name) {
+			q_filepath = talloc_asprintf(talloc_tos(), "%s/%s%s%s-XXXXXX", q_dir, q_prefix, base_name, q_suffix);
+		}
+		else {
+			q_filepath = talloc_asprintf(talloc_tos(), "%s/%sXXXXXX", q_dir, q_prefix);
+		}
+
+		if(dir_name) TALLOC_FREE(dir_name);
 		TALLOC_FREE(q_dir);
 		TALLOC_FREE(q_prefix);
+		TALLOC_FREE(q_suffix);
+
 		if (!q_filepath) {
 			DEBUG(0,("Quarantine failed: %s/%s: "
 				"Cannot allocate memory\n",
@@ -773,8 +1044,8 @@ static int svf_vfs_open(
 				svf_handle,
 				return -1);
 
-	test_prefix = strlen(svf_h->quarantine_prefix);
-	test_suffix = strlen(svf_h->quarantine_suffix);
+	test_prefix = strlen(svf_h->rename_prefix);
+	test_suffix = strlen(svf_h->rename_suffix);
 	if (test_prefix) rename_trap_count++;
 	if (test_suffix) rename_trap_count++;
 
@@ -820,12 +1091,12 @@ static int svf_vfs_open(
 	{
 		if(parent_dirname(mem_ctx, smb_fname->base_name, &dir_name, &base_name)) {
 			if (test_prefix) {
-				if (strncmp(base_name, svf_h->quarantine_prefix, test_prefix) != 0) {
+				if (strncmp(base_name, svf_h->rename_prefix, test_prefix) != 0) {
 					test_prefix = 0;
 				}
 			}
 			if (test_suffix) {
-				if (strcmp(base_name + (strlen(base_name) - test_suffix), svf_h->quarantine_suffix) != 0)
+				if (strcmp(base_name + (strlen(base_name) - test_suffix), svf_h->rename_suffix) != 0)
 				{
 					test_suffix = 0;
 				}

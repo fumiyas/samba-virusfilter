@@ -65,14 +65,6 @@ For general:
   * Support other anti-virus engines:
     * External command
     * misc.
-  * Extend quarantine options:
-    * `svf-*:quarantine keep tree = yes`
-    * `svf-*:quarantine keep name = yes`
-    * `svf-*:quarantine suffix = .infected`
-  * Support "rename" action:
-    * `svf-*:infected file action = rename`
-    * `svf-*:rename prefix = svf.`
-    * `svf-*:rename suffix = .infected`
   * More test cases
     * Use Bats? (https://github.com/sstephenson/bats)
   * clamd privileges (root or group that has rights to access Samba shares)

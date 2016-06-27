@@ -64,7 +64,6 @@ typedef enum {
 	SVF_ACTION_QUARANTINE,
 	SVF_ACTION_RENAME,
 	SVF_ACTION_DELETE,
-	/* FIXME: SVF_ACTION_RENAME, */
 } svf_action;
 
 typedef enum {
