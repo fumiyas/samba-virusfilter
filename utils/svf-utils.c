@@ -696,7 +696,7 @@ svf_cache_handle *svf_cache_new(TALLOC_CTX *ctx, int entry_limit, time_t time_li
 		return NULL;
 	}
 
-	cache_h->cache = memcache_init(cache_h->ctx, entry_limit * (sizeof(svf_cache_entry) + 128));
+	cache_h->cache = memcache_init(cache_h->ctx, entry_limit * (sizeof(svf_cache_entry) + SVF_CACHE_BUFFER_SIZE));
 	if (!cache_h->cache) {
 		DEBUG(0,("memcache_init failed.\n"));
 		return NULL;

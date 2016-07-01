@@ -1,0 +1,27 @@
+diff --git a/lib/util/memcache.c b/lib/util/memcache.c
+index 9e9a208..f93c898 100644
+--- a/lib/util/memcache.c
++++ b/lib/util/memcache.c
+@@ -53,6 +53,7 @@ static bool memcache_is_talloc(enum memcache_number n)
+        case GETPWNAM_CACHE:
+        case PDB_GETPWSID_CACHE:
+        case SINGLETON_CACHE_TALLOC:
+        case SHARE_MODE_LOCK_CACHE:
++       case SVF_SCAN_RESULTS_CACHE_TALLOC:
+                result = true;
+                break;
+diff --git a/lib/util/memcache.h b/lib/util/memcache.h
+index 2602fb7..a80d36e 100644
+--- a/lib/util/memcache.h
++++ b/lib/util/memcache.h
+@@ -41,7 +41,8 @@ enum memcache_number {
+        SINGLETON_CACHE_TALLOC, /* talloc */
+        SINGLETON_CACHE,
+        SMB1_SEARCH_OFFSET_MAP,
+-       SHARE_MODE_LOCK_CACHE   /* talloc */
++       SHARE_MODE_LOCK_CACHE,  /* talloc */
++       SVF_SCAN_RESULTS_CACHE_TALLOC /* talloc */
+ };
+ 
+ /*
+

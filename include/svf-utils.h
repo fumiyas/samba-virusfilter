@@ -33,6 +33,7 @@
 #define SVF_IO_BUFFER_SIZE	(SVF_IO_URL_MAX + 128)
 #define SVF_IO_EOL_SIZE		2
 #define SVF_IO_IOV_MAX		16
+#define SVF_CACHE_BUFFER_SIZE	(PATH_MAX + 128)
 
 typedef struct svf_io_handle {
 	int		socket;
