@@ -62,8 +62,8 @@ extern userdom_struct current_user_info;
 typedef enum {
 	SVF_ACTION_DO_NOTHING,
 	SVF_ACTION_QUARANTINE,
+	SVF_ACTION_RENAME,
 	SVF_ACTION_DELETE,
-	/* FIXME: SVF_ACTION_RENAME, */
 } svf_action;
 
 typedef enum {
