@@ -1053,7 +1053,10 @@ static int svf_vfs_open(
 	}
 
 	if (SMB_VFS_NEXT_STAT(vfs_h, smb_fname) != 0) {
-		/* FIXME: Return immediately if !(flags & O_CREAT) && errno != ENOENT? */
+		// Do not return immediately if !(flags & O_CREAT) && errno != ENOENT.
+		// Do not do this here or anywhere else. The module is stackable and
+		// there may be modules below, such as audit modules, which should be
+		// handled.
 		goto svf_vfs_open_next;
 	}
 	if (!S_ISREG(smb_fname->st.st_ex_mode)) {
@@ -1149,10 +1152,19 @@ static int svf_vfs_close(
 				svf_handle,
 				return -1);
 
-	/* FIXME: Must close after scan? */
+	// Must close after scan? It appears not as the scanners are not internal
+	// and other modules such as greyhole seem to do SMB_VFS_NEXT_* functions
+	// before processing.
 	close_result = SMB_VFS_NEXT_CLOSE(vfs_h, fsp);
 	close_errno = errno;
-	/* FIXME: Return immediately if errno_result == -1, and close_errno == EBADF or ...? */
+	// Return immediately if close_result == -1, and close_errno == EBADF.
+	// If close failed, file likely doesn't exist, do not try to scan.
+	if (close_result == -1 && close_errno == EBADF)
+	{
+		DEBUG(10, ("Removing cache entry (if existant): fname: %s\n", fname));
+		svf_cache_remove(svf_h->cache_h, fname);
+		goto svf_vfs_close_fail;
+	}
 
 	if (fsp->is_directory) {
                 DEBUG(5, ("Not scanned: Directory: %s/%s\n",
