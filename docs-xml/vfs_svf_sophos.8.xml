@@ -37,7 +37,7 @@
 
         <variablelist>
                <varlistentry>
-                <term>svf_fsav:socket path = PATH</term>
+                <term>svf_sophos:socket path = PATH</term>
                 <listitem>
                 <para>Path of local socket for the virus scanner.
                 </para>
@@ -46,7 +46,7 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf_fsav:connect timeout = 30000</term>
+                <term>svf_sophos:connect timeout = 30000</term>
                 <listitem>
                 <para>Controls how long to wait on connecting to the virus
 		scanning process before timing out. Value is in milliseconds.
@@ -55,7 +55,7 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf_fsav:io timeout = 60000</term>
+                <term>svf_sophos:io timeout = 60000</term>
                 <listitem>
                 <para>Controls how long to wait on communications with the virus
 		scanning process before timing out. Value is in milliseconds.
@@ -64,7 +64,7 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf_fsav:scan on open = yes</term>
+                <term>svf_sophos:scan on open = yes</term>
                 <listitem>
                 <para>This option controls whether files are scanned on open.
                 </para>
@@ -72,7 +72,7 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf_fsav:scan on close = no</term>
+                <term>svf_sophos:scan on close = no</term>
                 <listitem>
                 <para>This option controls whether files are scanned on open.
                 </para>
@@ -80,7 +80,7 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf_fsav:max file size = 100000000</term>
+                <term>svf_sophos:max file size = 100000000</term>
                 <listitem>
                 <para>This is the largest sized file, in bytes, which will be scanned.
                 </para>
@@ -88,7 +88,7 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf_fsav:min file size = 10</term>
+                <term>svf_sophos:min file size = 10</term>
                 <listitem>
                 <para>This is the largest sized file, in bytes, which will be scanned.
                 </para>
@@ -96,7 +96,7 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf_fsav:infected file action = nothing</term>
+                <term>svf_sophos:infected file action = nothing</term>
                 <listitem>
                 <para>What to do with an infected file. The options are
 		nothing, quarantine, rename, delete. Rename is alias for quarantine
@@ -106,7 +106,7 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf_fsav:infected file errno on close = 0</term>
+                <term>svf_sophos:infected file errno on close = 0</term>
                 <listitem>
                 <para>What errno to return on close if the file is infected.
 		</para>
@@ -114,7 +114,7 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf_fsav:infected file errno on open = EACCES</term>
+                <term>svf_sophos:infected file errno on open = EACCES</term>
                 <listitem>
                 <para>What errno to return on close if the file is infected.
 		</para>
@@ -122,41 +122,41 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf_fsav:quarantine directory  = PATH</term>
+                <term>svf_sophos:quarantine directory  = PATH</term>
                 <listitem>
                 <para>Where to move infected files.</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf_fsav:quarantine prefix = svf.</term>
+                <term>svf_sophos:quarantine prefix = svf.</term>
                 <listitem>
                 <para>Prefix for quarantined files.</para>
                 <para>If this option is not set, the default is "svf.".</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf_fsav:quarantine suffix = .infected</term>
+                <term>svf_sophos:quarantine suffix = .infected</term>
                 <listitem>
                 <para>Suffix for quarantined files.
 		This option is only used if keep name is true. Otherwise it is ignored.</para>
                 <para>If this option is not set, the default is ".infected".</para>
                 </listitem>
                 </varlistentry>
-                <term>svf_fsav:rename prefix = svf.</term>
+                <term>svf_sophos:rename prefix = svf.</term>
                 <listitem>
                 <para>Prefix for infected files.</para>
                 <para>If this option is not set, the default is "svf.".</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf_fsav:rename suffix = .infected</term>
+                <term>svf_sophos:rename suffix = .infected</term>
                 <listitem>
                 <para>Suffix for infected files.</para>
                 <para>If this option is not set, the default is ".infected".</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf_fsav:quarantine keep tree = yes</term>
+                <term>svf_sophos:quarantine keep tree = yes</term>
                 <listitem>
                 <para>If keep tree is set, the directory structure relative
                 to the share is maintained in the quarantine directory.
@@ -165,51 +165,51 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf_fsav:quarantine keep name = yes</term>
+                <term>svf_sophos:quarantine keep name = yes</term>
                 <listitem>
                 <para>Should the file name be left unmodified other than adding a suffix
-                and/or prefix and a random suffix name as defined in svf_fsav:rename prefix
-                and svf_fsav:rename suffix.</para>
+                and/or prefix and a random suffix name as defined in svf_sophos:rename prefix
+                and svf_sophos:rename suffix.</para>
                 <para>If this option is not set, the default is no.</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf_fsav:infected file command = @SAMBA_DATADIR@/bin/svf-notify --mail-to virusmaster@example.com --cc "%U@example.com" --from samba@example.com --subject-prefix "Samba: Infected File: "</term>
+                <term>svf_sophos:infected file command = @SAMBA_DATADIR@/bin/svf-notify --mail-to virusmaster@example.com --cc "%U@example.com" --from samba@example.com --subject-prefix "Samba: Infected File: "</term>
                 <listitem>
                 <para>External command to run on an infected file is found.</para>
                 <para>If this option is not set, the default is none.</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf_fsav:scan archive = true</term>
+                <term>svf_sophos:scan archive = true</term>
                 <listitem>
                 <para>This defines whether or not to scan archives.</para>
                 <para>Sophos supports this and defaults to false.</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf_fsav:max nested scan archive = 1</term>
+                <term>svf_sophos:max nested scan archive = 1</term>
                 <listitem>
                 <para>This defines the maximum depth to search nested archives.</para>
                 <para>The Sophos module supports this and defauls to 1.</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf_fsav:scan error command = @SAMBA_DATADIR@/bin/svf-notify --mail-to virusmaster@example.com --from samba@example.com --subject-prefix "Samba: Scan Error: "</term>
+                <term>svf_sophos:scan error command = @SAMBA_DATADIR@/bin/svf-notify --mail-to virusmaster@example.com --from samba@example.com --subject-prefix "Samba: Scan Error: "</term>
                 <listitem>
                 <para>External command to run on scan error.</para>
                 <para>If this option is not set, the default is none.</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf_fsav:exclude files = empty</term>
+                <term>svf_sophos:exclude files = empty</term>
                 <listitem>
                 <para>Files to exclude from scanning.</para>
                 <para>If this option is not set, the default is empty.</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf_fsav:block access on error = false</term>
+                <term>svf_sophos:block access on error = false</term>
                 <listitem>
                 <para>Controls whether or not access should be blocked on
 		a scanning error.</para>
@@ -217,7 +217,7 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf_fsav:scan error errno on close = 0</term>
+                <term>svf_sophos:scan error errno on close = 0</term>
                 <listitem>
                 <para>What errno to return on close if there is an error in
 		scanning the file and block access on error is true.
@@ -226,7 +226,7 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf_fsav:scan error errno on open = EACCES</term>
+                <term>svf_sophos:scan error errno on open = EACCES</term>
                 <listitem>
                 <para>What errno to return on open if there is an error in
 		scanning the file and block access on error is true.
@@ -235,7 +235,7 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf_fsav:cache entry limit = 100</term>
+                <term>svf_sophos:cache entry limit = 100</term>
                 <listitem>
                 <para>The maximum number of entries in the scanning results
 		cache. Due to how Samba's memcache works, this is approximate.</para>
@@ -243,12 +243,20 @@
                 </listitem>
                 </varlistentry>
                <varlistentry>
-                <term>svf_fsav:cache time limit = 10</term>
+                <term>svf_sophos:cache time limit = 10</term>
                 <listitem>
                 <para>The maximum number of seconds that a scanning result
 		will stay in the results cache. -1 disables the limit.
 		0 disables caching.</para>
                 <para>If this option is not set, the default is 10.</para>
+                </listitem>
+                </varlistentry>
+               <varlistentry>
+                <term>svf_sophos:quarantine directory mode = 700</term>
+                <listitem>
+                <para>This is the octet mode for the quarantine directory and
+		its subdirectories as they are created.</para>
+                <para>If this option is not set, the default is 700 or S_IRUSR | S_IWUSR | S_IXUSR.</para>
                 </listitem>
                 </varlistentry>
         </variablelist>

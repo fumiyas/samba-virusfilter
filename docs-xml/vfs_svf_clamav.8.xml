@@ -236,6 +236,14 @@
                 <para>If this option is not set, the default is 10.</para>
                 </listitem>
                 </varlistentry>
+               <varlistentry>
+                <term>svf_clamav:quarantine directory mode = 700</term>
+                <listitem>
+                <para>This is the octet mode for the quarantine directory and
+		its subdirectories as they are created.</para>
+                <para>If this option is not set, the default is 700 or S_IRUSR | S_IWUSR | S_IXUSR.</para>
+                </listitem>
+                </varlistentry>
         </variablelist>
 
 <refsect1>
