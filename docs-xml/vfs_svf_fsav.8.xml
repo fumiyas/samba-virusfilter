@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
-<refentry id="vfs_sfv_fsav.8">
+<refentry id="vfs_svf_fsav.8">
 
 <refmeta>
-	<refentrytitle>vfs_sfv_fsav</refentrytitle>
+	<refentrytitle>vfs_svf_fsav</refentrytitle>
 	<manvolnum>8</manvolnum>
 	<refmiscinfo class="source">Samba</refmiscinfo>
 	<refmiscinfo class="manual">System Administration tools</refmiscinfo>
@@ -12,7 +12,7 @@
 
 
 <refnamediv>
-	<refname>vfs_sfv_fsav</refname>
+	<refname>vfs_svf_fsav</refname>
 	<refpurpose>On access virus scanner</refpurpose>
 </refnamediv>
 
@@ -183,21 +183,21 @@
                 <term>svf_fsav:scan archive = true</term>
                 <listitem>
                 <para>This defines whether or not to scan archives.</para>
-                <para>The f-sav module supports this and defauls to false.</para>
+                <para>The f-sav module supports this and defaults to false.</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
                 <term>svf_fsav:max nested scan archive = 1</term>
                 <listitem>
                 <para>This defines the maximum depth to search nested archives.</para>
-                <para>f-secure module supports this and defauls to 1.</para>
+                <para>f-secure module supports this and defaults to 1.</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>
                 <term>svf_fsav:scan mime = true</term>
                 <listitem>
                 <para>This defines whether or not to scan mime files.</para>
-                <para>f-secure module supports this and defauls to false.</para>
+                <para>f-secure module supports this and defaults to false.</para>
                 </listitem>
                 </varlistentry>
                <varlistentry>

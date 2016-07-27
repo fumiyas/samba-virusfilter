@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
-<refentry id="vfs_sfv_clamav.8">
+<refentry id="vfs_svf_clamav.8">
 
 <refmeta>
-	<refentrytitle>vfs_sfv_clamav</refentrytitle>
+	<refentrytitle>vfs_svf_clamav</refentrytitle>
 	<manvolnum>8</manvolnum>
 	<refmiscinfo class="source">Samba</refmiscinfo>
 	<refmiscinfo class="manual">System Administration tools</refmiscinfo>
@@ -12,7 +12,7 @@
 
 
 <refnamediv>
-	<refname>vfs_sfv_clamav</refname>
+	<refname>vfs_svf_clamav</refname>
 	<refpurpose>On access virus scanner</refpurpose>
 </refnamediv>
 
