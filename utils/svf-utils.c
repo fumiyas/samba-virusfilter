@@ -1015,7 +1015,11 @@ int svf_shell_run(
 		pid_t wpid;
 
 		/* the parent just waits for the child to exit */
+#if SAMBA_VERSION_NUMBER >= 40500
+		while((wpid = waitpid(pid,&status,0)) < 0) {
+#else
 		while((wpid = sys_waitpid(pid,&status,0)) < 0) {
+#endif
 			if(errno == EINTR) {
 				errno = 0;
 				continue;

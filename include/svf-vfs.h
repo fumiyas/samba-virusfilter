@@ -234,13 +234,13 @@ static bool quarantine_create_dir(vfs_handle_struct *handle, svf_handle *svf_h, 
 		if (quarantine_directory_exist(handle, new_dir))
 			DEBUG(10, ("quarantine: dir %s already exists\n", new_dir));
 		else {
-#if SAMBA_VERSION_NUMBER < 40100
+#if SAMBA_VERSION_NUMBER >= 40500
 			struct smb_filename *smb_fname = NULL;
 #endif
 
 			DEBUG(5, ("quarantine: creating new dir %s\n", new_dir));
 
-#if SAMBA_VERSION_NUMBER >= 40100
+#if SAMBA_VERSION_NUMBER < 40500
 			if (SMB_VFS_NEXT_MKDIR(handle, new_dir, mode) != 0) {
 #else
 			smb_fname = synthetic_smb_fname(talloc_tos(),
@@ -258,7 +258,7 @@ static bool quarantine_create_dir(vfs_handle_struct *handle, svf_handle *svf_h, 
 				ret = False;
 				goto done;
 			}
-#if SAMBA_VERSION_NUMBER < 40100
+#if SAMBA_VERSION_NUMBER >= 40500
 			TALLOC_FREE(smb_fname);
 #endif
 		}
@@ -587,7 +587,10 @@ static svf_action svf_do_infected_file_action(
 
 		become_root();
 
-#if SAMBA_VERSION_NUMBER >= 40100
+#if SAMBA_VERSION_NUMBER >= 40500
+		q_smb_fname = synthetic_smb_fname(mem_ctx, q_filepath, smb_fname->stream_name, NULL, smb_fname->flags);
+		if (q_smb_fname == NULL) {
+#elif SAMBA_VERSION_NUMBER >= 40100
 		q_smb_fname = synthetic_smb_fname(mem_ctx, q_filepath, smb_fname->stream_name, NULL);
 		if (q_smb_fname == NULL) {
 #else
@@ -720,7 +723,10 @@ static svf_action svf_do_infected_file_action(
 		}
 		close(q_fd);
 
-#if SAMBA_VERSION_NUMBER >= 40100
+#if SAMBA_VERSION_NUMBER >= 40500
+		q_smb_fname = synthetic_smb_fname(mem_ctx, q_filepath, smb_fname->stream_name, NULL, smb_fname->flags);
+		if (q_smb_fname == NULL) {
+#elif SAMBA_VERSION_NUMBER >= 40100
 		q_smb_fname = synthetic_smb_fname(mem_ctx, q_filepath, smb_fname->stream_name, NULL);
 		if (q_smb_fname == NULL) {
 #else
