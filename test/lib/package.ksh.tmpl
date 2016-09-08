@@ -1,7 +1,7 @@
 #!/bin/ksh
 # vim:filetype=sh
 
-T_svf_version="${TEST_SVF_VERSION-@PACKAGE_VERSION@}"
+T_virusfilter_version="${TEST_VIRUSFILTER_VERSION-@PACKAGE_VERSION@}"
 T_tmp_dir="${TEST_TMP_DIR-@TEST_TMP_DIR@}"
 
 T_orig_LIB_PATH="${@SAMBA_LIB_PATH_VAR@:-}"
@@ -23,7 +23,7 @@ T_file_excluded_suffix=".ext"
 T_file_size_list="0 $(($T_min_file_size / 10)) $T_min_file_size $T_max_file_size $(($T_max_file_size * 10))"
 
 T_quarantine_dir="$T_tmp_dir/quarantine"
-T_quarantine_prefix="svf."
+T_quarantine_prefix="virusfilter."
 
 ## ----------------------------------------------------------------------
 
@@ -60,9 +60,9 @@ function t_init
 
   test_verbose 1 "$0: Initializing test environment ..."
 
-  T_svf_module=$(print -r "$TEST_dir/.."/*/$T_svf_module_name.so)
-  if [ ! -f "$T_svf_module" ]; then
-    test_abort "$0: VFS module not found: $T_svf_module"
+  T_virusfilter_module=$(print -r "$TEST_dir/.."/*/$T_virusfilter_module_name.so)
+  if [ ! -f "$T_virusfilter_module" ]; then
+    test_abort "$0: VFS module not found: $T_virusfilter_module"
   fi
 
   rm -rf \
@@ -148,11 +148,11 @@ function tu_reset
     >"$T_smb_conf_file" \
     || test_abort "$0: Cannot create file: $T_smb_conf_file"
   tu_smb_conf_append "[$T_samba_share_name]"
-  tu_smb_conf_append "vfs objects = $T_svf_module"
-  tu_smb_conf_append "$T_svf_module_name: quarantine directory = $T_quarantine_dir"
-  tu_smb_conf_append "$T_svf_module_name: quarantine prefix = $T_quarantine_prefix"
-  tu_smb_conf_append_svf_option "connect timeout = 5000" ## msec
-  tu_smb_conf_append_svf_option "io timeout = 5000" ## msec
+  tu_smb_conf_append "vfs objects = $T_virusfilter_module"
+  tu_smb_conf_append "$T_virusfilter_module_name: quarantine directory = $T_quarantine_dir"
+  tu_smb_conf_append "$T_virusfilter_module_name: quarantine prefix = $T_quarantine_prefix"
+  tu_smb_conf_append_virusfilter_option "connect timeout = 5000" ## msec
+  tu_smb_conf_append_virusfilter_option "io timeout = 5000" ## msec
 
   for file in "$T_samba_data_dir"/*; do
     ln "$file" "$T_samba_share_dir/" \
@@ -171,9 +171,9 @@ function tu_smb_conf_append
     || test_abort "$0: Cannot append to file: $T_smb_conf_file"
 }
 
-function tu_smb_conf_append_svf_option
+function tu_smb_conf_append_virusfilter_option
 {
-  tu_smb_conf_append "$T_svf_module_name: $1"
+  tu_smb_conf_append "$T_virusfilter_module_name: $1"
 }
 
 function tu_smbclient

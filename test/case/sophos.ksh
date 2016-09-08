@@ -1,4 +1,4 @@
-T_svf_module_name="svf-sophos"
+T_virusfilter_module_name="virusfilter-sophos"
 T_scanner_name="savdid"
 T_scanner_pid=""
 

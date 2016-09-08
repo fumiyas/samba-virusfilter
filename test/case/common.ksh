@@ -16,7 +16,7 @@ function tc_init
 
 function tc_reset
 {
-  tu_smb_conf_append_svf_option "socket path = $TEST_tmp_dir/$T_scanner_name.socket${T_scanner_socket_suffix-}"
+  tu_smb_conf_append_virusfilter_option "socket path = $TEST_tmp_dir/$T_scanner_name.socket${T_scanner_socket_suffix-}"
 }
 
 ## ======================================================================
@@ -87,7 +87,7 @@ function tc_option_exclude_files
 
   test_verbose 0 "Testing 'exclude files' option"
   tu_reset
-  tu_smb_conf_append_svf_option "exclude files = /dummy.*/*$T_file_excluded_suffix/dummy.*/"
+  tu_smb_conf_append_virusfilter_option "exclude files = /dummy.*/*$T_file_excluded_suffix/dummy.*/"
   tcx_connect_share "$tc"
   tcx_get_safe_file "$tc"
   tcx_get_safe_file "$tc" --filename-suffix "$T_file_excluded_suffix"
@@ -105,8 +105,8 @@ function tc_option_minmax_file_size
 
   test_verbose 0 "Testing 'min/max file size' option"
   tu_reset
-  tu_smb_conf_append_svf_option "min file size = $T_min_file_size"
-  tu_smb_conf_append_svf_option "max file size = $T_max_file_size"
+  tu_smb_conf_append_virusfilter_option "min file size = $T_min_file_size"
+  tu_smb_conf_append_virusfilter_option "max file size = $T_max_file_size"
   tcx_connect_share "$tc"
   tcx_get_safe_file "$tc"
   tcx_get_safe_file "$tc" --filename-suffix "$T_file_excluded_suffix"
@@ -124,7 +124,7 @@ function tc_option_infected_file_action_nothing
 
   test_verbose 0 "Testing 'infected file action = none' option"
   tu_reset
-  tu_smb_conf_append_svf_option "infected file action = nothing"
+  tu_smb_conf_append_virusfilter_option "infected file action = nothing"
   tcx_get_virus_file "$tc" --infected-file-action nothing
   tcx_get_virus_files_on_a_session "$tc" --infected-file-action nothing
 }
@@ -135,10 +135,10 @@ function tc_option_infected_file_action_delete
 
   test_verbose 0 "Testing 'infected file action = delete' option"
   tu_reset
-  tu_smb_conf_append_svf_option "infected file action = delete"
+  tu_smb_conf_append_virusfilter_option "infected file action = delete"
   tcx_get_virus_file "$tc" --infected-file-action delete
   tu_reset
-  tu_smb_conf_append_svf_option "infected file action = delete"
+  tu_smb_conf_append_virusfilter_option "infected file action = delete"
   tcx_get_virus_files_on_a_session "$tc" --infected-file-action delete
 }
 
@@ -148,10 +148,10 @@ function tc_option_infected_file_action_quarantine
 
   test_verbose 0 "Testing 'infected file action = quarantine' option"
   tu_reset
-  tu_smb_conf_append_svf_option "infected file action = quarantine"
+  tu_smb_conf_append_virusfilter_option "infected file action = quarantine"
   tcx_get_virus_file "$tc" --infected-file-action quarantine
   tu_reset
-  tu_smb_conf_append_svf_option "infected file action = quarantine"
+  tu_smb_conf_append_virusfilter_option "infected file action = quarantine"
   tcx_get_virus_files_on_a_session "$tc" --infected-file-action quarantine
 }
 
@@ -162,7 +162,7 @@ function tc_option_infected_file_command
   test_verbose 0 "Testing 'infected file command' option"
   tu_reset
   typeset command_out="$TEST_tmp_dir/command.out"
-  tu_smb_conf_append_svf_option "infected file command = sh -c 'env >>$command_out'"
+  tu_smb_conf_append_virusfilter_option "infected file command = sh -c 'env >>$command_out'"
   tcx_get_virus_file "$tc" --infected-file-command-env-out "$command_out"
 }
 
@@ -172,7 +172,7 @@ function tc_option_scan_limit
 
   test_verbose 0 "Testing 'scan limit' option"
   tu_reset
-  tu_smb_conf_append_svf_option "scan limit = 2"
+  tu_smb_conf_append_virusfilter_option "scan limit = 2"
   tcx_get_safe_files_on_a_session "$tc"
   tcx_get_virus_files_on_a_session "$tc"
 }
@@ -184,8 +184,8 @@ function tc_option_scanner_timeout
   test_verbose 0 "Testing 'connect/io timeout' option (no block access)"
   tu_reset
   tcu_scanner_pause
-  tu_smb_conf_append_svf_option "connect timeout = 1000" ## msec
-  tu_smb_conf_append_svf_option "io timeout = 1000" ## msec
+  tu_smb_conf_append_virusfilter_option "connect timeout = 1000" ## msec
+  tu_smb_conf_append_virusfilter_option "io timeout = 1000" ## msec
 
   tcx_connect_share "$tc"
   tcx_get_safe_file "$tc"
@@ -193,7 +193,7 @@ function tc_option_scanner_timeout
 
   typeset tc="io timeout (block access)"
 
-  tu_smb_conf_append_svf_option "block access on error = yes"
+  tu_smb_conf_append_virusfilter_option "block access on error = yes"
 
   test_verbose 0 "Testing 'connect/io timeout' option (block access)"
   tcx_connect_share "$tc"
@@ -210,11 +210,11 @@ function tc_option_scan_error_command
   test_verbose 0 "Testing 'scan error command' option"
   tu_reset
   tcu_scanner_pause
-  tu_smb_conf_append_svf_option "connect timeout = 1" ## msec
-  tu_smb_conf_append_svf_option "io timeout = 1" ## msec
+  tu_smb_conf_append_virusfilter_option "connect timeout = 1" ## msec
+  tu_smb_conf_append_virusfilter_option "io timeout = 1" ## msec
 
   typeset command_out="$TEST_tmp_dir/command.out"
-  tu_smb_conf_append_svf_option "scan error command = sh -c 'env >>$command_out'"
+  tu_smb_conf_append_virusfilter_option "scan error command = sh -c 'env >>$command_out'"
   tcx_get_safe_file "$tc" --scan-error-command-env-out "$command_out"
 
   tcu_scanner_continue
@@ -227,10 +227,10 @@ function tc_option_cache_time_limit
   test_verbose 0 "Testing 'cache time limit' option"
   tu_reset
 
-  tu_smb_conf_append_svf_option "cache time limit = 999"
+  tu_smb_conf_append_virusfilter_option "cache time limit = 999"
   tcx_get_safe_file "$tc" --get-count 2
 
-  tu_smb_conf_append_svf_option "cache time limit = 1"
+  tu_smb_conf_append_virusfilter_option "cache time limit = 1"
   tcx_get_safe_file "$tc exceeded" --get-count 2 --get-count-interval 2
 }
 
@@ -243,7 +243,7 @@ function tc_option_cache_entry_limit
 
   typeset limit
   for limit in 1 5 1000; do
-    tu_smb_conf_append_svf_option "cache entry limit = $limit"
+    tu_smb_conf_append_virusfilter_option "cache entry limit = $limit"
     tcx_get_safe_files_on_a_session "$tc=$limit"
     tcx_get_safe_files_on_a_session "$tc=$limit, 2 times" \
       --file-size-list "$T_file_size_list $T_file_size_list"
@@ -358,24 +358,24 @@ function tcx_get_safe_file
 	"Scan error triggers external command${comment:+ ($comment)}: $file"
 
       env_ok=
-      sed -n '/^SVF_/p' "$scan_error_command_env_out" \
+      sed -n '/^VIRUSFILTER_/p' "$scan_error_command_env_out" \
       |sort \
       |for env_expected in \
-	SVF_CLIENT_IP="127.0.0.1" \
-	SVF_CLIENT_NAME="127.0.0.1" \
-	SVF_CLIENT_NETBIOS_NAME="$hostname" \
-	SVF_MODULE_NAME="$T_svf_module_name" \
-	SVF_SCAN_ERROR_REPORT="*" \
-	SVF_SCAN_ERROR_SERVICE_FILE_PATH="$file" \
-	SVF_SERVER_IP="127.0.0.1" \
-	SVF_SERVER_NAME="$hostname" \
-	SVF_SERVER_NETBIOS_NAME="127.0.0.1" \
-	SVF_SERVER_PID="[0-9]*" \
-	SVF_SERVICE_NAME="$T_samba_share_name" \
-	SVF_SERVICE_PATH="$T_samba_share_dir" \
-	SVF_USER_DOMAIN="$hostname_upper" \
-	SVF_USER_NAME="nobody" \
-	SVF_VERSION="$T_svf_version" \
+	VIRUSFILTER_CLIENT_IP="127.0.0.1" \
+	VIRUSFILTER_CLIENT_NAME="127.0.0.1" \
+	VIRUSFILTER_CLIENT_NETBIOS_NAME="$hostname" \
+	VIRUSFILTER_MODULE_NAME="$T_virusfilter_module_name" \
+	VIRUSFILTER_SCAN_ERROR_REPORT="*" \
+	VIRUSFILTER_SCAN_ERROR_SERVICE_FILE_PATH="$file" \
+	VIRUSFILTER_SERVER_IP="127.0.0.1" \
+	VIRUSFILTER_SERVER_NAME="$hostname" \
+	VIRUSFILTER_SERVER_NETBIOS_NAME="127.0.0.1" \
+	VIRUSFILTER_SERVER_PID="[0-9]*" \
+	VIRUSFILTER_SERVICE_NAME="$T_samba_share_name" \
+	VIRUSFILTER_SERVICE_PATH="$T_samba_share_dir" \
+	VIRUSFILTER_USER_DOMAIN="$hostname_upper" \
+	VIRUSFILTER_USER_NAME="nobody" \
+	VIRUSFILTER_VERSION="$T_virusfilter_version" \
 	END \
 	; do
 	read -r env
@@ -395,7 +395,7 @@ function tcx_get_safe_file
 	  ;;
 	esac
       done
-      test_assert_eq "$env_ok" "yes" "'scan error command' gets SVF_* environment vars: $file"
+      test_assert_eq "$env_ok" "yes" "'scan error command' gets VIRUSFILTER_* environment vars: $file"
     fi
   done
 }
@@ -512,25 +512,25 @@ function tcx_get_virus_file
 	"VIRUS file triggers external command${comment:+ ($comment)}: $file"
 
       env_ok=
-      sed -n '/^SVF_/p' "$infected_file_command_env_out" \
+      sed -n '/^VIRUSFILTER_/p' "$infected_file_command_env_out" \
       |sort \
       |for env_expected in \
-	SVF_CLIENT_IP="127.0.0.1" \
-	SVF_CLIENT_NAME="127.0.0.1" \
-	SVF_CLIENT_NETBIOS_NAME="$hostname" \
-	SVF_INFECTED_FILE_ACTION="${infected_file_action:-nothing}" \
-	SVF_INFECTED_FILE_REPORT="*" \
-	SVF_INFECTED_SERVICE_FILE_PATH="$file" \
-	SVF_MODULE_NAME="$T_svf_module_name" \
-	SVF_SERVER_IP="127.0.0.1" \
-	SVF_SERVER_NAME="$hostname" \
-	SVF_SERVER_NETBIOS_NAME="127.0.0.1" \
-	SVF_SERVER_PID="[0-9]*" \
-	SVF_SERVICE_NAME="$T_samba_share_name" \
-	SVF_SERVICE_PATH="$T_samba_share_dir" \
-	SVF_USER_DOMAIN="$hostname_upper" \
-	SVF_USER_NAME="nobody" \
-	SVF_VERSION="$T_svf_version" \
+	VIRUSFILTER_CLIENT_IP="127.0.0.1" \
+	VIRUSFILTER_CLIENT_NAME="127.0.0.1" \
+	VIRUSFILTER_CLIENT_NETBIOS_NAME="$hostname" \
+	VIRUSFILTER_INFECTED_FILE_ACTION="${infected_file_action:-nothing}" \
+	VIRUSFILTER_INFECTED_FILE_REPORT="*" \
+	VIRUSFILTER_INFECTED_SERVICE_FILE_PATH="$file" \
+	VIRUSFILTER_MODULE_NAME="$T_virusfilter_module_name" \
+	VIRUSFILTER_SERVER_IP="127.0.0.1" \
+	VIRUSFILTER_SERVER_NAME="$hostname" \
+	VIRUSFILTER_SERVER_NETBIOS_NAME="127.0.0.1" \
+	VIRUSFILTER_SERVER_PID="[0-9]*" \
+	VIRUSFILTER_SERVICE_NAME="$T_samba_share_name" \
+	VIRUSFILTER_SERVICE_PATH="$T_samba_share_dir" \
+	VIRUSFILTER_USER_DOMAIN="$hostname_upper" \
+	VIRUSFILTER_USER_NAME="nobody" \
+	VIRUSFILTER_VERSION="$T_virusfilter_version" \
 	END \
 	; do
 	read -r env
@@ -549,7 +549,7 @@ function tcx_get_virus_file
 	  ;;
 	esac
       done
-      test_assert_eq "$env_ok" "yes" "'infected file command' gets SVF_* environment vars: $file"
+      test_assert_eq "$env_ok" "yes" "'infected file command' gets VIRUSFILTER_* environment vars: $file"
     fi
   done
 }

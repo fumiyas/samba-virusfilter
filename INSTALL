@@ -53,7 +53,7 @@ Change a line in ./buildtools/wafsamba/stale_files.py:
                    if link[0:bin_base_len] == bin_base:
                        p = link
   -            if f in ['config.h']:
-  +            if f in ['config.h', 'svf-config.h']:
+  +            if f in ['config.h', 'virusfilter-config.h']:
                    continue
                (froot, fext) = os.path.splitext(f)
                if fext not in [ '.c', '.h', '.so', '.o' ]:

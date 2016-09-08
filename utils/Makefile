@@ -3,11 +3,11 @@ SOURCE_BUILD=	$(SOURCE_DIR)/build
 
 ## ======================================================================
 
-BUILD_TARGETS= svf-utils.o
+BUILD_TARGETS= virusfilter-utils.o
 
 ## ======================================================================
 
 include $(SOURCE_BUILD)/Makefile.common
 
-svf-utils.o:: $(SOURCE_DIR)/include/svf-utils.h $(SVF_COMMON_HEADERS)
+virusfilter-utils.o:: $(SOURCE_DIR)/include/virusfilter-utils.h $(VIRUSFILTER_COMMON_HEADERS)
 
