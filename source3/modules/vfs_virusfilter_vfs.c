@@ -19,8 +19,8 @@
 #ifndef _VIRUSFILTER_VFS_H
 #define _VIRUSFILTER_VFS_H
 
-#include "virusfilter-common.h"
-#include "virusfilter-utils.h"
+#include "vfs_virusfilter_common.h"
+#include "vfs_virusfilter_utils.h"
 
 #define VIRUSFILTER_MODULE_NAME "virusfilter_" VIRUSFILTER_MODULE_ENGINE
 #define ALLOC_CHECK(ptr, label) do { if ((ptr) == NULL) { DEBUG(0, ("virusfilter-vfs: out of memory!\n")); errno = ENOMEM; goto label; } } while(0)

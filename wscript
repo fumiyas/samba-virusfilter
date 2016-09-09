@@ -24,7 +24,7 @@ def configure(conf):
         sambaversion.MINOR,
         sambaversion.RELEASE,
     )))
-    conf.write_config_header('include/virusfilter-config.h')
+    conf.write_config_header('include/vfs_virusfilter_config.h')
     conf.env['defines'] = old_defines
 
     conf.ADD_EXTRA_INCLUDES('include')

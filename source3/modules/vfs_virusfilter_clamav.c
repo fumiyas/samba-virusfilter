@@ -35,11 +35,11 @@
 #define virusfilter_module_scan_end			virusfilter_clamav_scan_end
 #define virusfilter_module_scan				virusfilter_clamav_scan
 
-#include "virusfilter-vfs.h"
+#include "vfs_virusfilter_vfs.c"
 
 /* ====================================================================== */
 
-#include "virusfilter-utils.h"
+#include "vfs_virusfilter_utils.h"
 
 /* ====================================================================== */
 

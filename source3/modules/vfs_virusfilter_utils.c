@@ -16,8 +16,8 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "virusfilter-common.h"
-#include "virusfilter-utils.h"
+#include "vfs_virusfilter_common.h"
+#include "vfs_virusfilter_utils.h"
 
 #include <poll.h>
 

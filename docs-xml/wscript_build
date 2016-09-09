@@ -1,0 +1,11 @@
+#!/usr/bin/env python
+
+manpages='''
+         manpages/vfs_virusfilter_clamav.8
+         manpages/vfs_virusfilter_fsav.8
+         manpages/vfs_virusfilter_sophos.8
+         '''
+
+if ('XSLTPROC_MANPAGES' in bld.env and bld.env['XSLTPROC_MANPAGES']):
+
+    bld.SAMBAMANPAGES(manpages)

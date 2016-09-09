@@ -3,7 +3,7 @@ SOURCE_BUILD=		$(SOURCE_DIR)/build
 
 ## ======================================================================
 
-MAKE_DIRS=		utils clamav sophos f-secure bin etc test
+MAKE_DIRS=		source3 bin etc test
 
 ## ======================================================================
 

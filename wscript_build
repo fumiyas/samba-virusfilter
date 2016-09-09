@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
-VFS_SFV_CLAMAV_SRC = '''utils/virusfilter-utils.c clamav/virusfilter-clamav.c'''
-VFS_SFV_FSECURE_SRC = '''utils/virusfilter-utils.c f-secure/virusfilter-fsav.c'''
-VFS_SFV_SOPHOS_SRC = '''utils/virusfilter-utils.c sophos/virusfilter-sophos.c'''
+bld.RECURSE('docs-xml')
+
+VFS_SFV_CLAMAV_SRC = '''source3/modules/vfs_virusfilter_utils.c source3/modules/vfs_virusfilter_clamav.c'''
+VFS_SFV_FSECURE_SRC = '''source3/modules/vfs_virusfilter_utils.c source3/modules/vfs_virusfilter_fsav.c'''
+VFS_SFV_SOPHOS_SRC = '''source3/modules/vfs_virusfilter_utils.c source3/modules/vfs_virusfilter_sophos.c'''
 
 bld.SAMBA3_MODULE('vfs_virusfilter_clamav',
                  subsystem='vfs',
