@@ -24,8 +24,8 @@ def configure(conf):
         sambaversion.MINOR,
         sambaversion.RELEASE,
     )))
-    conf.write_config_header('include/svf-config.h')
+    conf.write_config_header('include/virusfilter-config.h')
     conf.env['defines'] = old_defines
 
     conf.ADD_EXTRA_INCLUDES('include')
-    conf.env['shared_modules'].extend(TO_LIST('vfs_svf_clamav vfs_svf_fsav vfs_svf_sophos'))
+    conf.env['shared_modules'].extend(TO_LIST('vfs_virusfilter_clamav vfs_virusfilter_fsav vfs_virusfilter_sophos'))

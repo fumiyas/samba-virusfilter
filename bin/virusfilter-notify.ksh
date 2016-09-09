@@ -23,43 +23,43 @@ pdie() { echo "$0: ERROR: ${1-}" 1>&2; exit "${2-1}"; }
 
 ## ======================================================================
 
-sendmail="${SVF_NOTIFY_SENDMAIL_COMMAND:-/usr/sbin/sendmail}"
-sendmail_opts="${SVF_NOTIFY_SENDMAIL_OPTIONS:-}"
+sendmail="${VIRUSFILTER_NOTIFY_SENDMAIL_COMMAND:-/usr/sbin/sendmail}"
+sendmail_opts="${VIRUSFILTER_NOTIFY_SENDMAIL_OPTIONS:-}"
 
-smbclient="${SVF_NOTIFY_SMBCLIENT_COMMAND:-@SAMBA_BINDIR@/smbclient}"
-smbclient_opts="${SVF_NOTIFY_SMBCLIENT_OPTIONS:-}"
+smbclient="${VIRUSFILTER_NOTIFY_SMBCLIENT_COMMAND:-@SAMBA_BINDIR@/smbclient}"
+smbclient_opts="${VIRUSFILTER_NOTIFY_SMBCLIENT_OPTIONS:-}"
 
 ## ======================================================================
 
-if [ -n "${SVF_RESULT_IS_CACHE-}" ]; then
+if [ -n "${VIRUSFILTER_RESULT_IS_CACHE-}" ]; then
   ## Result is cache. Ignore!
   exit 0
 fi
 
-if [ ! -t 1 ] && [ -z "${SVF_NOTIFY_BG-}" ]; then
-  export SVF_NOTIFY_BG=1
+if [ ! -t 1 ] && [ -z "${VIRUSFILTER_NOTIFY_BG-}" ]; then
+  export VIRUSFILTER_NOTIFY_BG=1
   "$0" ${1+"$@"} </dev/null >/dev/null &
   exit 0
 fi
 
 ## ----------------------------------------------------------------------
 
-if [ -n "${SVF_INFECTED_FILE_ACTION-}" ]; then
-  report="$SVF_INFECTED_FILE_REPORT"
+if [ -n "${VIRUSFILTER_INFECTED_FILE_ACTION-}" ]; then
+  report="$VIRUSFILTER_INFECTED_FILE_REPORT"
 else
-  report="$SVF_SCAN_ERROR_REPORT"
+  report="$VIRUSFILTER_SCAN_ERROR_REPORT"
 fi
 
-if [ X"$SVF_SERVER_NAME" != X"$SVF_SERVER_IP" ]; then
-  server_name="$SVF_SERVER_NAME"
+if [ X"$VIRUSFILTER_SERVER_NAME" != X"$VIRUSFILTER_SERVER_IP" ]; then
+  server_name="$VIRUSFILTER_SERVER_NAME"
 else
-  server_name="$SVF_SERVER_NETBIOS_NAME"
+  server_name="$VIRUSFILTER_SERVER_NETBIOS_NAME"
 fi
 
-if [ X"$SVF_CLIENT_NAME" != X"$SVF_CLIENT_IP" ]; then
-  client_name="$SVF_CLIENT_NAME"
+if [ X"$VIRUSFILTER_CLIENT_NAME" != X"$VIRUSFILTER_CLIENT_IP" ]; then
+  client_name="$VIRUSFILTER_CLIENT_NAME"
 else
-  client_name="$SVF_CLIENT_NETBIOS_NAME"
+  client_name="$VIRUSFILTER_CLIENT_NETBIOS_NAME"
 fi
 
 mail_to=""
@@ -186,13 +186,13 @@ subject="$subject_prefix$report"
 msg_header="\
 Subject: $subject
 Content-Type: $content_type; charset=$content_encoding
-X-SVF-Version: $SVF_VERSION
-X-SVF-Module-Name: $SVF_MODULE_NAME
+X-VIRUSFILTER-Version: $VIRUSFILTER_VERSION
+X-VIRUSFILTER-Module-Name: $VIRUSFILTER_MODULE_NAME
 "
 
-if [ -n "${SVF_MODULE_VERSION-}" ]; then
+if [ -n "${VIRUSFILTER_MODULE_VERSION-}" ]; then
   msg_header="${msg_header}\
-X-SVF-Module-Version: $SVF_MODULE_VERSION
+X-VIRUSFILTER-Module-Version: $VIRUSFILTER_MODULE_VERSION
 "
 fi
 
@@ -231,30 +231,30 @@ if [ -n "${header_file-}" ] && [ -f "$header_file" ]; then
 fi
 
 msg_body="${msg_body}\
-Server: $server_name ($SVF_SERVER_IP)
-Server PID: $SVF_SERVER_PID
-Service name: $SVF_SERVICE_NAME
-Service path: $SVF_SERVICE_PATH
-Client: $client_name ($SVF_CLIENT_IP)
-User: $SVF_USER_DOMAIN\\$SVF_USER_NAME
+Server: $server_name ($VIRUSFILTER_SERVER_IP)
+Server PID: $VIRUSFILTER_SERVER_PID
+Service name: $VIRUSFILTER_SERVICE_NAME
+Service path: $VIRUSFILTER_SERVICE_PATH
+Client: $client_name ($VIRUSFILTER_CLIENT_IP)
+User: $VIRUSFILTER_USER_DOMAIN\\$VIRUSFILTER_USER_NAME
 "
 
-if [ -n "${SVF_INFECTED_FILE_ACTION-}" ]; then
+if [ -n "${VIRUSFILTER_INFECTED_FILE_ACTION-}" ]; then
   msg_body="${msg_body}\
-Infected file report: $SVF_INFECTED_FILE_REPORT
-Infected file path: $SVF_SERVICE_PATH/$SVF_INFECTED_SERVICE_FILE_PATH
-Infected file action: $SVF_INFECTED_FILE_ACTION
+Infected file report: $VIRUSFILTER_INFECTED_FILE_REPORT
+Infected file path: $VIRUSFILTER_SERVICE_PATH/$VIRUSFILTER_INFECTED_SERVICE_FILE_PATH
+Infected file action: $VIRUSFILTER_INFECTED_FILE_ACTION
 "
 else
   msg_body="${msg_body}\
-Scan error report: $SVF_SCAN_ERROR_REPORT
-Scan error file path: $SVF_SERVICE_PATH/$SVF_SCAN_ERROR_SERVICE_FILE_PATH
+Scan error report: $VIRUSFILTER_SCAN_ERROR_REPORT
+Scan error file path: $VIRUSFILTER_SERVICE_PATH/$VIRUSFILTER_SCAN_ERROR_SERVICE_FILE_PATH
 "
 fi
 
-if [ -n "${SVF_QUARANTINED_FILE_PATH-}" ]; then
+if [ -n "${VIRUSFILTER_QUARANTINED_FILE_PATH-}" ]; then
   msg_body="${msg_body}\
-Quarantined file path: ${SVF_QUARANTINED_FILE_PATH-}
+Quarantined file path: ${VIRUSFILTER_QUARANTINED_FILE_PATH-}
 "
 fi
 

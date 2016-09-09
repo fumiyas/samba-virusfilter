@@ -1,27 +1,27 @@
 #!/usr/bin/env python
 
-VFS_SFV_CLAMAV_SRC = '''utils/svf-utils.c clamav/svf-clamav.c'''
-VFS_SFV_FSECURE_SRC = '''utils/svf-utils.c f-secure/svf-fsav.c'''
-VFS_SFV_SOPHOS_SRC = '''utils/svf-utils.c sophos/svf-sophos.c'''
+VFS_SFV_CLAMAV_SRC = '''utils/virusfilter-utils.c clamav/virusfilter-clamav.c'''
+VFS_SFV_FSECURE_SRC = '''utils/virusfilter-utils.c f-secure/virusfilter-fsav.c'''
+VFS_SFV_SOPHOS_SRC = '''utils/virusfilter-utils.c sophos/virusfilter-sophos.c'''
 
-bld.SAMBA3_MODULE('vfs_svf_clamav',
+bld.SAMBA3_MODULE('vfs_virusfilter_clamav',
                  subsystem='vfs',
                  source=VFS_SFV_CLAMAV_SRC,
                  deps='samba-util',
                  init_function='',
-                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('vfs_svf_clamav'),
-                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('vfs_svf_clamav'))
-bld.SAMBA3_MODULE('vfs_svf_fsav',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('vfs_virusfilter_clamav'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('vfs_virusfilter_clamav'))
+bld.SAMBA3_MODULE('vfs_virusfilter_fsav',
                  subsystem='vfs',
                  source=VFS_SFV_FSECURE_SRC,
                  deps='samba-util',
                  init_function='',
-                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('vfs_svf_fsav'),
-                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('vfs_svf_fsav'))
-bld.SAMBA3_MODULE('vfs_svf_sophos',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('vfs_virusfilter_fsav'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('vfs_virusfilter_fsav'))
+bld.SAMBA3_MODULE('vfs_virusfilter_sophos',
                  subsystem='vfs',
                  source=VFS_SFV_SOPHOS_SRC,
                  deps='samba-util',
                  init_function='',
-                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('vfs_svf_sophos'),
-                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('vfs_svf_sophos'))
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('vfs_virusfilter_sophos'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('vfs_virusfilter_sophos'))

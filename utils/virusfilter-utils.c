@@ -16,12 +16,12 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "svf-common.h"
-#include "svf-utils.h"
+#include "virusfilter-common.h"
+#include "virusfilter-utils.h"
 
 #include <poll.h>
 
-#define SVF_ENV_SIZE_CHUNK 32
+#define VIRUSFILTER_ENV_SIZE_CHUNK 32
 
 /* ====================================================================== */
 
@@ -55,7 +55,7 @@ void *memmem(const void *m1, size_t m1_len, const void *m2, size_t m2_len)
 
 /* ====================================================================== */
 
-char *svf_string_sub(TALLOC_CTX *mem_ctx, connection_struct *conn, const char *str)
+char *virusfilter_string_sub(TALLOC_CTX *mem_ctx, connection_struct *conn, const char *str)
 {
 	return talloc_sub_advanced(mem_ctx,
 		lp_servicename(mem_ctx, SNUM(conn)),
@@ -68,7 +68,7 @@ char *svf_string_sub(TALLOC_CTX *mem_ctx, connection_struct *conn, const char *s
 }
 
 /* Python's urllib.quote(string[, safe]) clone */
-int svf_url_quote(const char *src, char *dst, int dst_size)
+int virusfilter_url_quote(const char *src, char *dst, int dst_size)
 {
 	char *dst_c = dst;
         static char hex[] = "0123456789ABCDEF";
@@ -105,7 +105,7 @@ int svf_url_quote(const char *src, char *dst, int dst_size)
  <warrenb@hpcvscdp.cv.hp.com>
 **********************************************************/
 
-static int svf_copy_reg(const char *source, const char *dest)
+static int virusfilter_copy_reg(const char *source, const char *dest)
 {
 	SMB_STRUCT_STAT source_stats;
 	int saved_errno;
@@ -224,7 +224,7 @@ static int svf_copy_reg(const char *source, const char *dest)
 #endif /* SAMBA_VERSION_NUMBER >= 30600 */
 
 #if SAMBA_VERSION_NUMBER >= 30600
-int svf_vfs_next_move(
+int virusfilter_vfs_next_move(
 	vfs_handle_struct *vfs_h,
 	const struct smb_filename *smb_fname_src,
 	const struct smb_filename *smb_fname_dst)
@@ -236,31 +236,31 @@ int svf_vfs_next_move(
 		return result;
 	}
 
-	return svf_copy_reg(smb_fname_src->base_name, smb_fname_dst->base_name);
+	return virusfilter_copy_reg(smb_fname_src->base_name, smb_fname_dst->base_name);
 }
 #endif /* SAMBA_VERSION_NUMBER >= 30600 */
 
 /* Line-based socket I/O
  * ====================================================================== */
 
-svf_io_handle *svf_io_new(TALLOC_CTX *mem_ctx, int connect_timeout, int io_timeout)
+virusfilter_io_handle *virusfilter_io_new(TALLOC_CTX *mem_ctx, int connect_timeout, int io_timeout)
 {
-	svf_io_handle *io_h = talloc_zero(mem_ctx, svf_io_handle);
+	virusfilter_io_handle *io_h = talloc_zero(mem_ctx, virusfilter_io_handle);
 
 	if (!io_h) {
 		return NULL;
 	}
 
 	io_h->socket = -1;
-	svf_io_set_connect_timeout(io_h, connect_timeout);
-	svf_io_set_io_timeout(io_h, io_timeout);
-	svf_io_set_writel_eol(io_h, "\x0A", 1);
-	svf_io_set_readl_eol(io_h, "\x0A", 1);
+	virusfilter_io_set_connect_timeout(io_h, connect_timeout);
+	virusfilter_io_set_io_timeout(io_h, io_timeout);
+	virusfilter_io_set_writel_eol(io_h, "\x0A", 1);
+	virusfilter_io_set_readl_eol(io_h, "\x0A", 1);
 
 	return io_h;
 }
 
-int svf_io_set_connect_timeout(svf_io_handle *io_h, int timeout)
+int virusfilter_io_set_connect_timeout(virusfilter_io_handle *io_h, int timeout)
 {
 	int timeout_old = io_h->connect_timeout;
 
@@ -270,7 +270,7 @@ int svf_io_set_connect_timeout(svf_io_handle *io_h, int timeout)
 	return timeout_old;
 }
 
-int svf_io_set_io_timeout(svf_io_handle *io_h, int timeout)
+int virusfilter_io_set_io_timeout(virusfilter_io_handle *io_h, int timeout)
 {
 	int timeout_old = io_h->io_timeout;
 
@@ -280,9 +280,9 @@ int svf_io_set_io_timeout(svf_io_handle *io_h, int timeout)
 	return timeout_old;
 }
 
-void svf_io_set_writel_eol(svf_io_handle *io_h, const char *eol, int eol_size)
+void virusfilter_io_set_writel_eol(virusfilter_io_handle *io_h, const char *eol, int eol_size)
 {
-	if (eol_size < 1 || eol_size > SVF_IO_EOL_SIZE) {
+	if (eol_size < 1 || eol_size > VIRUSFILTER_IO_EOL_SIZE) {
 		return;
 	}
 
@@ -290,9 +290,9 @@ void svf_io_set_writel_eol(svf_io_handle *io_h, const char *eol, int eol_size)
 	io_h->w_eol_size = eol_size;
 }
 
-void svf_io_set_readl_eol(svf_io_handle *io_h, const char *eol, int eol_size)
+void virusfilter_io_set_readl_eol(virusfilter_io_handle *io_h, const char *eol, int eol_size)
 {
-	if (eol_size < 1 || eol_size > SVF_IO_EOL_SIZE) {
+	if (eol_size < 1 || eol_size > VIRUSFILTER_IO_EOL_SIZE) {
 		return;
 	}
 
@@ -300,7 +300,7 @@ void svf_io_set_readl_eol(svf_io_handle *io_h, const char *eol, int eol_size)
 	io_h->r_eol_size = eol_size;
 }
 
-svf_result svf_io_connect_path(svf_io_handle *io_h, const char *path)
+virusfilter_result virusfilter_io_connect_path(virusfilter_io_handle *io_h, const char *path)
 {
 	struct sockaddr_un addr;
 	NTSTATUS status;
@@ -314,13 +314,13 @@ svf_result svf_io_connect_path(svf_io_handle *io_h, const char *path)
 		&io_h->socket);
 	if (!NT_STATUS_IS_OK(status)) {
 		io_h->socket = -1;
-		return SVF_RESULT_ERROR;
+		return VIRUSFILTER_RESULT_ERROR;
 	}
 
-	return SVF_RESULT_OK;
+	return VIRUSFILTER_RESULT_OK;
 }
 
-svf_result svf_io_disconnect(svf_io_handle *io_h)
+virusfilter_result virusfilter_io_disconnect(virusfilter_io_handle *io_h)
 {
 	if (io_h->socket != -1) {
 		close(io_h->socket);
@@ -330,16 +330,16 @@ svf_result svf_io_disconnect(svf_io_handle *io_h)
 	io_h->r_size = io_h->r_rest_size = 0;
 	io_h->r_rest_buffer = NULL;
 
-	return SVF_RESULT_OK;
+	return VIRUSFILTER_RESULT_OK;
 }
 
-svf_result svf_io_write(svf_io_handle *io_h, const char *data, size_t data_size)
+virusfilter_result virusfilter_io_write(virusfilter_io_handle *io_h, const char *data, size_t data_size)
 {
 	struct pollfd pollfd;
 	ssize_t wrote_size;
 
 	if (data_size == 0) {
-		return SVF_RESULT_OK;
+		return VIRUSFILTER_RESULT_OK;
 	}
 
 	pollfd.fd = io_h->socket;
@@ -352,10 +352,10 @@ svf_result svf_io_write(svf_io_handle *io_h, const char *data, size_t data_size)
 				errno = 0;
 				continue;
 			}
-			return SVF_RESULT_ERROR;
+			return VIRUSFILTER_RESULT_ERROR;
 		case 0:
 			errno = ETIMEDOUT;
-			return SVF_RESULT_ERROR;
+			return VIRUSFILTER_RESULT_ERROR;
 		}
 
 		wrote_size = write(io_h->socket, data, data_size);
@@ -364,61 +364,61 @@ svf_result svf_io_write(svf_io_handle *io_h, const char *data, size_t data_size)
 				errno = 0;
 				continue;
 			}
-			return SVF_RESULT_ERROR;
+			return VIRUSFILTER_RESULT_ERROR;
 		}
 
 		data += wrote_size;
 		data_size -= wrote_size;
 	}
 
-	return SVF_RESULT_OK;
+	return VIRUSFILTER_RESULT_OK;
 }
 
-svf_result svf_io_writel(svf_io_handle *io_h, const char *data, size_t data_size)
+virusfilter_result virusfilter_io_writel(virusfilter_io_handle *io_h, const char *data, size_t data_size)
 {
-	svf_result result;
+	virusfilter_result result;
 
-	result = svf_io_write(io_h, data, data_size);
-	if (result != SVF_RESULT_OK) {
+	result = virusfilter_io_write(io_h, data, data_size);
+	if (result != VIRUSFILTER_RESULT_OK) {
 		return result;
 	}
 
-	return svf_io_write(io_h, io_h->w_eol, io_h->w_eol_size);
+	return virusfilter_io_write(io_h, io_h->w_eol, io_h->w_eol_size);
 }
 
-svf_result svf_io_writefl(svf_io_handle *io_h, const char *data_fmt, ...)
+virusfilter_result virusfilter_io_writefl(virusfilter_io_handle *io_h, const char *data_fmt, ...)
 {
 	va_list ap;
-	char data[SVF_IO_BUFFER_SIZE + SVF_IO_EOL_SIZE];
+	char data[VIRUSFILTER_IO_BUFFER_SIZE + VIRUSFILTER_IO_EOL_SIZE];
 	size_t data_size;
 
 	va_start(ap, data_fmt);
-	data_size = vsnprintf(data, SVF_IO_BUFFER_SIZE, data_fmt, ap);
+	data_size = vsnprintf(data, VIRUSFILTER_IO_BUFFER_SIZE, data_fmt, ap);
 	va_end(ap);
 
 	memcpy(data + data_size, io_h->w_eol, io_h->w_eol_size);
 	data_size += io_h->w_eol_size;
 
-	return svf_io_write(io_h, data, data_size);
+	return virusfilter_io_write(io_h, data, data_size);
 }
 
-svf_result svf_io_vwritefl(svf_io_handle *io_h, const char *data_fmt, va_list ap)
+virusfilter_result virusfilter_io_vwritefl(virusfilter_io_handle *io_h, const char *data_fmt, va_list ap)
 {
-	char data[SVF_IO_BUFFER_SIZE + SVF_IO_EOL_SIZE];
+	char data[VIRUSFILTER_IO_BUFFER_SIZE + VIRUSFILTER_IO_EOL_SIZE];
 	size_t data_size;
 
-	data_size = vsnprintf(data, SVF_IO_BUFFER_SIZE, data_fmt, ap);
+	data_size = vsnprintf(data, VIRUSFILTER_IO_BUFFER_SIZE, data_fmt, ap);
 
 	memcpy(data + data_size, io_h->w_eol, io_h->w_eol_size);
 	data_size += io_h->w_eol_size;
 
-	return svf_io_write(io_h, data, data_size);
+	return virusfilter_io_write(io_h, data, data_size);
 }
 
-svf_result svf_io_writev(svf_io_handle *io_h, ...)
+virusfilter_result virusfilter_io_writev(virusfilter_io_handle *io_h, ...)
 {
 	va_list ap;
-	struct iovec iov[SVF_IO_IOV_MAX], *iov_p;
+	struct iovec iov[VIRUSFILTER_IO_IOV_MAX], *iov_p;
 	int iov_n;
 	struct pollfd pollfd;
 	size_t data_size;
@@ -426,7 +426,7 @@ svf_result svf_io_writev(svf_io_handle *io_h, ...)
 
 	va_start(ap, io_h);
 	for (iov_p = iov, iov_n = 0, data_size = 0;
-	     iov_n < SVF_IO_IOV_MAX;
+	     iov_n < VIRUSFILTER_IO_IOV_MAX;
 	     iov_p++, iov_n++) {
 		iov_p->iov_base = va_arg(ap, void *);
 		if (!iov_p->iov_base) {
@@ -447,10 +447,10 @@ svf_result svf_io_writev(svf_io_handle *io_h, ...)
 				errno = 0;
 				continue;
 			}
-			return SVF_RESULT_ERROR;
+			return VIRUSFILTER_RESULT_ERROR;
 		case 0:
 			errno = ETIMEDOUT;
-			return SVF_RESULT_ERROR;
+			return VIRUSFILTER_RESULT_ERROR;
 		}
 
 		wrote_size = writev(io_h->socket, iov_p, iov_n);
@@ -459,12 +459,12 @@ svf_result svf_io_writev(svf_io_handle *io_h, ...)
 				errno = 0;
 				continue;
 			}
-			return SVF_RESULT_ERROR;
+			return VIRUSFILTER_RESULT_ERROR;
 		}
 
 		data_size -= wrote_size;
 		if (data_size <= 0) {
-			return SVF_RESULT_OK;
+			return VIRUSFILTER_RESULT_OK;
 		}
 
 		while (iov_n > 0 && wrote_size >= iov_p->iov_len) {
@@ -480,14 +480,14 @@ svf_result svf_io_writev(svf_io_handle *io_h, ...)
 
 #if 0
 	/* Not reached */
-	return SVF_RESULT_OK;
+	return VIRUSFILTER_RESULT_OK;
 #endif
 }
 
-svf_result svf_io_writevl(svf_io_handle *io_h, ...)
+virusfilter_result virusfilter_io_writevl(virusfilter_io_handle *io_h, ...)
 {
 	va_list ap;
-	struct iovec iov[SVF_IO_IOV_MAX + 1], *iov_p;
+	struct iovec iov[VIRUSFILTER_IO_IOV_MAX + 1], *iov_p;
 	int iov_n;
 	struct pollfd pollfd;
 	size_t data_size;
@@ -495,7 +495,7 @@ svf_result svf_io_writevl(svf_io_handle *io_h, ...)
 
 	va_start(ap, io_h);
 	for (iov_p = iov, iov_n = 0, data_size = 0;
-	     iov_n < SVF_IO_IOV_MAX;
+	     iov_n < VIRUSFILTER_IO_IOV_MAX;
 	     iov_p++, iov_n++) {
 		iov_p->iov_base = va_arg(ap, void *);
 		if (!iov_p->iov_base) {
@@ -521,10 +521,10 @@ svf_result svf_io_writevl(svf_io_handle *io_h, ...)
 				errno = 0;
 				continue;
 			}
-			return SVF_RESULT_ERROR;
+			return VIRUSFILTER_RESULT_ERROR;
 		case 0:
 			errno = ETIMEDOUT;
-			return SVF_RESULT_ERROR;
+			return VIRUSFILTER_RESULT_ERROR;
 		}
 
 		wrote_size = writev(io_h->socket, iov_p, iov_n);
@@ -533,12 +533,12 @@ svf_result svf_io_writevl(svf_io_handle *io_h, ...)
 				errno = 0;
 				continue;
 			}
-			return SVF_RESULT_ERROR;
+			return VIRUSFILTER_RESULT_ERROR;
 		}
 
 		data_size -= wrote_size;
 		if (data_size <= 0) {
-			return SVF_RESULT_OK;
+			return VIRUSFILTER_RESULT_OK;
 		}
 
 		while (iov_n > 0 && wrote_size >= iov_p->iov_len) {
@@ -554,14 +554,14 @@ svf_result svf_io_writevl(svf_io_handle *io_h, ...)
 
 #if 0
 	/* Not reached */
-	return SVF_RESULT_OK;
+	return VIRUSFILTER_RESULT_OK;
 #endif
 }
 
-svf_result svf_io_readl(svf_io_handle *io_h)
+virusfilter_result virusfilter_io_readl(virusfilter_io_handle *io_h)
 {
 	char *buffer;
-	ssize_t buffer_size = SVF_IO_BUFFER_SIZE;
+	ssize_t buffer_size = VIRUSFILTER_IO_BUFFER_SIZE;
 	struct pollfd pollfd;
 	ssize_t read_size;
 	char *eol;
@@ -569,7 +569,7 @@ svf_result svf_io_readl(svf_io_handle *io_h)
 	if (io_h->r_rest_buffer == NULL) {
 		DEBUG(11,("Rest data not found in read buffer\n"));
 		buffer = io_h->r_buffer = io_h->r_buffer_real;
-		buffer_size = SVF_IO_BUFFER_SIZE;
+		buffer_size = VIRUSFILTER_IO_BUFFER_SIZE;
 	} else {
 		DEBUG(11,("Rest data found in read buffer: %s, size=%ld\n",
 			io_h->r_rest_buffer, (long)io_h->r_rest_size));
@@ -584,14 +584,14 @@ svf_result svf_io_readl(svf_io_handle *io_h)
 			io_h->r_rest_buffer = (io_h->r_rest_size > 0) ?
 				(eol + io_h->r_eol_size) : NULL;
 
-			return SVF_RESULT_OK;
+			return VIRUSFILTER_RESULT_OK;
 		}
 
 		io_h->r_buffer = io_h->r_buffer_real;
 		memmove(io_h->r_buffer, io_h->r_rest_buffer, io_h->r_rest_size);
 
 		buffer = io_h->r_buffer + io_h->r_size;
-		buffer_size = SVF_IO_BUFFER_SIZE - io_h->r_rest_size;
+		buffer_size = VIRUSFILTER_IO_BUFFER_SIZE - io_h->r_rest_size;
 	}
 
 	io_h->r_rest_buffer = NULL;
@@ -607,10 +607,10 @@ svf_result svf_io_readl(svf_io_handle *io_h)
 				errno = 0;
 				continue;
 			}
-			return SVF_RESULT_ERROR;
+			return VIRUSFILTER_RESULT_ERROR;
 		case 0:
 			errno = ETIMEDOUT;
-			return SVF_RESULT_ERROR;
+			return VIRUSFILTER_RESULT_ERROR;
 		}
 
 		read_size = read(io_h->socket, buffer, buffer_size);
@@ -619,13 +619,13 @@ svf_result svf_io_readl(svf_io_handle *io_h)
 				errno = 0;
 				continue;
 			}
-			return SVF_RESULT_ERROR;
+			return VIRUSFILTER_RESULT_ERROR;
 		}
 
 		buffer[read_size] = '\0';
 
 		if (read_size == 0) { /* EOF */
-			return SVF_RESULT_OK;
+			return VIRUSFILTER_RESULT_OK;
 		}
 
 		io_h->r_size += read_size;
@@ -641,7 +641,7 @@ svf_result svf_io_readl(svf_io_handle *io_h)
 				DEBUG(11,("Rest data in read buffer: %s, size=%ld\n",
 					io_h->r_rest_buffer, (long)io_h->r_rest_size));
 			}
-			return SVF_RESULT_OK;
+			return VIRUSFILTER_RESULT_OK;
 		}
 
 		buffer += read_size;
@@ -650,53 +650,53 @@ svf_result svf_io_readl(svf_io_handle *io_h)
 
 	errno = E2BIG;
 
-	return SVF_RESULT_ERROR;
+	return VIRUSFILTER_RESULT_ERROR;
 }
 
-svf_result svf_io_writefl_readl(svf_io_handle *io_h, const char *fmt, ...)
+virusfilter_result virusfilter_io_writefl_readl(virusfilter_io_handle *io_h, const char *fmt, ...)
 {
 	if (fmt) {
 		va_list ap;
-		svf_result result;
+		virusfilter_result result;
 
 		va_start(ap, fmt);
-		result = svf_io_vwritefl(io_h, fmt, ap);
+		result = virusfilter_io_vwritefl(io_h, fmt, ap);
 		va_end(ap);
 
-		if (result != SVF_RESULT_OK) {
+		if (result != VIRUSFILTER_RESULT_OK) {
 			return result;
 		}
 	}
 
-	svf_result result = svf_io_readl(io_h);
-	if (result != SVF_RESULT_OK) {
-		DEBUG(0,("svf_io_readl not OK: %d\n", result));
-		return SVF_RESULT_ERROR;
+	virusfilter_result result = virusfilter_io_readl(io_h);
+	if (result != VIRUSFILTER_RESULT_OK) {
+		DEBUG(0,("virusfilter_io_readl not OK: %d\n", result));
+		return VIRUSFILTER_RESULT_ERROR;
 	}
 	if (io_h->r_size == 0) { /* EOF */
-		DEBUG(0,("svf_io_readl EOF\n"));
-		return SVF_RESULT_ERROR; /* FIXME: SVF_RESULT_EOF? */
+		DEBUG(0,("virusfilter_io_readl EOF\n"));
+		return VIRUSFILTER_RESULT_ERROR; /* FIXME: VIRUSFILTER_RESULT_EOF? */
 	}
 
-	return SVF_RESULT_OK;
+	return VIRUSFILTER_RESULT_OK;
 }
 
 /* Generic "stupid" cache
  * ====================================================================== */
 
-svf_cache_handle *svf_cache_new(TALLOC_CTX *ctx, int entry_limit, time_t time_limit)
+virusfilter_cache_handle *virusfilter_cache_new(TALLOC_CTX *ctx, int entry_limit, time_t time_limit)
 {
-	svf_cache_handle *cache_h;
+	virusfilter_cache_handle *cache_h;
 
 	if(time_limit == 0) return NULL;
 
-	cache_h = talloc_zero(ctx, svf_cache_handle);
+	cache_h = talloc_zero(ctx, virusfilter_cache_handle);
 	if (!cache_h) {
 		DEBUG(0,("talloc_zero failed.\n"));
 		return NULL;
 	}
 
-	cache_h->cache = memcache_init(cache_h->ctx, entry_limit * (sizeof(svf_cache_entry) + SVF_CACHE_BUFFER_SIZE));
+	cache_h->cache = memcache_init(cache_h->ctx, entry_limit * (sizeof(virusfilter_cache_entry) + VIRUSFILTER_CACHE_BUFFER_SIZE));
 	if (!cache_h->cache) {
 		DEBUG(0,("memcache_init failed.\n"));
 		return NULL;
@@ -707,14 +707,14 @@ svf_cache_handle *svf_cache_new(TALLOC_CTX *ctx, int entry_limit, time_t time_li
 	return cache_h;
 }
 
-int svf_cache_entry_add(
-	svf_cache_handle *cache_h,
+int virusfilter_cache_entry_add(
+	virusfilter_cache_handle *cache_h,
 	const char *fname,
-	svf_result result,
+	virusfilter_result result,
 	const char *report)
 {
-	int blob_size = sizeof(svf_cache_entry);
-	svf_cache_entry *cache_e = talloc_zero_size(NULL, blob_size);
+	int blob_size = sizeof(virusfilter_cache_entry);
+	virusfilter_cache_entry *cache_e = talloc_zero_size(NULL, blob_size);
 	int fname_len = strlen(fname);
 
 	if (!cache_e || cache_h->time_limit == 0) {
@@ -730,22 +730,22 @@ int svf_cache_entry_add(
 		cache_e->time = time(NULL);
 	}
 
-	memcache_add_talloc(cache_h->cache, SVF_SCAN_RESULTS_CACHE_TALLOC,
+	memcache_add_talloc(cache_h->cache, VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC,
 			 data_blob_const(fname, fname_len), &cache_e);
 
 	return 1;
 }
 
-int svf_cache_entry_rename(
-	svf_cache_handle *cache_h,
+int virusfilter_cache_entry_rename(
+	virusfilter_cache_handle *cache_h,
 	const char *old_fname,
 	const char *new_fname)
 {
 	int old_fname_len = strlen(old_fname);
 	int new_fname_len = strlen(new_fname);
-	svf_cache_entry *new_data;
+	virusfilter_cache_entry *new_data;
 
-	svf_cache_entry *old_data = memcache_lookup_talloc(cache_h->cache, SVF_SCAN_RESULTS_CACHE_TALLOC,
+	virusfilter_cache_entry *old_data = memcache_lookup_talloc(cache_h->cache, VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC,
 			     data_blob_const(old_fname, old_fname_len));
 
 	if (!old_data)
@@ -753,32 +753,32 @@ int svf_cache_entry_rename(
 		return 0;
 	}
 
-	new_data = talloc_memdup(cache_h->ctx, old_data, sizeof(svf_cache_entry));
+	new_data = talloc_memdup(cache_h->ctx, old_data, sizeof(virusfilter_cache_entry));
 	if (!new_data)
 	{
 		return 0;
 	}
 	new_data->report = talloc_strdup(new_data, old_data->report);
 
-	memcache_add_talloc(cache_h->cache, SVF_SCAN_RESULTS_CACHE_TALLOC,
+	memcache_add_talloc(cache_h->cache, VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC,
 			  data_blob_const(new_fname, new_fname_len), &new_data);
 
-	memcache_delete(cache_h->cache, SVF_SCAN_RESULTS_CACHE_TALLOC,
+	memcache_delete(cache_h->cache, VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC,
 		     data_blob_const(old_fname, old_fname_len));
 
 	return 1;
 }
 
-void svf_cache_purge(svf_cache_handle *cache_h)
+void virusfilter_cache_purge(virusfilter_cache_handle *cache_h)
 {
-	memcache_flush(cache_h->cache, SVF_SCAN_RESULTS_CACHE_TALLOC);
+	memcache_flush(cache_h->cache, VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC);
 }
 
-svf_cache_entry *svf_cache_get(svf_cache_handle *cache_h, const char *fname)
+virusfilter_cache_entry *virusfilter_cache_get(virusfilter_cache_handle *cache_h, const char *fname)
 {
 	int fname_len = strlen(fname);
-	svf_cache_entry *cache_e = NULL;
-	svf_cache_entry *data = memcache_lookup_talloc(cache_h->cache, SVF_SCAN_RESULTS_CACHE_TALLOC,
+	virusfilter_cache_entry *cache_e = NULL;
+	virusfilter_cache_entry *data = memcache_lookup_talloc(cache_h->cache, VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC,
 			     data_blob_const(fname, fname_len));
 
 	if (data) {
@@ -787,11 +787,11 @@ svf_cache_entry *svf_cache_get(svf_cache_handle *cache_h, const char *fname)
 			if (time(NULL) - data->time  > cache_h->time_limit)
 			{
 				DEBUG(10,("Cache entry is too old: %s\n", fname));
-				svf_cache_remove(cache_h, fname);
+				virusfilter_cache_remove(cache_h, fname);
 				return cache_e;
 			}
 		}
-		cache_e = talloc_memdup(cache_h->ctx, data, sizeof(svf_cache_entry));
+		cache_e = talloc_memdup(cache_h->ctx, data, sizeof(virusfilter_cache_entry));
 		if (!cache_e) return cache_e;
 		if (data->report) {
 			cache_e->report = talloc_strdup(cache_e, data->report);
@@ -802,15 +802,15 @@ svf_cache_entry *svf_cache_get(svf_cache_handle *cache_h, const char *fname)
 	return cache_e;
 }
 
-void svf_cache_remove(svf_cache_handle *cache_h, const char *fname)
+void virusfilter_cache_remove(virusfilter_cache_handle *cache_h, const char *fname)
 {
 	DEBUG(10,("Purging cache entry: %s\n", fname));
 
-	memcache_delete(cache_h->cache, SVF_SCAN_RESULTS_CACHE_TALLOC,
+	memcache_delete(cache_h->cache, VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC,
 		     data_blob_const(fname, strlen(fname)));
 }
 
-void svf_cache_entry_free(svf_cache_entry *cache_e)
+void virusfilter_cache_entry_free(virusfilter_cache_entry *cache_e)
 {
 	if(cache_e->report) {
 		TALLOC_FREE(cache_e->report);
@@ -822,37 +822,37 @@ void svf_cache_entry_free(svf_cache_entry *cache_e)
 /* Environment variable handling for execle(2)
  * ====================================================================== */
 
-svf_env_struct *svf_env_new(TALLOC_CTX *ctx)
+virusfilter_env_struct *virusfilter_env_new(TALLOC_CTX *ctx)
 {
-	svf_env_struct *env_h = talloc_zero(ctx, svf_env_struct);
+	virusfilter_env_struct *env_h = talloc_zero(ctx, virusfilter_env_struct);
 	if (!env_h) {
 		DEBUG(0, ("talloc_zero failed\n"));
-		goto svf_env_init_failed;
+		goto virusfilter_env_init_failed;
 	}
 
 	env_h->env_num = 0;
-	env_h->env_size = SVF_ENV_SIZE_CHUNK;
+	env_h->env_size = VIRUSFILTER_ENV_SIZE_CHUNK;
 	env_h->env_list = talloc_array(env_h, char *, env_h->env_size);
 	if (!env_h->env_list) {
 		DEBUG(0, ("TALLOC_ARRAY failed\n"));
-		goto svf_env_init_failed;
+		goto virusfilter_env_init_failed;
 	}
 
 	env_h->env_list[0] = NULL;
 
 	return env_h;
 
-svf_env_init_failed:
+virusfilter_env_init_failed:
 	TALLOC_FREE(env_h);
 	return NULL;
 }
 
-char * const *svf_env_list(svf_env_struct *env_h)
+char * const *virusfilter_env_list(virusfilter_env_struct *env_h)
 {
 	return env_h->env_list;
 }
 
-int svf_env_set(svf_env_struct *env_h, const char *name, const char *value)
+int virusfilter_env_set(virusfilter_env_struct *env_h, const char *name, const char *value)
 {
 	size_t name_len = strlen(name);
 	size_t env_len = name_len + 1 + strlen(value); /* strlen("name=value") */
@@ -871,7 +871,7 @@ int svf_env_set(svf_env_struct *env_h, const char *name, const char *value)
 
 		if (env_h->env_size == env_h->env_num + 1) {
 			/* Enlarge env_h->env_list */
-			size_t env_size_new = env_h->env_size + SVF_ENV_SIZE_CHUNK;
+			size_t env_size_new = env_h->env_size + VIRUSFILTER_ENV_SIZE_CHUNK;
 			char **env_list_new = talloc_realloc(
 				env_h, env_h->env_list, char *, env_size_new);
 			if (!env_list_new) {
@@ -916,8 +916,8 @@ int svf_env_set(svf_env_struct *env_h, const char *name, const char *value)
 /* Shell scripting
  * ====================================================================== */
 
-/* svf_env version Samba's *_sub_advanced() in substitute.c */
-int svf_shell_set_conn_env(svf_env_struct *env_h, connection_struct *conn)
+/* virusfilter_env version Samba's *_sub_advanced() in substitute.c */
+int virusfilter_shell_set_conn_env(virusfilter_env_struct *env_h, connection_struct *conn)
 {
 	int snum = SNUM(conn);
 	const char *server_addr_p;
@@ -933,52 +933,52 @@ int svf_shell_set_conn_env(svf_env_struct *env_h, connection_struct *conn)
 	if (strncmp("::ffff:", server_addr_p, 7) == 0) {
 		server_addr_p += 7;
 	}
-	svf_env_set(env_h, "SVF_SERVER_IP", server_addr_p);
-	svf_env_set(env_h, "SVF_SERVER_NAME", myhostname());
-	svf_env_set(env_h, "SVF_SERVER_NETBIOS_NAME", local_machine_name);
+	virusfilter_env_set(env_h, "VIRUSFILTER_SERVER_IP", server_addr_p);
+	virusfilter_env_set(env_h, "VIRUSFILTER_SERVER_NAME", myhostname());
+	virusfilter_env_set(env_h, "VIRUSFILTER_SERVER_NETBIOS_NAME", local_machine_name);
 	slprintf(pidstr,sizeof(pidstr)-1, "%ld", (long)getpid());
-	svf_env_set(env_h, "SVF_SERVER_PID", pidstr);
+	virusfilter_env_set(env_h, "VIRUSFILTER_SERVER_PID", pidstr);
 
-	svf_env_set(env_h, "SVF_SERVICE_NAME", lp_const_servicename(snum));
-	svf_env_set(env_h, "SVF_SERVICE_PATH", conn->connectpath);
+	virusfilter_env_set(env_h, "VIRUSFILTER_SERVICE_NAME", lp_const_servicename(snum));
+	virusfilter_env_set(env_h, "VIRUSFILTER_SERVICE_PATH", conn->connectpath);
 
 	client_addr_p = conn_client_addr(conn);
 	if (strncmp("::ffff:", client_addr_p, 7) == 0) {
 		client_addr_p += 7;
 	}
-	svf_env_set(env_h, "SVF_CLIENT_IP", client_addr_p);
-	svf_env_set(env_h, "SVF_CLIENT_NAME", conn_client_name(conn));
-	svf_env_set(env_h, "SVF_CLIENT_NETBIOS_NAME", get_remote_machine_name());
+	virusfilter_env_set(env_h, "VIRUSFILTER_CLIENT_IP", client_addr_p);
+	virusfilter_env_set(env_h, "VIRUSFILTER_CLIENT_NAME", conn_client_name(conn));
+	virusfilter_env_set(env_h, "VIRUSFILTER_CLIENT_NETBIOS_NAME", get_remote_machine_name());
 
-	svf_env_set(env_h, "SVF_USER_NAME", get_current_username());
-	svf_env_set(env_h, "SVF_USER_DOMAIN", current_user_info.domain);
+	virusfilter_env_set(env_h, "VIRUSFILTER_USER_NAME", get_current_username());
+	virusfilter_env_set(env_h, "VIRUSFILTER_USER_DOMAIN", current_user_info.domain);
 
 	return 0;
 }
 
 /* Modified version of Samba's smbrun() in smbrun.c */
-int svf_shell_run(
+int virusfilter_shell_run(
 	const char *cmd,
 	uid_t uid,
 	gid_t gid,
-	svf_env_struct *env_h,
+	virusfilter_env_struct *env_h,
 	connection_struct *conn,
 	bool sanitize)
 {
 	pid_t pid;
 
 	if (!env_h) {
-		env_h = svf_env_new(talloc_tos());
+		env_h = virusfilter_env_new(talloc_tos());
 		if (!env_h) {
 			return -1;
 		}
 	}
 
-	if (conn && svf_shell_set_conn_env(env_h, conn) == -1) {
+	if (conn && virusfilter_shell_set_conn_env(env_h, conn) == -1) {
 		return -1;
 	}
 
-#ifdef SVF_RUN_OUTFD_SUPPORT
+#ifdef VIRUSFILTER_RUN_OUTFD_SUPPORT
 	/* point our stdout at the file we want output to go into */
 	if (outfd && ((*outfd = setup_out_fd()) == -1)) {
 		return -1;
@@ -996,9 +996,9 @@ int svf_shell_run(
 	CatchChildLeaveStatus();
 
 	if ((pid=fork()) < 0) {
-		DEBUG(0,("svf_run: fork failed with error %s\n", strerror(errno)));
+		DEBUG(0,("virusfilter_run: fork failed with error %s\n", strerror(errno)));
 		CatchChild();
-#ifdef SVF_RUN_OUTFD_SUPPORT
+#ifdef VIRUSFILTER_RUN_OUTFD_SUPPORT
 		if (outfd) {
 			close(*outfd);
 			*outfd = -1;
@@ -1031,7 +1031,7 @@ int svf_shell_run(
 
 		if (wpid != pid) {
 			DEBUG(2,("waitpid(%d) : %s\n",(int)pid,strerror(errno)));
-#ifdef SVF_RUN_OUTFD_SUPPORT
+#ifdef VIRUSFILTER_RUN_OUTFD_SUPPORT
 			if (outfd) {
 				close(*outfd);
 				*outfd = -1;
@@ -1040,7 +1040,7 @@ int svf_shell_run(
 			return -1;
 		}
 
-#ifdef SVF_RUN_OUTFD_SUPPORT
+#ifdef VIRUSFILTER_RUN_OUTFD_SUPPORT
 		/* Reset the seek pointer. */
 		if (outfd) {
 			sys_lseek(*outfd, 0, SEEK_SET);
@@ -1062,7 +1062,7 @@ int svf_shell_run(
 	   don't directly exec the command we want because it may be a
 	   pipeline or anything else the config file specifies */
 
-#ifdef SVF_RUN_OUTFD_SUPPORT
+#ifdef VIRUSFILTER_RUN_OUTFD_SUPPORT
 	/* point our stdout at the file we want output to go into */
 	if (outfd) {
 		close(1);
@@ -1107,7 +1107,7 @@ int svf_shell_run(
 		}
 
 		execle("/bin/sh","sh","-c",
-		    newcmd ? (const char *)newcmd : cmd, NULL, svf_env_list(env_h));
+		    newcmd ? (const char *)newcmd : cmd, NULL, virusfilter_env_list(env_h));
 
 		SAFE_FREE(newcmd);
 	}

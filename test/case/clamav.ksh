@@ -1,4 +1,4 @@
-T_svf_module_name="svf-clamav"
+T_virusfilter_module_name="virusfilter-clamav"
 T_scanner_name="clamd"
 T_scanner_pid=""
 

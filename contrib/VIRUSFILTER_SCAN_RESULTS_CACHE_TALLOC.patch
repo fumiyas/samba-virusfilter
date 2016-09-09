@@ -7,7 +7,7 @@ index 9e9a208..f93c898 100644
         case PDB_GETPWSID_CACHE:
         case SINGLETON_CACHE_TALLOC:
         case SHARE_MODE_LOCK_CACHE:
-+       case SVF_SCAN_RESULTS_CACHE_TALLOC:
++       case VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC:
                 result = true;
                 break;
 diff --git a/lib/util/memcache.h b/lib/util/memcache.h
@@ -20,7 +20,7 @@ index 2602fb7..a80d36e 100644
         SMB1_SEARCH_OFFSET_MAP,
 -       SHARE_MODE_LOCK_CACHE   /* talloc */
 +       SHARE_MODE_LOCK_CACHE,  /* talloc */
-+       SVF_SCAN_RESULTS_CACHE_TALLOC /* talloc */
++       VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC /* talloc */
  };
  
  /*

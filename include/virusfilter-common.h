@@ -16,8 +16,8 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _SVF_COMMON_H
-#define _SVF_COMMON_H
+#ifndef _VIRUSFILTER_COMMON_H
+#define _VIRUSFILTER_COMMON_H
 
 #include <stdint.h>
 #include <time.h>
@@ -45,35 +45,35 @@
 #undef PACKAGE_URL
 #undef PACKAGE_VERSION
 
-/* Samba debug classs for SVF */
+/* Samba debug classs for VIRUSFILTER */
 #undef DBGC_CLASS
-#define DBGC_CLASS svf_debug_level
-extern int svf_debug_level;
+#define DBGC_CLASS virusfilter_debug_level
+extern int virusfilter_debug_level;
 
 /* Samba's global variable */
 extern userdom_struct current_user_info;
 
-#include "svf-config.h"
+#include "virusfilter-config.h"
 
-#define SVF_VERSION PACKAGE_VERSION
+#define VIRUSFILTER_VERSION PACKAGE_VERSION
 
 /* ====================================================================== */
 
 typedef enum {
-	SVF_ACTION_DO_NOTHING,
-	SVF_ACTION_QUARANTINE,
-	SVF_ACTION_RENAME,
-	SVF_ACTION_DELETE,
-} svf_action;
+	VIRUSFILTER_ACTION_DO_NOTHING,
+	VIRUSFILTER_ACTION_QUARANTINE,
+	VIRUSFILTER_ACTION_RENAME,
+	VIRUSFILTER_ACTION_DELETE,
+} virusfilter_action;
 
 typedef enum {
-	SVF_RESULT_OK,
-	SVF_RESULT_CLEAN,
-	SVF_RESULT_ERROR,
-	SVF_RESULT_INFECTED,
-	/* FIXME: SVF_RESULT_SUSPECTED, */
-	/* FIXME: SVF_RESULT_RISKWARE, */
-} svf_result;
+	VIRUSFILTER_RESULT_OK,
+	VIRUSFILTER_RESULT_CLEAN,
+	VIRUSFILTER_RESULT_ERROR,
+	VIRUSFILTER_RESULT_INFECTED,
+	/* FIXME: VIRUSFILTER_RESULT_SUSPECTED, */
+	/* FIXME: VIRUSFILTER_RESULT_RISKWARE, */
+} virusfilter_result;
 
 #define conn_session_info(conn)		((conn)->session_info)
 #if SAMBA_VERSION_NUMBER >= 40200
@@ -87,5 +87,5 @@ typedef enum {
 
 #define conn_server_addr(conn)	tsocket_address_inet_addr_string((conn)->sconn->local_address, talloc_tos())
 
-#endif /* _SVF_COMMON_H */
+#endif /* _VIRUSFILTER_COMMON_H */
 
