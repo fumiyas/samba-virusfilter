@@ -26,10 +26,13 @@
 #define VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC SINGLETON_CACHE_TALLOC
 #endif
 
-#define str_eq(s1, s2)		((strcmp((s1), (s2)) == 0) ? true : false)
-#define strn_eq(s1, s2, n)	((strncmp((s1), (s2), (n)) == 0) ? true : false)
+#define str_eq(s1, s2)		\
+	((strcmp((s1), (s2)) == 0) ? true : false)
+#define strn_eq(s1, s2, n)	\
+	((strncmp((s1), (s2), (n)) == 0) ? true : false)
 
-#define VIRUSFILTER_IO_URL_MAX		(PATH_MAX * 3) /* "* 3" is for %-encoding */
+/* "* 3" is for %-encoding */
+#define VIRUSFILTER_IO_URL_MAX		(PATH_MAX * 3)
 #define VIRUSFILTER_IO_BUFFER_SIZE	(VIRUSFILTER_IO_URL_MAX + 128)
 #define VIRUSFILTER_IO_EOL_SIZE		2
 #define VIRUSFILTER_IO_IOV_MAX		16
@@ -39,9 +42,11 @@ typedef struct virusfilter_io_handle {
 	int		socket;
 	int		connect_timeout;	/* msec */
 	int		io_timeout;		/* msec */
-	char		w_eol[VIRUSFILTER_IO_EOL_SIZE];	/* end-of-line character(s) */
+	/* end-of-line character(s) */
+	char		w_eol[VIRUSFILTER_IO_EOL_SIZE];
 	int		w_eol_size;
-	char		r_eol[VIRUSFILTER_IO_EOL_SIZE];	/* end-of-line character(s) */
+	/* end-of-line character(s) */
+	char		r_eol[VIRUSFILTER_IO_EOL_SIZE];
 	int		r_eol_size;
 	char		*r_buffer;
 	char		r_buffer_real[VIRUSFILTER_IO_BUFFER_SIZE+1];
@@ -70,7 +75,8 @@ typedef struct {
 
 /* ====================================================================== */
 
-char *virusfilter_string_sub(TALLOC_CTX *mem_ctx, connection_struct *conn, const char *str);
+char *virusfilter_string_sub(TALLOC_CTX *mem_ctx, connection_struct *conn,
+	const char *str);
 int virusfilter_url_quote(const char *src, char *dst, int dst_size);
 int virusfilter_vfs_next_move(
 	vfs_handle_struct *handle,
@@ -78,38 +84,55 @@ int virusfilter_vfs_next_move(
 	const struct smb_filename *smb_fname_dst);
 
 /* Line-based socket I/O */
-virusfilter_io_handle *virusfilter_io_new(TALLOC_CTX *mem_ctx, int connect_timeout, int timeout);
-int virusfilter_io_set_connect_timeout(virusfilter_io_handle *io_h, int timeout);
+virusfilter_io_handle *virusfilter_io_new(TALLOC_CTX *mem_ctx,
+	int connect_timeout, int timeout);
+int virusfilter_io_set_connect_timeout(virusfilter_io_handle *io_h,
+	int timeout);
 int virusfilter_io_set_io_timeout(virusfilter_io_handle *io_h, int timeout);
-void virusfilter_io_set_writel_eol(virusfilter_io_handle *io_h, const char *eol, int eol_size);
-void virusfilter_io_set_readl_eol(virusfilter_io_handle *io_h, const char *eol, int eol_size);
-virusfilter_result virusfilter_io_connect_path(virusfilter_io_handle *io_h, const char *path);
+void virusfilter_io_set_writel_eol(virusfilter_io_handle *io_h,
+	const char *eol, int eol_size);
+void virusfilter_io_set_readl_eol(virusfilter_io_handle *io_h, const char *eol,
+	int eol_size);
+virusfilter_result virusfilter_io_connect_path(virusfilter_io_handle *io_h,
+	const char *path);
 virusfilter_result virusfilter_io_disconnect(virusfilter_io_handle *io_h);
-virusfilter_result virusfilter_io_write(virusfilter_io_handle *io_h, const char *data, size_t data_size);
-virusfilter_result virusfilter_io_writel(virusfilter_io_handle *io_h, const char *data, size_t data_size);
-virusfilter_result virusfilter_io_writefl(virusfilter_io_handle *io_h, const char *data_fmt, ...);
-virusfilter_result virusfilter_io_vwritefl(virusfilter_io_handle *io_h, const char *data_fmt, va_list ap);
+virusfilter_result virusfilter_io_write(virusfilter_io_handle *io_h,
+	const char *data, size_t data_size);
+virusfilter_result virusfilter_io_writel(virusfilter_io_handle *io_h,
+	const char *data, size_t data_size);
+virusfilter_result virusfilter_io_writefl(virusfilter_io_handle *io_h,
+	const char *data_fmt, ...);
+virusfilter_result virusfilter_io_vwritefl(virusfilter_io_handle *io_h,
+	const char *data_fmt, va_list ap);
 virusfilter_result virusfilter_io_writev(virusfilter_io_handle *io_h, ...);
 virusfilter_result virusfilter_io_writevl(virusfilter_io_handle *io_h, ...);
 virusfilter_result virusfilter_io_readl(virusfilter_io_handle *io_h);
-virusfilter_result virusfilter_io_writefl_readl(virusfilter_io_handle *io_h, const char *fmt, ...);
+virusfilter_result virusfilter_io_writefl_readl(virusfilter_io_handle *io_h,
+	const char *fmt, ...);
 
 /* Scan result cache */
-virusfilter_cache_handle *virusfilter_cache_new(TALLOC_CTX *ctx, int entry_limit, time_t time_limit);
-int virusfilter_cache_entry_add(virusfilter_cache_handle *cache_h, const char *fname, virusfilter_result result, const char *report);
-int virusfilter_cache_entry_rename(virusfilter_cache_handle *cache_h, const char *old_fname, const char *new_fname);
+virusfilter_cache_handle *virusfilter_cache_new(TALLOC_CTX *ctx,
+	int entry_limit, time_t time_limit);
+int virusfilter_cache_entry_add(virusfilter_cache_handle *cache_h,
+	const char *fname, virusfilter_result result, const char *report);
+int virusfilter_cache_entry_rename(virusfilter_cache_handle *cache_h,
+	const char *old_fname, const char *new_fname);
 void virusfilter_cache_entry_free(virusfilter_cache_entry *cache_e);
-virusfilter_cache_entry *virusfilter_cache_get(virusfilter_cache_handle *cache_h, const char *fname);
-void virusfilter_cache_remove(virusfilter_cache_handle *cache_h, const char *fname);
+virusfilter_cache_entry *virusfilter_cache_get(
+	virusfilter_cache_handle *cache_h, const char *fname);
+void virusfilter_cache_remove(virusfilter_cache_handle *cache_h,
+	const char *fname);
 void virusfilter_cache_purge(virusfilter_cache_handle *cache_h);
 
 /* Environment variable handling for execle(2) */
 virusfilter_env_struct *virusfilter_env_new(TALLOC_CTX *ctx);
 char * const *virusfilter_env_list(virusfilter_env_struct *env_h);
-int virusfilter_env_set(virusfilter_env_struct *env_h, const char *name, const char *value);
+int virusfilter_env_set(virusfilter_env_struct *env_h, const char *name,
+	const char *value);
 
 /* Shell scripting */
-int virusfilter_shell_set_conn_env(virusfilter_env_struct *env_h, connection_struct *conn);
+int virusfilter_shell_set_conn_env(virusfilter_env_struct *env_h,
+	connection_struct *conn);
 int virusfilter_shell_run(
 	const char *cmd,
 	uid_t uid,

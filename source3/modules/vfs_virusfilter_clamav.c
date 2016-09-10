@@ -156,7 +156,8 @@ static virusfilter_result virusfilter_clamav_scan(
 	}
 
 virusfilter_clamav_scan_return:
-	*reportp = report;
+	if (report == NULL) *reportp = "Scanner report memory error";
+	else *reportp = report;
 
 	return result;
 }

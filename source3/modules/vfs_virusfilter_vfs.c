@@ -39,7 +39,8 @@
 #define VIRUSFILTER_DEFAULT_CACHE_ENTRY_LIMIT		100
 #define VIRUSFILTER_DEFAULT_CACHE_TIME_LIMIT		10
 
-#define VIRUSFILTER_DEFAULT_INFECTED_FILE_ACTION	VIRUSFILTER_ACTION_DO_NOTHING
+#define VIRUSFILTER_DEFAULT_INFECTED_FILE_ACTION	\
+	VIRUSFILTER_ACTION_DO_NOTHING
 #define VIRUSFILTER_DEFAULT_INFECTED_FILE_COMMAND	NULL
 #define VIRUSFILTER_DEFAULT_INFECTED_FILE_ERRNO_ON_OPEN	EACCES
 #define VIRUSFILTER_DEFAULT_INFECTED_FILE_ERRNO_ON_CLOSE 0
@@ -49,12 +50,14 @@
 #define VIRUSFILTER_DEFAULT_SCAN_ERROR_ERRNO_ON_CLOSE	0
 #define VIRUSFILTER_DEFAULT_BLOCK_ACCESS_ON_ERROR	false
 
-#define VIRUSFILTER_DEFAULT_QUARANTINE_DIRECTORY	VARDIR "/virusfilter/quarantine"
+#define VIRUSFILTER_DEFAULT_QUARANTINE_DIRECTORY	VARDIR  \
+	"/virusfilter/quarantine"
 #define VIRUSFILTER_DEFAULT_QUARANTINE_PREFIX		"virusfilter."
 #define VIRUSFILTER_DEFAULT_QUARANTINE_SUFFIX		".infected"
 #define VIRUSFILTER_DEFAULT_QUARANTINE_KEEP_NAME	false
 #define VIRUSFILTER_DEFAULT_QUARANTINE_KEEP_TREE	false
-#define VIRUSFILTER_DEFAULT_QUARANTINE_DIR_MODE		"700" /* S_IRUSR | S_IWUSR | S_IXUSR */
+/* 700 = S_IRUSR | S_IWUSR | S_IXUSR */
+#define VIRUSFILTER_DEFAULT_QUARANTINE_DIR_MODE		"700"
 
 #define VIRUSFILTER_DEFAULT_RENAME_PREFIX		"virusfilter."
 #define VIRUSFILTER_DEFAULT_RENAME_SUFFIX		".infected"
@@ -67,10 +70,12 @@ static const struct enum_list virusfilter_actions[] = {
 	{ VIRUSFILTER_ACTION_QUARANTINE,	"quarantine" },
 	{ VIRUSFILTER_ACTION_RENAME,		"rename" },
 	{ VIRUSFILTER_ACTION_DELETE,		"delete" },
-	{ VIRUSFILTER_ACTION_DELETE,		"remove" },	/* alias for "delete" */
-	{ VIRUSFILTER_ACTION_DELETE,		"unlink" },	/* alias for "delete" */
+	/* alias for "delete" */
+	{ VIRUSFILTER_ACTION_DELETE,		"remove" },
+	/* alias for "delete" */
+	{ VIRUSFILTER_ACTION_DELETE,		"unlink" },
 	{ VIRUSFILTER_ACTION_DO_NOTHING,	"nothing" },
-	{ -1,				NULL}
+	{ -1,					NULL}
 };
 
 typedef struct {
@@ -97,11 +102,11 @@ typedef struct {
 	/* Exclude files */
 	name_compare_entry		*exclude_files;
 	/* Scan result cache */
-	virusfilter_cache_handle		*cache_h;
+	virusfilter_cache_handle	*cache_h;
 	int				cache_entry_limit;
 	int				cache_time_limit;
 	/* Infected file options */
-	virusfilter_action			infected_file_action;
+	virusfilter_action		infected_file_action;
 	const char *			infected_file_command;
 	int				infected_file_errno_on_open;
 	int				infected_file_errno_on_close;
@@ -123,7 +128,7 @@ typedef struct {
 	/* Network options */
 #ifdef VIRUSFILTER_DEFAULT_SOCKET_PATH
         const char *			socket_path;
-	virusfilter_io_handle			*io_h;
+	virusfilter_io_handle		*io_h;
 #endif
 	/* Module specific configuration options */
 #ifdef VIRUSFILTER_MODULE_CONFIG_MEMBERS
@@ -146,11 +151,13 @@ static int virusfilter_module_disconnect(vfs_handle_struct *vfs_h);
 #endif
 
 #ifdef virusfilter_module_destruct_config
-static int virusfilter_module_destruct_config(virusfilter_handle *virusfilter_h);
+static int virusfilter_module_destruct_config(
+	virusfilter_handle *virusfilter_h);
 #endif
 
 #ifdef virusfilter_module_scan_init
-static virusfilter_result virusfilter_module_scan_init(virusfilter_handle *virusfilter_h);
+static virusfilter_result virusfilter_module_scan_init(
+	virusfilter_handle *virusfilter_h);
 #endif
 
 #ifdef virusfilter_module_scan_end
@@ -280,8 +287,8 @@ static bool quarantine_create_dir(vfs_handle_struct *handle,
 	ret = True;
 	done:
 		unbecome_root();
-		SAFE_FREE(tmp_str);
-		SAFE_FREE(new_dir);
+		TALLOC_FREE(tmp_str);
+		TALLOC_FREE(new_dir);
 		return ret;
 }
 
@@ -473,21 +480,25 @@ static int virusfilter_vfs_connect(
 			virusfilter_h->cache_entry_limit,
 			virusfilter_h->cache_time_limit);
 		if (!virusfilter_h->cache_h) {
-			DEBUG(0,("Initializing cache failed: Cache disabled\n"));
+			DEBUG(0,("Initializing cache failed: Cache "
+				"disabled\n"));
 		}
 	}
 
 #ifdef virusfilter_module_connect
-	if (virusfilter_module_connect(vfs_h, virusfilter_h, svc, user) == -1) {
+	if (virusfilter_module_connect(vfs_h, virusfilter_h, svc, user) == -1)
+	{
 		return -1;
 	}
 #endif
 
 	/* Check quarantine directory now to save processing
          * and becoming root over and over. */
-	if (virusfilter_h->infected_file_action == VIRUSFILTER_ACTION_QUARANTINE)
+	if (virusfilter_h->infected_file_action ==
+	    VIRUSFILTER_ACTION_QUARANTINE)
 	{
-		/* Do SMB_VFS_NEXT_MKDIR(virusfilter_h->quarantine_dir) hierarchy */
+		// Do SMB_VFS_NEXT_MKDIR(virusfilter_h->quarantine_dir)
+		// hierarchy
 		become_root();
 		if(!quarantine_directory_exist(vfs_h,
 		   virusfilter_h->quarantine_dir))
@@ -703,7 +714,8 @@ static virusfilter_action virusfilter_do_infected_file_action(
 				}
 
 				become_root();
-				if(quarantine_directory_exist(vfs_h, temp_path))
+				if(quarantine_directory_exist(vfs_h,
+				   temp_path))
 				{
 					unbecome_root();
 					DEBUG(10, ("quarantine: Directory "
@@ -721,7 +733,8 @@ static virusfilter_action virusfilter_do_infected_file_action(
 						DEBUG(3, ("quarantine: Could "
 							"not create directory "
 							"ignoring for %s...\n",
-							smb_fname_str_dbg(smb_fname)));
+							smb_fname_str_dbg(
+								smb_fname)));
 						TALLOC_FREE(temp_path);
 					}
 					else
@@ -738,8 +751,8 @@ static virusfilter_action virusfilter_do_infected_file_action(
 				q_suffix);
 		}
 		else {
-			q_filepath = talloc_asprintf(talloc_tos(), "%s/%sXXXXXX",
-				q_dir, q_prefix);
+			q_filepath = talloc_asprintf(talloc_tos(),
+				"%s/%sXXXXXX", q_dir, q_prefix);
 		}
 
 		TALLOC_FREE(dir_name);
@@ -868,7 +881,8 @@ static virusfilter_action virusfilter_treat_infected_file(
 	if (virusfilter_set_module_env(env_h) == -1) {
 		goto done;
 	}
-	if (virusfilter_env_set(env_h, "VIRUSFILTER_INFECTED_SERVICE_FILE_PATH",
+	if (virusfilter_env_set(env_h,
+	    "VIRUSFILTER_INFECTED_SERVICE_FILE_PATH",
 	    smb_fname->base_name) == -1)
 	{
 		goto done;
@@ -888,7 +902,8 @@ static virusfilter_action virusfilter_treat_infected_file(
 	{
 		goto done;
 	}
-	if (is_cache && virusfilter_env_set(env_h, "VIRUSFILTER_RESULT_IS_CACHE",
+	if (is_cache && virusfilter_env_set(env_h,
+            "VIRUSFILTER_RESULT_IS_CACHE",
 	    "yes") == -1)
 	{
 		goto done;
@@ -909,7 +924,8 @@ static virusfilter_action virusfilter_treat_infected_file(
 	command_result = virusfilter_shell_run(command, 0, 0, env_h,
 		vfs_h->conn, true);
 	if (command_result != 0) {
-		DEBUG(0,("Infected file command failed: %d\n", command_result));
+		DEBUG(0,("Infected file command failed: %d\n",
+			command_result));
 	}
 
 	DEBUG(10,("Infected file command finished: %d\n", command_result));
@@ -946,7 +962,8 @@ static void virusfilter_treat_scan_error(
 	if (virusfilter_set_module_env(env_h) == -1) {
 		goto done;
 	}
-	if (virusfilter_env_set(env_h, "VIRUSFILTER_SCAN_ERROR_SERVICE_FILE_PATH",
+	if (virusfilter_env_set(env_h,
+	    "VIRUSFILTER_SCAN_ERROR_SERVICE_FILE_PATH",
 	    smb_fname->base_name) == -1)
 	{
 		goto done;
@@ -1087,8 +1104,9 @@ virusfilter_scan_result_eval:
 		if (!is_cache && add_scan_cache) {
 			DEBUG(10, ("Adding new cache entry: %s, %d\n",
 				fname, scan_result));
-			if (!virusfilter_cache_entry_add(virusfilter_h->cache_h,
-			    fname, scan_result, scan_report))
+			if (!virusfilter_cache_entry_add(
+			    virusfilter_h->cache_h, fname, scan_result,
+			    scan_report))
 			{
 				DEBUG(0,("Cannot create cache entry: "
 					"virusfilter_cache_entry_new failed"));
@@ -1289,8 +1307,8 @@ static int virusfilter_vfs_close(
 			if (virusfilter_h->cache_h) {
 				DEBUG(10, ("Removing cache entry (if "
 					"existant): fname: %s\n", fname));
-				virusfilter_cache_remove(virusfilter_h->cache_h,
-					fname);
+				virusfilter_cache_remove(
+					virusfilter_h->cache_h, fname);
 			}
                 }
                 DEBUG(5, ("Not scanned: scan on close is disabled: %s/%s\n",

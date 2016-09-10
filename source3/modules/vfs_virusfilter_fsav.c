@@ -28,7 +28,8 @@
 #define VIRUSFILTER_DEFAULT_SCAN_REQUEST_LIMIT		0
 #define VIRUSFILTER_DEFAULT_SCAN_MIME			false
 /* Default values for module-specific configuration variables */
-#define VIRUSFILTER_DEFAULT_FSAV_PROTOCOL		5 /* F-Secure Linux 7 or later? */
+/* 5 = F-Secure Linux 7 or later? */
+#define VIRUSFILTER_DEFAULT_FSAV_PROTOCOL		5
 #define VIRUSFILTER_DEFAULT_SCAN_RISKWARE		false
 #define VIRUSFILTER_DEFAULT_STOP_SCAN_ON_FIRST		true
 #define VIRUSFILTER_DEFAULT_FILTER_FILENAME		false
@@ -41,7 +42,8 @@
 	/* End of VIRUSFILTER_MODULE_CONFIG_MEMBERS */
 
 #define virusfilter_module_connect		virusfilter_fsav_connect
-#define virusfilter_module_destruct_config	virusfilter_fsav_destruct_config
+#define virusfilter_module_destruct_config	\
+	virusfilter_fsav_destruct_config
 #define virusfilter_module_scan_init		virusfilter_fsav_scan_init
 #define virusfilter_module_scan_end		virusfilter_fsav_scan_end
 #define virusfilter_module_scan			virusfilter_fsav_scan
@@ -161,11 +163,13 @@ static virusfilter_result virusfilter_fsav_scan_init(
 	if (virusfilter_io_writefl_readl(io_h,
 	    "CONFIGURE\tTIMEOUT\t%d", virusfilter_h->timeout / 1000)
 	    != VIRUSFILTER_RESULT_OK) {
-		DEBUG(0,("fsavd: CONFIGURE TIMEOUT: I/O error: %s\n", strerror(errno)));
+		DEBUG(0,("fsavd: CONFIGURE TIMEOUT: I/O error: %s\n",
+			strerror(errno)));
 		goto virusfilter_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK\t", 3)) {
-		DEBUG(0,("fsavd: CONFIGURE TIMEOUT: Not accepted: %s\n", io_h->r_buffer));
+		DEBUG(0,("fsavd: CONFIGURE TIMEOUT: Not accepted: %s\n",
+			io_h->r_buffer));
 		goto virusfilter_fsav_init_failed;
 	}
 #endif
@@ -337,7 +341,8 @@ static virusfilter_result virusfilter_fsav_scan(
 			   str_eq(reply_token, "ARCHIVE_SUSPECTED") ||
 			   str_eq(reply_token, "MIME_SUSPECTED")) {
 #if 0
-			/* FIXME: Block if "block suspected file" option is true */
+			// FIXME: Block if "block suspected file" option is
+			// true
 			result = VIRUSFILTER_RESULT_SUSPECTED;
 			...
 #else
@@ -362,7 +367,8 @@ static virusfilter_result virusfilter_fsav_scan(
 	}
 
 virusfilter_fsav_scan_return:
-	*reportp = report;
+	if (report == NULL) *reportp = "Scanner report memory error";
+	else *reportp = report;
 
 	return result;
 }

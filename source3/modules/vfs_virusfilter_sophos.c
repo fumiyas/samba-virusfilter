@@ -101,7 +101,8 @@ static virusfilter_result virusfilter_sophos_scan_init(
 	}
 
 
-	DEBUG(7,("SSSP: Connecting to socket: %s\n", virusfilter_h->socket_path));
+	DEBUG(7,("SSSP: Connecting to socket: %s\n",
+		virusfilter_h->socket_path));
 
 	become_root();
 	result = virusfilter_io_connect_path(io_h, virusfilter_h->socket_path);
@@ -119,7 +120,8 @@ static virusfilter_result virusfilter_sophos_scan_init(
 		goto virusfilter_sophos_scan_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK SSSP/1.0", 11)) {
-		DEBUG(0,("SSSP: Invalid greeting message: %s\n", io_h->r_buffer));
+		DEBUG(0,("SSSP: Invalid greeting message: %s\n",
+			io_h->r_buffer));
 		goto virusfilter_sophos_scan_init_failed;
 	}
 
@@ -197,8 +199,8 @@ static virusfilter_result virusfilter_sophos_scan(
 	fileurl_len = virusfilter_url_quote(connectpath, fileurl,
 		VIRUSFILTER_IO_URL_MAX);
 	if (fileurl_len < 0) {
-		DEBUG(0,("virusfilter_url_quote failed: File path too long: %s/%s\n",
-			connectpath, fname));
+		DEBUG(0,("virusfilter_url_quote failed: File path too long: "
+			"%s/%s\n", connectpath, fname));
 		result = VIRUSFILTER_RESULT_ERROR;
 		report = "File path too long";
 		goto virusfilter_sophos_scan_return;
@@ -209,8 +211,8 @@ static virusfilter_result virusfilter_sophos_scan(
 	fileurl_len += fileurl_len2 = virusfilter_url_quote(fname,
 		fileurl + fileurl_len, VIRUSFILTER_IO_URL_MAX - fileurl_len);
 	if (fileurl_len2 < 0) {
-		DEBUG(0,("virusfilter_url_quote failed: File path too long: %s/%s\n",
-			connectpath, fname));
+		DEBUG(0,("virusfilter_url_quote failed: File path too long: "
+			"%s/%s\n", connectpath, fname));
 		result = VIRUSFILTER_RESULT_ERROR;
 		report = "File path too long";
 		goto virusfilter_sophos_scan_return;
@@ -222,7 +224,8 @@ static virusfilter_result virusfilter_sophos_scan(
 	    fileurl, fileurl_len,
 	    NULL
 	    ) != VIRUSFILTER_RESULT_OK) {
-		DEBUG(0,("SSSP: SCANFILE: Write error: %s\n", strerror(errno)));
+		DEBUG(0,("SSSP: SCANFILE: Write error: %s\n",
+			strerror(errno)));
 		goto virusfilter_sophos_scan_io_error;
 	}
 
@@ -231,7 +234,8 @@ static virusfilter_result virusfilter_sophos_scan(
 		goto virusfilter_sophos_scan_io_error;
 	}
 	if (!strn_eq(io_h->r_buffer, "ACC ", 4)) {
-		DEBUG(0,("SSSP: SCANFILE: Not accepted: %s\n", io_h->r_buffer));
+		DEBUG(0,("SSSP: SCANFILE: Not accepted: %s\n",
+			io_h->r_buffer));
 		result = VIRUSFILTER_RESULT_ERROR;
 		goto virusfilter_sophos_scan_return;
 	}
@@ -254,7 +258,8 @@ static virusfilter_result virusfilter_sophos_scan(
 			result = VIRUSFILTER_RESULT_INFECTED;
 			reply_token = strtok_r(NULL, " ", &reply_saveptr);
 			if (reply_token) {
-				  report = talloc_strdup(talloc_tos(), reply_token);
+				  report = talloc_strdup(talloc_tos(),
+					reply_token);
 			} else {
 				  report = "UNKNOWN INFECTION";
 			}
@@ -263,8 +268,11 @@ static virusfilter_result virusfilter_sophos_scan(
 		} else if (str_eq(reply_token, "DONE")) {
 			reply_token = strtok_r(NULL, "", &reply_saveptr);
 			if (reply_token &&
-			    !strn_eq(reply_token, "OK 0000 ", 8) && /* Succeed */
-			    !strn_eq(reply_token, "OK 0203 ", 8)) { /* Infected */
+			    /* Succeed */
+			    !strn_eq(reply_token, "OK 0000 ", 8) &&
+			    /* Infected */
+			    !strn_eq(reply_token, "OK 0203 ", 8))
+			{
 				DEBUG(0,("SSSP: SCANFILE: Error: %s\n",
 					reply_token));
 				result = VIRUSFILTER_RESULT_ERROR;
@@ -280,13 +288,18 @@ static virusfilter_result virusfilter_sophos_scan(
 	}
 
 virusfilter_sophos_scan_return:
-	*reportp = report;
+	if (report == NULL) *reportp = "Scanner report memory error";
+	else *reportp = report;
 
 	return result;
 
 virusfilter_sophos_scan_io_error:
 	*reportp = talloc_asprintf(talloc_tos(),
 		"Scanner I/O error: %s\n", strerror(errno));
+	if (reportp == NULL)
+	{
+		*reportp = "Scanner I/O error and unable to talloc\n";
+	}
 
 	return result;
 }

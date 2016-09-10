@@ -122,8 +122,8 @@ static int virusfilter_copy_reg(const char *source, const char *dest)
 #if 0
 	if (source_stats.st_ex_size > module_sizelimit) {
 		DEBUG(5,
-			("%s: size of %s larger than sizelimit (%lld > %lld), rename prohititted\n",
-			MODULE, source,
+			("%s: size of %s larger than sizelimit (%lld > %lld), "
+			"rename prohititted\n", MODULE, source,
 			(long long)source_stats.st_ex_size,
 			(long long)module_sizelimit));
 		return -1;
@@ -137,7 +137,8 @@ static int virusfilter_copy_reg(const char *source, const char *dest)
 		return -1;
 
 #ifdef O_NOFOLLOW
-	if((ofd = open (dest, O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW, 0600)) < 0 )
+	if((ofd = open (dest, O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW, 0600))
+	   < 0 )
 #else
 	if((ofd = open (dest, O_WRONLY | O_CREAT | O_TRUNC , 0600)) < 0 )
 #endif
@@ -203,8 +204,10 @@ static int virusfilter_copy_reg(const char *source, const char *dest)
 	{
 		struct utimbuf tv;
 
-		tv.actime = convert_timespec_to_time_t(source_stats.st_ex_atime);
-		tv.modtime = convert_timespec_to_time_t(source_stats.st_ex_mtime);
+		tv.actime = convert_timespec_to_time_t(
+				source_stats.st_ex_atime);
+		tv.modtime = convert_timespec_to_time_t(
+				source_stats.st_ex_mtime);
 		utime(dest, &tv);
 	}
 #endif
@@ -250,7 +253,8 @@ int virusfilter_vfs_next_move(
 virusfilter_io_handle *virusfilter_io_new(TALLOC_CTX *mem_ctx,
 	int connect_timeout, int io_timeout)
 {
-	virusfilter_io_handle *io_h = talloc_zero(mem_ctx, virusfilter_io_handle);
+	virusfilter_io_handle *io_h = talloc_zero(mem_ctx,
+		virusfilter_io_handle);
 
 	if (!io_h) {
 		return NULL;
@@ -265,7 +269,8 @@ virusfilter_io_handle *virusfilter_io_new(TALLOC_CTX *mem_ctx,
 	return io_h;
 }
 
-int virusfilter_io_set_connect_timeout(virusfilter_io_handle *io_h, int timeout)
+int virusfilter_io_set_connect_timeout(virusfilter_io_handle *io_h,
+	int timeout)
 {
 	int timeout_old = io_h->connect_timeout;
 
@@ -285,8 +290,8 @@ int virusfilter_io_set_io_timeout(virusfilter_io_handle *io_h, int timeout)
 	return timeout_old;
 }
 
-void virusfilter_io_set_writel_eol(virusfilter_io_handle *io_h, const char *eol,
-	int eol_size)
+void virusfilter_io_set_writel_eol(virusfilter_io_handle *io_h,
+	const char *eol, int eol_size)
 {
 	if (eol_size < 1 || eol_size > VIRUSFILTER_IO_EOL_SIZE) {
 		return;
@@ -602,7 +607,8 @@ virusfilter_result virusfilter_io_readl(virusfilter_io_handle *io_h)
 		}
 
 		io_h->r_buffer = io_h->r_buffer_real;
-		memmove(io_h->r_buffer, io_h->r_rest_buffer, io_h->r_rest_size);
+		memmove(io_h->r_buffer, io_h->r_rest_buffer,
+			io_h->r_rest_size);
 
 		buffer = io_h->r_buffer + io_h->r_size;
 		buffer_size = VIRUSFILTER_IO_BUFFER_SIZE - io_h->r_rest_size;
@@ -694,7 +700,8 @@ virusfilter_result virusfilter_io_writefl_readl(virusfilter_io_handle *io_h,
 	}
 	if (io_h->r_size == 0) { /* EOF */
 		DEBUG(0,("virusfilter_io_readl EOF\n"));
-		return VIRUSFILTER_RESULT_ERROR; /* FIXME: VIRUSFILTER_RESULT_EOF? */
+		/* FIXME: VIRUSFILTER_RESULT_EOF? */
+		return VIRUSFILTER_RESULT_ERROR;
 	}
 
 	return VIRUSFILTER_RESULT_OK;
@@ -703,8 +710,8 @@ virusfilter_result virusfilter_io_writefl_readl(virusfilter_io_handle *io_h,
 /* Generic "stupid" cache
  * ====================================================================== */
 
-virusfilter_cache_handle *virusfilter_cache_new(TALLOC_CTX *ctx, int entry_limit,
-	time_t time_limit)
+virusfilter_cache_handle *virusfilter_cache_new(TALLOC_CTX *ctx,
+	int entry_limit, time_t time_limit)
 {
 	virusfilter_cache_handle *cache_h;
 
@@ -717,7 +724,8 @@ virusfilter_cache_handle *virusfilter_cache_new(TALLOC_CTX *ctx, int entry_limit
 	}
 
 	cache_h->cache = memcache_init(cache_h->ctx, entry_limit *
-		(sizeof(virusfilter_cache_entry) + VIRUSFILTER_CACHE_BUFFER_SIZE));
+		(sizeof(virusfilter_cache_entry) +
+		VIRUSFILTER_CACHE_BUFFER_SIZE));
 	if (!cache_h->cache) {
 		DEBUG(0,("memcache_init failed.\n"));
 		return NULL;
@@ -751,8 +759,9 @@ int virusfilter_cache_entry_add(
 		cache_e->time = time(NULL);
 	}
 
-	memcache_add_talloc(cache_h->cache, VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC,
-			 data_blob_const(fname, fname_len), &cache_e);
+	memcache_add_talloc(cache_h->cache,
+			VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC,
+			data_blob_const(fname, fname_len), &cache_e);
 
 	return 1;
 }
@@ -766,9 +775,10 @@ int virusfilter_cache_entry_rename(
 	int new_fname_len = strlen(new_fname);
 	virusfilter_cache_entry *new_data;
 
-	virusfilter_cache_entry *old_data = memcache_lookup_talloc(cache_h->cache,
-			     VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC,
-			     data_blob_const(old_fname, old_fname_len));
+	virusfilter_cache_entry *old_data = memcache_lookup_talloc(
+			cache_h->cache,
+			VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC,
+			data_blob_const(old_fname, old_fname_len));
 
 	if (!old_data)
 	{
@@ -783,11 +793,12 @@ int virusfilter_cache_entry_rename(
 	}
 	new_data->report = talloc_strdup(new_data, old_data->report);
 
-	memcache_add_talloc(cache_h->cache, VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC,
-			  data_blob_const(new_fname, new_fname_len), &new_data);
+	memcache_add_talloc(cache_h->cache,
+			VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC,
+			data_blob_const(new_fname, new_fname_len), &new_data);
 
 	memcache_delete(cache_h->cache, VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC,
-		      data_blob_const(old_fname, old_fname_len));
+			data_blob_const(old_fname, old_fname_len));
 
 	return 1;
 }
@@ -797,7 +808,8 @@ void virusfilter_cache_purge(virusfilter_cache_handle *cache_h)
 	memcache_flush(cache_h->cache, VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC);
 }
 
-virusfilter_cache_entry *virusfilter_cache_get(virusfilter_cache_handle *cache_h,
+virusfilter_cache_entry *virusfilter_cache_get(
+	virusfilter_cache_handle *cache_h,
 	const char *fname)
 {
 	int fname_len = strlen(fname);
@@ -811,7 +823,8 @@ virusfilter_cache_entry *virusfilter_cache_get(virusfilter_cache_handle *cache_h
 			data->time;
 			if (time(NULL) - data->time  > cache_h->time_limit)
 			{
-				DEBUG(10,("Cache entry is too old: %s\n", fname));
+				DEBUG(10,("Cache entry is too old: %s\n",
+					fname));
 				virusfilter_cache_remove(cache_h, fname);
 				return cache_e;
 			}
@@ -884,7 +897,8 @@ int virusfilter_env_set(virusfilter_env_struct *env_h, const char *name,
 	const char *value)
 {
 	size_t name_len = strlen(name);
-	size_t env_len = name_len + 1 + strlen(value); /* strlen("name=value") */
+	/* strlen("name=value") */
+	size_t env_len = name_len + 1 + strlen(value);
 	char **env_p;
 
 	/* Named env value already exists? */
@@ -1071,7 +1085,8 @@ int virusfilter_shell_run(
 		CatchChild();
 
 		if (wpid != pid) {
-			DEBUG(2,("waitpid(%d) : %s\n",(int)pid,strerror(errno)));
+			DEBUG(2,("waitpid(%d) : %s\n", (int)pid,
+				strerror(errno)));
 #ifdef VIRUSFILTER_RUN_OUTFD_SUPPORT
 			if (outfd) {
 				close(*outfd);
