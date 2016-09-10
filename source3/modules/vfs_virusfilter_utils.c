@@ -55,7 +55,8 @@ void *memmem(const void *m1, size_t m1_len, const void *m2, size_t m2_len)
 
 /* ====================================================================== */
 
-char *virusfilter_string_sub(TALLOC_CTX *mem_ctx, connection_struct *conn, const char *str)
+char *virusfilter_string_sub(TALLOC_CTX *mem_ctx, connection_struct *conn,
+	const char *str)
 {
 	return talloc_sub_advanced(mem_ctx,
 		lp_servicename(mem_ctx, SNUM(conn)),
@@ -151,9 +152,11 @@ static int virusfilter_copy_reg(const char *source, const char *dest)
 	 */
 
 #ifdef HAVE_FCHOWN
-	if ((fchown(ofd, source_stats.st_ex_uid, source_stats.st_ex_gid) == -1) && (errno != EPERM))
+	if ((fchown(ofd, source_stats.st_ex_uid, source_stats.st_ex_gid) == -1)
+	    && (errno != EPERM))
 #else
-	if ((chown(dest, source_stats.st_ex_uid, source_stats.st_ex_gid) == -1) && (errno != EPERM))
+	if ((chown(dest, source_stats.st_ex_uid, source_stats.st_ex_gid) == -1)
+	    && (errno != EPERM))
 #endif
 		goto err;
 
@@ -236,14 +239,16 @@ int virusfilter_vfs_next_move(
 		return result;
 	}
 
-	return virusfilter_copy_reg(smb_fname_src->base_name, smb_fname_dst->base_name);
+	return virusfilter_copy_reg(smb_fname_src->base_name,
+		smb_fname_dst->base_name);
 }
 #endif /* SAMBA_VERSION_NUMBER >= 30600 */
 
 /* Line-based socket I/O
  * ====================================================================== */
 
-virusfilter_io_handle *virusfilter_io_new(TALLOC_CTX *mem_ctx, int connect_timeout, int io_timeout)
+virusfilter_io_handle *virusfilter_io_new(TALLOC_CTX *mem_ctx,
+	int connect_timeout, int io_timeout)
 {
 	virusfilter_io_handle *io_h = talloc_zero(mem_ctx, virusfilter_io_handle);
 
@@ -280,7 +285,8 @@ int virusfilter_io_set_io_timeout(virusfilter_io_handle *io_h, int timeout)
 	return timeout_old;
 }
 
-void virusfilter_io_set_writel_eol(virusfilter_io_handle *io_h, const char *eol, int eol_size)
+void virusfilter_io_set_writel_eol(virusfilter_io_handle *io_h, const char *eol,
+	int eol_size)
 {
 	if (eol_size < 1 || eol_size > VIRUSFILTER_IO_EOL_SIZE) {
 		return;
@@ -290,7 +296,8 @@ void virusfilter_io_set_writel_eol(virusfilter_io_handle *io_h, const char *eol,
 	io_h->w_eol_size = eol_size;
 }
 
-void virusfilter_io_set_readl_eol(virusfilter_io_handle *io_h, const char *eol, int eol_size)
+void virusfilter_io_set_readl_eol(virusfilter_io_handle *io_h, const char *eol,
+	int eol_size)
 {
 	if (eol_size < 1 || eol_size > VIRUSFILTER_IO_EOL_SIZE) {
 		return;
@@ -300,7 +307,8 @@ void virusfilter_io_set_readl_eol(virusfilter_io_handle *io_h, const char *eol, 
 	io_h->r_eol_size = eol_size;
 }
 
-virusfilter_result virusfilter_io_connect_path(virusfilter_io_handle *io_h, const char *path)
+virusfilter_result virusfilter_io_connect_path(virusfilter_io_handle *io_h,
+	const char *path)
 {
 	struct sockaddr_un addr;
 	NTSTATUS status;
@@ -333,7 +341,8 @@ virusfilter_result virusfilter_io_disconnect(virusfilter_io_handle *io_h)
 	return VIRUSFILTER_RESULT_OK;
 }
 
-virusfilter_result virusfilter_io_write(virusfilter_io_handle *io_h, const char *data, size_t data_size)
+virusfilter_result virusfilter_io_write(virusfilter_io_handle *io_h,
+	const char *data, size_t data_size)
 {
 	struct pollfd pollfd;
 	ssize_t wrote_size;
@@ -374,7 +383,8 @@ virusfilter_result virusfilter_io_write(virusfilter_io_handle *io_h, const char 
 	return VIRUSFILTER_RESULT_OK;
 }
 
-virusfilter_result virusfilter_io_writel(virusfilter_io_handle *io_h, const char *data, size_t data_size)
+virusfilter_result virusfilter_io_writel(virusfilter_io_handle *io_h,
+	const char *data, size_t data_size)
 {
 	virusfilter_result result;
 
@@ -386,7 +396,8 @@ virusfilter_result virusfilter_io_writel(virusfilter_io_handle *io_h, const char
 	return virusfilter_io_write(io_h, io_h->w_eol, io_h->w_eol_size);
 }
 
-virusfilter_result virusfilter_io_writefl(virusfilter_io_handle *io_h, const char *data_fmt, ...)
+virusfilter_result virusfilter_io_writefl(virusfilter_io_handle *io_h,
+	const char *data_fmt, ...)
 {
 	va_list ap;
 	char data[VIRUSFILTER_IO_BUFFER_SIZE + VIRUSFILTER_IO_EOL_SIZE];
@@ -402,7 +413,8 @@ virusfilter_result virusfilter_io_writefl(virusfilter_io_handle *io_h, const cha
 	return virusfilter_io_write(io_h, data, data_size);
 }
 
-virusfilter_result virusfilter_io_vwritefl(virusfilter_io_handle *io_h, const char *data_fmt, va_list ap)
+virusfilter_result virusfilter_io_vwritefl(virusfilter_io_handle *io_h,
+	const char *data_fmt, va_list ap)
 {
 	char data[VIRUSFILTER_IO_BUFFER_SIZE + VIRUSFILTER_IO_EOL_SIZE];
 	size_t data_size;
@@ -573,12 +585,14 @@ virusfilter_result virusfilter_io_readl(virusfilter_io_handle *io_h)
 	} else {
 		DEBUG(11,("Rest data found in read buffer: %s, size=%ld\n",
 			io_h->r_rest_buffer, (long)io_h->r_rest_size));
-		eol = memmem(io_h->r_rest_buffer, io_h->r_rest_size, io_h->r_eol, io_h->r_eol_size);
+		eol = memmem(io_h->r_rest_buffer, io_h->r_rest_size,
+			io_h->r_eol, io_h->r_eol_size);
 		if (eol) {
 			*eol = '\0';
 			io_h->r_buffer = io_h->r_rest_buffer;
 			io_h->r_size = eol - io_h->r_rest_buffer;
-			DEBUG(11,("Read line data from read buffer: %s\n", io_h->r_buffer));
+			DEBUG(11,("Read line data from read buffer: %s\n",
+				io_h->r_buffer));
 
 			io_h->r_rest_size -= io_h->r_size + io_h->r_eol_size;
 			io_h->r_rest_buffer = (io_h->r_rest_size > 0) ?
@@ -630,16 +644,20 @@ virusfilter_result virusfilter_io_readl(virusfilter_io_handle *io_h)
 
 		io_h->r_size += read_size;
 
-		eol = memmem(io_h->r_buffer, read_size, io_h->r_eol, io_h->r_eol_size);
+		eol = memmem(io_h->r_buffer, read_size, io_h->r_eol,
+			io_h->r_eol_size);
 		if (eol) {
 			*eol = '\0';
-			DEBUG(11,("Read line data from socket: %s\n", io_h->r_buffer));
+			DEBUG(11,("Read line data from socket: %s\n",
+				io_h->r_buffer));
 			io_h->r_size = eol - io_h->r_buffer;
-			io_h->r_rest_size = read_size - (eol - buffer + io_h->r_eol_size);
+			io_h->r_rest_size = read_size - (eol - buffer +
+				io_h->r_eol_size);
 			if (io_h->r_rest_size > 0) {
 				io_h->r_rest_buffer = eol + io_h->r_eol_size;
-				DEBUG(11,("Rest data in read buffer: %s, size=%ld\n",
-					io_h->r_rest_buffer, (long)io_h->r_rest_size));
+				DEBUG(11,("Rest data in read buffer: %s, "
+					"size=%ld\n", io_h->r_rest_buffer,
+					(long)io_h->r_rest_size));
 			}
 			return VIRUSFILTER_RESULT_OK;
 		}
@@ -653,7 +671,8 @@ virusfilter_result virusfilter_io_readl(virusfilter_io_handle *io_h)
 	return VIRUSFILTER_RESULT_ERROR;
 }
 
-virusfilter_result virusfilter_io_writefl_readl(virusfilter_io_handle *io_h, const char *fmt, ...)
+virusfilter_result virusfilter_io_writefl_readl(virusfilter_io_handle *io_h,
+	const char *fmt, ...)
 {
 	if (fmt) {
 		va_list ap;
@@ -684,7 +703,8 @@ virusfilter_result virusfilter_io_writefl_readl(virusfilter_io_handle *io_h, con
 /* Generic "stupid" cache
  * ====================================================================== */
 
-virusfilter_cache_handle *virusfilter_cache_new(TALLOC_CTX *ctx, int entry_limit, time_t time_limit)
+virusfilter_cache_handle *virusfilter_cache_new(TALLOC_CTX *ctx, int entry_limit,
+	time_t time_limit)
 {
 	virusfilter_cache_handle *cache_h;
 
@@ -696,7 +716,8 @@ virusfilter_cache_handle *virusfilter_cache_new(TALLOC_CTX *ctx, int entry_limit
 		return NULL;
 	}
 
-	cache_h->cache = memcache_init(cache_h->ctx, entry_limit * (sizeof(virusfilter_cache_entry) + VIRUSFILTER_CACHE_BUFFER_SIZE));
+	cache_h->cache = memcache_init(cache_h->ctx, entry_limit *
+		(sizeof(virusfilter_cache_entry) + VIRUSFILTER_CACHE_BUFFER_SIZE));
 	if (!cache_h->cache) {
 		DEBUG(0,("memcache_init failed.\n"));
 		return NULL;
@@ -745,7 +766,8 @@ int virusfilter_cache_entry_rename(
 	int new_fname_len = strlen(new_fname);
 	virusfilter_cache_entry *new_data;
 
-	virusfilter_cache_entry *old_data = memcache_lookup_talloc(cache_h->cache, VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC,
+	virusfilter_cache_entry *old_data = memcache_lookup_talloc(cache_h->cache,
+			     VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC,
 			     data_blob_const(old_fname, old_fname_len));
 
 	if (!old_data)
@@ -753,7 +775,8 @@ int virusfilter_cache_entry_rename(
 		return 0;
 	}
 
-	new_data = talloc_memdup(cache_h->ctx, old_data, sizeof(virusfilter_cache_entry));
+	new_data = talloc_memdup(cache_h->ctx, old_data,
+			    sizeof(virusfilter_cache_entry));
 	if (!new_data)
 	{
 		return 0;
@@ -764,7 +787,7 @@ int virusfilter_cache_entry_rename(
 			  data_blob_const(new_fname, new_fname_len), &new_data);
 
 	memcache_delete(cache_h->cache, VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC,
-		     data_blob_const(old_fname, old_fname_len));
+		      data_blob_const(old_fname, old_fname_len));
 
 	return 1;
 }
@@ -774,11 +797,13 @@ void virusfilter_cache_purge(virusfilter_cache_handle *cache_h)
 	memcache_flush(cache_h->cache, VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC);
 }
 
-virusfilter_cache_entry *virusfilter_cache_get(virusfilter_cache_handle *cache_h, const char *fname)
+virusfilter_cache_entry *virusfilter_cache_get(virusfilter_cache_handle *cache_h,
+	const char *fname)
 {
 	int fname_len = strlen(fname);
 	virusfilter_cache_entry *cache_e = NULL;
-	virusfilter_cache_entry *data = memcache_lookup_talloc(cache_h->cache, VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC,
+	virusfilter_cache_entry *data = memcache_lookup_talloc(cache_h->cache,
+			     VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC,
 			     data_blob_const(fname, fname_len));
 
 	if (data) {
@@ -791,7 +816,8 @@ virusfilter_cache_entry *virusfilter_cache_get(virusfilter_cache_handle *cache_h
 				return cache_e;
 			}
 		}
-		cache_e = talloc_memdup(cache_h->ctx, data, sizeof(virusfilter_cache_entry));
+		cache_e = talloc_memdup(cache_h->ctx, data,
+			sizeof(virusfilter_cache_entry));
 		if (!cache_e) return cache_e;
 		if (data->report) {
 			cache_e->report = talloc_strdup(cache_e, data->report);
@@ -802,7 +828,8 @@ virusfilter_cache_entry *virusfilter_cache_get(virusfilter_cache_handle *cache_h
 	return cache_e;
 }
 
-void virusfilter_cache_remove(virusfilter_cache_handle *cache_h, const char *fname)
+void virusfilter_cache_remove(virusfilter_cache_handle *cache_h,
+	const char *fname)
 {
 	DEBUG(10,("Purging cache entry: %s\n", fname));
 
@@ -824,7 +851,8 @@ void virusfilter_cache_entry_free(virusfilter_cache_entry *cache_e)
 
 virusfilter_env_struct *virusfilter_env_new(TALLOC_CTX *ctx)
 {
-	virusfilter_env_struct *env_h = talloc_zero(ctx, virusfilter_env_struct);
+	virusfilter_env_struct *env_h = talloc_zero(ctx,
+		virusfilter_env_struct);
 	if (!env_h) {
 		DEBUG(0, ("talloc_zero failed\n"));
 		goto virusfilter_env_init_failed;
@@ -852,7 +880,8 @@ char * const *virusfilter_env_list(virusfilter_env_struct *env_h)
 	return env_h->env_list;
 }
 
-int virusfilter_env_set(virusfilter_env_struct *env_h, const char *name, const char *value)
+int virusfilter_env_set(virusfilter_env_struct *env_h, const char *name,
+	const char *value)
 {
 	size_t name_len = strlen(name);
 	size_t env_len = name_len + 1 + strlen(value); /* strlen("name=value") */
@@ -860,7 +889,9 @@ int virusfilter_env_set(virusfilter_env_struct *env_h, const char *name, const c
 
 	/* Named env value already exists? */
 	for (env_p = env_h->env_list; *env_p != NULL; env_p++) {
-		if ((*env_p)[name_len] == '=' && strn_eq(*env_p, name, name_len)) {
+		if ((*env_p)[name_len] == '=' &&
+		    strn_eq(*env_p, name, name_len))
+		{
 			break;
 		}
 	}
@@ -871,7 +902,8 @@ int virusfilter_env_set(virusfilter_env_struct *env_h, const char *name, const c
 
 		if (env_h->env_size == env_h->env_num + 1) {
 			/* Enlarge env_h->env_list */
-			size_t env_size_new = env_h->env_size + VIRUSFILTER_ENV_SIZE_CHUNK;
+			size_t env_size_new = env_h->env_size +
+				VIRUSFILTER_ENV_SIZE_CHUNK;
 			char **env_list_new = talloc_realloc(
 				env_h, env_h->env_list, char *, env_size_new);
 			if (!env_list_new) {
@@ -917,7 +949,8 @@ int virusfilter_env_set(virusfilter_env_struct *env_h, const char *name, const c
  * ====================================================================== */
 
 /* virusfilter_env version Samba's *_sub_advanced() in substitute.c */
-int virusfilter_shell_set_conn_env(virusfilter_env_struct *env_h, connection_struct *conn)
+int virusfilter_shell_set_conn_env(virusfilter_env_struct *env_h,
+	connection_struct *conn)
 {
 	int snum = SNUM(conn);
 	const char *server_addr_p;
@@ -935,23 +968,30 @@ int virusfilter_shell_set_conn_env(virusfilter_env_struct *env_h, connection_str
 	}
 	virusfilter_env_set(env_h, "VIRUSFILTER_SERVER_IP", server_addr_p);
 	virusfilter_env_set(env_h, "VIRUSFILTER_SERVER_NAME", myhostname());
-	virusfilter_env_set(env_h, "VIRUSFILTER_SERVER_NETBIOS_NAME", local_machine_name);
+	virusfilter_env_set(env_h, "VIRUSFILTER_SERVER_NETBIOS_NAME",
+		local_machine_name);
 	slprintf(pidstr,sizeof(pidstr)-1, "%ld", (long)getpid());
 	virusfilter_env_set(env_h, "VIRUSFILTER_SERVER_PID", pidstr);
 
-	virusfilter_env_set(env_h, "VIRUSFILTER_SERVICE_NAME", lp_const_servicename(snum));
-	virusfilter_env_set(env_h, "VIRUSFILTER_SERVICE_PATH", conn->connectpath);
+	virusfilter_env_set(env_h, "VIRUSFILTER_SERVICE_NAME",
+		lp_const_servicename(snum));
+	virusfilter_env_set(env_h, "VIRUSFILTER_SERVICE_PATH",
+		conn->connectpath);
 
 	client_addr_p = conn_client_addr(conn);
 	if (strncmp("::ffff:", client_addr_p, 7) == 0) {
 		client_addr_p += 7;
 	}
 	virusfilter_env_set(env_h, "VIRUSFILTER_CLIENT_IP", client_addr_p);
-	virusfilter_env_set(env_h, "VIRUSFILTER_CLIENT_NAME", conn_client_name(conn));
-	virusfilter_env_set(env_h, "VIRUSFILTER_CLIENT_NETBIOS_NAME", get_remote_machine_name());
+	virusfilter_env_set(env_h, "VIRUSFILTER_CLIENT_NAME",
+		conn_client_name(conn));
+	virusfilter_env_set(env_h, "VIRUSFILTER_CLIENT_NETBIOS_NAME",
+		get_remote_machine_name());
 
-	virusfilter_env_set(env_h, "VIRUSFILTER_USER_NAME", get_current_username());
-	virusfilter_env_set(env_h, "VIRUSFILTER_USER_DOMAIN", current_user_info.domain);
+	virusfilter_env_set(env_h, "VIRUSFILTER_USER_NAME",
+		get_current_username());
+	virusfilter_env_set(env_h, "VIRUSFILTER_USER_DOMAIN",
+		current_user_info.domain);
 
 	return 0;
 }
@@ -996,7 +1036,8 @@ int virusfilter_shell_run(
 	CatchChildLeaveStatus();
 
 	if ((pid=fork()) < 0) {
-		DEBUG(0,("virusfilter_run: fork failed with error %s\n", strerror(errno)));
+		DEBUG(0,("virusfilter_run: fork failed with error %s\n",
+			strerror(errno)));
 		CatchChild();
 #ifdef VIRUSFILTER_RUN_OUTFD_SUPPORT
 		if (outfd) {
@@ -1107,7 +1148,8 @@ int virusfilter_shell_run(
 		}
 
 		execle("/bin/sh","sh","-c",
-		    newcmd ? (const char *)newcmd : cmd, NULL, virusfilter_env_list(env_h));
+		    newcmd ? (const char *)newcmd : cmd, NULL,
+		    virusfilter_env_list(env_h));
 
 		SAFE_FREE(newcmd);
 	}

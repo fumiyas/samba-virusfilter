@@ -21,19 +21,19 @@
 
 /* Default values for standard "extra" configuration variables */
 #ifdef CLAMAV_DEFAULT_SOCKET_PATH
-#  define VIRUSFILTER_DEFAULT_SOCKET_PATH		CLAMAV_DEFAULT_SOCKET_PATH
+#  define VIRUSFILTER_DEFAULT_SOCKET_PATH	CLAMAV_DEFAULT_SOCKET_PATH
 #else
-#  define VIRUSFILTER_DEFAULT_SOCKET_PATH		"/var/run/clamav/clamd.ctl"
+#  define VIRUSFILTER_DEFAULT_SOCKET_PATH	"/var/run/clamav/clamd.ctl"
 #endif
-#define VIRUSFILTER_DEFAULT_CONNECT_TIMEOUT		30000 /* msec */
-#define VIRUSFILTER_DEFAULT_TIMEOUT			60000 /* msec */
+#define VIRUSFILTER_DEFAULT_CONNECT_TIMEOUT	30000 /* msec */
+#define VIRUSFILTER_DEFAULT_TIMEOUT		60000 /* msec */
 /* Default values for module-specific configuration variables */
 /* None */
 
-#define virusfilter_module_connect			virusfilter_clamav_connect
-#define virusfilter_module_scan_init			virusfilter_clamav_scan_init
-#define virusfilter_module_scan_end			virusfilter_clamav_scan_end
-#define virusfilter_module_scan				virusfilter_clamav_scan
+#define virusfilter_module_connect		virusfilter_clamav_connect
+#define virusfilter_module_scan_init		virusfilter_clamav_scan_init
+#define virusfilter_module_scan_end		virusfilter_clamav_scan_end
+#define virusfilter_module_scan			virusfilter_clamav_scan
 
 #include "vfs_virusfilter_vfs.c"
 
@@ -56,12 +56,14 @@ static int virusfilter_clamav_connect(
 	return 0;
 }
 
-static virusfilter_result virusfilter_clamav_scan_init(virusfilter_handle *virusfilter_h)
+static virusfilter_result virusfilter_clamav_scan_init(
+	virusfilter_handle *virusfilter_h)
 {
 	virusfilter_io_handle *io_h = virusfilter_h->io_h;
 	virusfilter_result result;
 
-	DEBUG(7,("clamd: Connecting to socket: %s\n", virusfilter_h->socket_path));
+	DEBUG(7,("clamd: Connecting to socket: %s\n",
+		virusfilter_h->socket_path));
 
 	become_root();
 	result = virusfilter_io_connect_path(io_h, virusfilter_h->socket_path);
@@ -113,7 +115,9 @@ static virusfilter_result virusfilter_clamav_scan(
 		goto virusfilter_clamav_scan_return;
 	}
 
-	if (io_h->r_buffer[filepath_len] != ':' || io_h->r_buffer[filepath_len+1] != ' ') {
+	if (io_h->r_buffer[filepath_len] != ':' ||
+	    io_h->r_buffer[filepath_len+1] != ' ')
+	{
 		DEBUG(0,("clamd: zSCAN: Invalid reply: %s\n", io_h->r_buffer));
 		result = VIRUSFILTER_RESULT_ERROR;
 		report = "Scanner communication error";

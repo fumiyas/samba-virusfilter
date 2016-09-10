@@ -40,11 +40,11 @@
 	bool filter_filename; \
 	/* End of VIRUSFILTER_MODULE_CONFIG_MEMBERS */
 
-#define virusfilter_module_connect			virusfilter_fsav_connect
-#define virusfilter_module_destruct_config		virusfilter_fsav_destruct_config
-#define virusfilter_module_scan_init			virusfilter_fsav_scan_init
-#define virusfilter_module_scan_end			virusfilter_fsav_scan_end
-#define virusfilter_module_scan				virusfilter_fsav_scan
+#define virusfilter_module_connect		virusfilter_fsav_connect
+#define virusfilter_module_destruct_config	virusfilter_fsav_destruct_config
+#define virusfilter_module_scan_init		virusfilter_fsav_scan_init
+#define virusfilter_module_scan_end		virusfilter_fsav_scan_end
+#define virusfilter_module_scan			virusfilter_fsav_scan
 
 #include "vfs_virusfilter_vfs.c"
 
@@ -85,14 +85,16 @@ static int virusfilter_fsav_connect(
 	return 0;
 }
 
-static int virusfilter_fsav_destruct_config(virusfilter_handle *virusfilter_h)
+static int virusfilter_fsav_destruct_config(
+	virusfilter_handle *virusfilter_h)
 {
 	virusfilter_fsav_scan_end(virusfilter_h);
 
 	return 0;
 }
 
-static virusfilter_result virusfilter_fsav_scan_init(virusfilter_handle *virusfilter_h)
+static virusfilter_result virusfilter_fsav_scan_init(
+	virusfilter_handle *virusfilter_h)
 {
 	virusfilter_io_handle *io_h = virusfilter_h->io_h;
 	virusfilter_result result;
@@ -101,9 +103,12 @@ static virusfilter_result virusfilter_fsav_scan_init(virusfilter_handle *virusfi
 		DEBUG(10,("fsavd: Checking if connection is alive\n"));
 
 		/* FIXME: I don't know the correct PING command format... */
-		if (virusfilter_io_writefl_readl(io_h, "PING") == VIRUSFILTER_RESULT_OK) {
+		if (virusfilter_io_writefl_readl(io_h, "PING") ==
+		    VIRUSFILTER_RESULT_OK)
+		{
 			if (strn_eq(io_h->r_buffer, "ERROR\t", 6)) {
-				DEBUG(10,("fsavd: Re-using existent connection\n"));
+				DEBUG(10,("fsavd: Re-using existent "
+					"connection\n"));
 				return VIRUSFILTER_RESULT_OK;
 			}
 		}
@@ -112,7 +117,8 @@ static virusfilter_result virusfilter_fsav_scan_init(virusfilter_handle *virusfi
 		virusfilter_fsav_scan_end(virusfilter_h);
 	}
 
-	DEBUG(7,("fsavd: Connecting to socket: %s\n", virusfilter_h->socket_path));
+	DEBUG(7,("fsavd: Connecting to socket: %s\n",
+		virusfilter_h->socket_path));
 
 	become_root();
 	result = virusfilter_io_connect_path(io_h, virusfilter_h->socket_path);
@@ -125,11 +131,13 @@ static virusfilter_result virusfilter_fsav_scan_init(virusfilter_handle *virusfi
 	}
 
 	if (virusfilter_io_readl(io_h) != VIRUSFILTER_RESULT_OK) {
-		DEBUG(0,("fsavd: Reading greeting message failed: %s\n", strerror(errno)));
+		DEBUG(0,("fsavd: Reading greeting message failed: %s\n",
+			strerror(errno)));
 		goto virusfilter_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "DBVERSION\t", 10)) {
-		DEBUG(0,("fsavd: Invalid greeting message: %s\n", io_h->r_buffer));
+		DEBUG(0,("fsavd: Invalid greeting message: %s\n",
+			io_h->r_buffer));
 		goto virusfilter_fsav_init_failed;
 	}
 
@@ -144,7 +152,8 @@ static virusfilter_result virusfilter_fsav_scan_init(virusfilter_handle *virusfi
 		goto virusfilter_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK\t", 3)) {
-		DEBUG(0,("fsavd: PROTOCOL: Not accepted: %s\n", io_h->r_buffer));
+		DEBUG(0,("fsavd: PROTOCOL: Not accepted: %s\n",
+			io_h->r_buffer));
 		goto virusfilter_fsav_init_failed;
 	}
 
@@ -162,68 +171,81 @@ static virusfilter_result virusfilter_fsav_scan_init(virusfilter_handle *virusfi
 #endif
 
 	if (virusfilter_io_writefl_readl(io_h,
-	    "CONFIGURE\tSTOPONFIRST\t%d", virusfilter_h->stop_scan_on_first ? 1 : 0)
-	    != VIRUSFILTER_RESULT_OK) {
-		DEBUG(0,("fsavd: CONFIGURE STOPONFIRST: I/O error: %s\n", strerror(errno)));
+	    "CONFIGURE\tSTOPONFIRST\t%d", virusfilter_h->stop_scan_on_first ?
+	    1 : 0) != VIRUSFILTER_RESULT_OK)
+	{
+		DEBUG(0,("fsavd: CONFIGURE STOPONFIRST: I/O error: %s\n",
+			strerror(errno)));
 		goto virusfilter_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK\t", 3)) {
-		DEBUG(0,("fsavd: CONFIGURE STOPONFIRST: Not accepted: %s\n", io_h->r_buffer));
+		DEBUG(0,("fsavd: CONFIGURE STOPONFIRST: Not accepted: %s\n",
+			io_h->r_buffer));
 		goto virusfilter_fsav_init_failed;
 	}
 
 	if (virusfilter_io_writefl_readl(io_h,
 	    "CONFIGURE\tFILTER\t%d", virusfilter_h->filter_filename ? 1 : 0)
 	    != VIRUSFILTER_RESULT_OK) {
-		DEBUG(0,("fsavd: CONFIGURE FILTER: I/O error: %s\n", strerror(errno)));
+		DEBUG(0,("fsavd: CONFIGURE FILTER: I/O error: %s\n",
+			strerror(errno)));
 		goto virusfilter_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK\t", 3)) {
-		DEBUG(0,("fsavd: CONFIGURE FILTER: Not accepted: %s\n", io_h->r_buffer));
+		DEBUG(0,("fsavd: CONFIGURE FILTER: Not accepted: %s\n",
+			io_h->r_buffer));
 		goto virusfilter_fsav_init_failed;
 	}
 
 	if (virusfilter_io_writefl_readl(io_h,
 	    "CONFIGURE\tARCHIVE\t%d", virusfilter_h->scan_archive ? 1 : 0)
 	    != VIRUSFILTER_RESULT_OK) {
-		DEBUG(0,("fsavd: CONFIGURE ARCHIVE: I/O error: %s\n", strerror(errno)));
+		DEBUG(0,("fsavd: CONFIGURE ARCHIVE: I/O error: %s\n",
+			strerror(errno)));
 		goto virusfilter_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK\t", 3)) {
-		DEBUG(0,("fsavd: CONFIGURE ARCHIVE: Not accepted: %s\n", io_h->r_buffer));
+		DEBUG(0,("fsavd: CONFIGURE ARCHIVE: Not accepted: %s\n",
+			io_h->r_buffer));
 		goto virusfilter_fsav_init_failed;
 	}
 
 	if (virusfilter_io_writefl_readl(io_h,
 	    "CONFIGURE\tMAXARCH\t%d", virusfilter_h->max_nested_scan_archive)
 	    != VIRUSFILTER_RESULT_OK) {
-		DEBUG(0,("fsavd: CONFIGURE MAXARCH: I/O error: %s\n", strerror(errno)));
+		DEBUG(0,("fsavd: CONFIGURE MAXARCH: I/O error: %s\n",
+			strerror(errno)));
 		goto virusfilter_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK\t", 3)) {
-		DEBUG(0,("fsavd: CONFIGURE MAXARCH: Not accepted: %s\n", io_h->r_buffer));
+		DEBUG(0,("fsavd: CONFIGURE MAXARCH: Not accepted: %s\n",
+			io_h->r_buffer));
 		goto virusfilter_fsav_init_failed;
 	}
 
 	if (virusfilter_io_writefl_readl(io_h,
 	    "CONFIGURE\tMIME\t%d", virusfilter_h->scan_mime ? 1 : 0)
 	    != VIRUSFILTER_RESULT_OK) {
-		DEBUG(0,("fsavd: CONFIGURE MIME: I/O error: %s\n", strerror(errno)));
+		DEBUG(0,("fsavd: CONFIGURE MIME: I/O error: %s\n",
+			strerror(errno)));
 		goto virusfilter_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK\t", 3)) {
-		DEBUG(0,("fsavd: CONFIGURE MIME: Not accepted: %s\n", io_h->r_buffer));
+		DEBUG(0,("fsavd: CONFIGURE MIME: Not accepted: %s\n",
+			io_h->r_buffer));
 		goto virusfilter_fsav_init_failed;
 	}
 
 	if (virusfilter_io_writefl_readl(io_h,
 	    "CONFIGURE\tRISKWARE\t%d", virusfilter_h->scan_riskware ? 1 : 0)
 	    != VIRUSFILTER_RESULT_OK) {
-		DEBUG(0,("fsavd: CONFIGURE RISKWARE: I/O error: %s\n", strerror(errno)));
+		DEBUG(0,("fsavd: CONFIGURE RISKWARE: I/O error: %s\n",
+			strerror(errno)));
 		goto virusfilter_fsav_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK\t", 3)) {
-		DEBUG(0,("fsavd: CONFIGURE RISKWARE: Not accepted: %s\n", io_h->r_buffer));
+	    DEBUG(0,("fsavd: CONFIGURE RISKWARE: Not accepted: %s\n",
+			io_h->r_buffer));
 		goto virusfilter_fsav_init_failed;
 	}
 
@@ -302,7 +324,8 @@ static virusfilter_result virusfilter_fsav_scan(
 			reply_token = strtok_r(NULL, "\t", &reply_saveptr);
 			reply_token = strtok_r(NULL, "\t", &reply_saveptr);
 			if (reply_token) {
-				  report = talloc_strdup(talloc_tos(), reply_token);
+				  report = talloc_strdup(talloc_tos(),
+					reply_token);
 			} else {
 				  report = "UNKNOWN INFECTION";
 			}
@@ -332,7 +355,8 @@ static virusfilter_result virusfilter_fsav_scan(
 				reply_token ? reply_token : "UNKNOWN ERROR");
 		} else {
 			result = VIRUSFILTER_RESULT_ERROR;
-			DEBUG(0,("fsavd: SCANFILE: Invalid reply: %s\t", reply_token));
+			DEBUG(0,("fsavd: SCANFILE: Invalid reply: %s\t",
+				reply_token));
 			report = "Scanner communication error";
 		}
 	}

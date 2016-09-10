@@ -23,7 +23,9 @@
 #include "vfs_virusfilter_utils.h"
 
 #define VIRUSFILTER_MODULE_NAME "virusfilter_" VIRUSFILTER_MODULE_ENGINE
-#define ALLOC_CHECK(ptr, label) do { if ((ptr) == NULL) { DEBUG(0, ("virusfilter-vfs: out of memory!\n")); errno = ENOMEM; goto label; } } while(0)
+#define ALLOC_CHECK(ptr, label) do { if ((ptr) == NULL) { DEBUG(0, \
+	("virusfilter-vfs: out of memory!\n")); \
+	errno = ENOMEM; goto label; } } while(0)
 
 /* Default configuration values
  * ====================================================================== */
@@ -174,7 +176,8 @@ static int virusfilter_destruct_config(virusfilter_handle *virusfilter_h)
 }
 
 // This is adapted from vfs_recycle module.
-static bool quarantine_directory_exist(vfs_handle_struct *handle, const char *dname)
+static bool quarantine_directory_exist(vfs_handle_struct *handle,
+                                       const char *dname)
 {
 	struct smb_filename smb_fname = {
 		.base_name = discard_const_p(char, dname)
@@ -196,7 +199,9 @@ static bool quarantine_directory_exist(vfs_handle_struct *handle, const char *dn
  * @return Returns True for success
  * This is adapted from vfs_recycle module.
  **/
-static bool quarantine_create_dir(vfs_handle_struct *handle, virusfilter_handle *virusfilter_h, const char *dname)
+static bool quarantine_create_dir(vfs_handle_struct *handle,
+				virusfilter_handle *virusfilter_h,
+				const char *dname)
 {
 	size_t len;
 	mode_t mode;
@@ -209,12 +214,12 @@ static bool quarantine_create_dir(vfs_handle_struct *handle, virusfilter_handle 
 
 	mode = virusfilter_h->quarantine_dir_mode;
 
-	tmp_str = SMB_STRDUP(dname);
+	tmp_str = talloc_strdup(talloc_tos(), dname);
 	ALLOC_CHECK(tmp_str, done);
 	tok_str = tmp_str;
 
 	len = strlen(dname)+1;
-	new_dir = (char *)SMB_MALLOC(len + 1);
+	new_dir = (char *)talloc_size(talloc_tos(), len + 1);
 	ALLOC_CHECK(new_dir, done);
 	*new_dir = '\0';
 	if (dname[0] == '/') {
@@ -232,13 +237,15 @@ static bool quarantine_create_dir(vfs_handle_struct *handle, virusfilter_handle 
 			goto done;
 		}
 		if (quarantine_directory_exist(handle, new_dir))
-			DEBUG(10, ("quarantine: dir %s already exists\n", new_dir));
+			DEBUG(10, ("quarantine: dir %s already exists\n",
+				new_dir));
 		else {
 #if SAMBA_VERSION_NUMBER >= 40500
 			struct smb_filename *smb_fname = NULL;
 #endif
 
-			DEBUG(5, ("quarantine: creating new dir %s\n", new_dir));
+			DEBUG(5, ("quarantine: creating new dir %s\n",
+				new_dir));
 
 #if SAMBA_VERSION_NUMBER < 40500
 			if (SMB_VFS_NEXT_MKDIR(handle, new_dir, mode) != 0) {
@@ -254,7 +261,9 @@ static bool quarantine_create_dir(vfs_handle_struct *handle, virusfilter_handle 
 			if (SMB_VFS_NEXT_MKDIR(handle, smb_fname, mode) != 0) {
 				TALLOC_FREE(smb_fname);
 #endif
-				DEBUG(1,("quarantine: mkdir failed for %s with error: %s\n", new_dir, strerror(errno)));
+				DEBUG(1,("quarantine: mkdir failed for %s "
+					"with error: %s\n", new_dir,
+					strerror(errno)));
 				ret = False;
 				goto done;
 			}
@@ -390,7 +399,8 @@ static int virusfilter_vfs_connect(
 		"quarantine directory mode",
 		VIRUSFILTER_DEFAULT_QUARANTINE_DIR_MODE);
         if (temp_quarantine_dir_mode) {
-                sscanf(temp_quarantine_dir_mode, "%o", &virusfilter_h->quarantine_dir_mode);
+                sscanf(temp_quarantine_dir_mode, "%o",
+                       &virusfilter_h->quarantine_dir_mode);
         }
         virusfilter_h->quarantine_prefix = lp_parm_const_string(
 		snum, VIRUSFILTER_MODULE_NAME,
@@ -449,7 +459,9 @@ static int virusfilter_vfs_connect(
 		"io timeout",
 		VIRUSFILTER_DEFAULT_TIMEOUT);
 
-	virusfilter_h->io_h = virusfilter_io_new(virusfilter_h, connect_timeout, io_timeout);
+	virusfilter_h->io_h =
+		virusfilter_io_new(virusfilter_h, connect_timeout, io_timeout);
+
 	if (!virusfilter_h->io_h) {
 		DEBUG(0,("virusfilter_io_new failed"));
 		return -1;
@@ -458,7 +470,8 @@ static int virusfilter_vfs_connect(
 
 	if (virusfilter_h->cache_entry_limit > 0) {
 		virusfilter_h->cache_h = virusfilter_cache_new(vfs_h,
-			virusfilter_h->cache_entry_limit, virusfilter_h->cache_time_limit);
+			virusfilter_h->cache_entry_limit,
+			virusfilter_h->cache_time_limit);
 		if (!virusfilter_h->cache_h) {
 			DEBUG(0,("Initializing cache failed: Cache disabled\n"));
 		}
@@ -476,11 +489,14 @@ static int virusfilter_vfs_connect(
 	{
 		/* Do SMB_VFS_NEXT_MKDIR(virusfilter_h->quarantine_dir) hierarchy */
 		become_root();
-		if(!quarantine_directory_exist(vfs_h, virusfilter_h->quarantine_dir))
+		if(!quarantine_directory_exist(vfs_h,
+		   virusfilter_h->quarantine_dir))
 		{
 			unbecome_root();
-			DEBUG(10, ("Creating quarantine directory: %s\n", virusfilter_h->quarantine_dir));
-			quarantine_create_dir(vfs_h, virusfilter_h, virusfilter_h->quarantine_dir);
+			DEBUG(10, ("Creating quarantine directory: %s\n",
+				virusfilter_h->quarantine_dir));
+			quarantine_create_dir(vfs_h, virusfilter_h,
+				virusfilter_h->quarantine_dir);
 		}
 		else unbecome_root();
 	}
@@ -510,14 +526,20 @@ static void virusfilter_vfs_disconnect(vfs_handle_struct *vfs_h)
 
 static int virusfilter_set_module_env(virusfilter_env_struct *env_h)
 {
-	if (virusfilter_env_set(env_h, "VIRUSFILTER_VERSION", VIRUSFILTER_VERSION) == -1) {
+	if (virusfilter_env_set(env_h, "VIRUSFILTER_VERSION",
+	    VIRUSFILTER_VERSION) == -1)
+	{
 		return -1;
 	}
-	if (virusfilter_env_set(env_h, "VIRUSFILTER_MODULE_NAME", VIRUSFILTER_MODULE_NAME) == -1) {
+	if (virusfilter_env_set(env_h, "VIRUSFILTER_MODULE_NAME",
+	    VIRUSFILTER_MODULE_NAME) == -1)
+	{
 		return -1;
 	}
 #ifdef VIRUSFILTER_MODULE_VERSION
-	if (virusfilter_env_set(env_h, "VIRUSFILTER_MODULE_VERSION", VIRUSFILTER_MODULE_VERSION) == -1) {
+	if (virusfilter_env_set(env_h, "VIRUSFILTER_MODULE_VERSION",
+	    VIRUSFILTER_MODULE_VERSION) == -1)
+	{
 		return -1;
 	}
 #endif
@@ -547,19 +569,23 @@ static virusfilter_action virusfilter_do_infected_file_action(
 
 	switch (virusfilter_h->infected_file_action) {
 	case VIRUSFILTER_ACTION_RENAME:
-		q_prefix = virusfilter_string_sub(mem_ctx, conn, virusfilter_h->rename_prefix);
-		q_suffix = virusfilter_string_sub(mem_ctx, conn, virusfilter_h->rename_suffix);
+		q_prefix = virusfilter_string_sub(mem_ctx, conn,
+			virusfilter_h->rename_prefix);
+		q_suffix = virusfilter_string_sub(mem_ctx, conn,
+			virusfilter_h->rename_suffix);
 		if (!q_prefix || !q_suffix) {
 			DEBUG(0,("Rename failed: %s/%s: "
 				"Cannot allocate memory\n",
 				conn->connectpath,
 				smb_fname->base_name));
-			if (q_prefix) TALLOC_FREE(q_prefix);
-			if (q_suffix) TALLOC_FREE(q_suffix);
+			TALLOC_FREE(q_prefix);
+			TALLOC_FREE(q_suffix);
 			return VIRUSFILTER_ACTION_DO_NOTHING;
 		}
 
-		if (!parent_dirname(mem_ctx, smb_fname->base_name, &q_dir, &base_name)) {
+		if (!parent_dirname(mem_ctx, smb_fname->base_name, &q_dir,
+			&base_name))
+		{
 			DEBUG(0,("Rename failed: %s/%s: "
 				"Cannot allocate memory\n",
 				conn->connectpath,
@@ -579,7 +605,8 @@ static virusfilter_action virusfilter_do_infected_file_action(
 			return VIRUSFILTER_ACTION_DO_NOTHING;
 		}
 
-		q_filepath = talloc_asprintf(talloc_tos(), "%s/%s%s%s", q_dir, q_prefix, base_name, q_suffix);
+		q_filepath = talloc_asprintf(talloc_tos(), "%s/%s%s%s", q_dir,
+			q_prefix, base_name, q_suffix);
 
 		TALLOC_FREE(q_dir);
 		TALLOC_FREE(q_prefix);
@@ -588,10 +615,12 @@ static virusfilter_action virusfilter_do_infected_file_action(
 		become_root();
 
 #if SAMBA_VERSION_NUMBER >= 40500
-		q_smb_fname = synthetic_smb_fname(mem_ctx, q_filepath, smb_fname->stream_name, NULL, smb_fname->flags);
+		q_smb_fname = synthetic_smb_fname(mem_ctx, q_filepath,
+			smb_fname->stream_name, NULL, smb_fname->flags);
 		if (q_smb_fname == NULL) {
 #elif SAMBA_VERSION_NUMBER >= 40100
-		q_smb_fname = synthetic_smb_fname(mem_ctx, q_filepath, smb_fname->stream_name, NULL);
+		q_smb_fname = synthetic_smb_fname(mem_ctx, q_filepath,
+			smb_fname->stream_name, NULL);
 		if (q_smb_fname == NULL) {
 #else
 		NTSTATUS status;
@@ -607,7 +636,9 @@ static virusfilter_action virusfilter_do_infected_file_action(
 			return VIRUSFILTER_ACTION_DO_NOTHING;
 		}
 
-		if (virusfilter_vfs_next_move(vfs_h, smb_fname, q_smb_fname) == -1) {
+		if (virusfilter_vfs_next_move(vfs_h, smb_fname, q_smb_fname)
+		    == -1)
+		{
 			unbecome_root();
 			DEBUG(0,("Rename failed: %s/%s: Rename failed: %s\n",
 				conn->connectpath,
@@ -622,23 +653,29 @@ static virusfilter_action virusfilter_do_infected_file_action(
 		return VIRUSFILTER_ACTION_RENAME;
 
 	case VIRUSFILTER_ACTION_QUARANTINE:
-		q_dir = virusfilter_string_sub(mem_ctx, conn, virusfilter_h->quarantine_dir);
-		q_prefix = virusfilter_string_sub(mem_ctx, conn, virusfilter_h->quarantine_prefix);
-		q_suffix = virusfilter_string_sub(mem_ctx, conn, virusfilter_h->quarantine_suffix);
+		q_dir = virusfilter_string_sub(mem_ctx, conn,
+			virusfilter_h->quarantine_dir);
+		q_prefix = virusfilter_string_sub(mem_ctx, conn,
+			virusfilter_h->quarantine_prefix);
+		q_suffix = virusfilter_string_sub(mem_ctx, conn,
+			virusfilter_h->quarantine_suffix);
 		if (!q_dir || !q_prefix || !q_suffix) {
 			DEBUG(0,("Quarantine failed: %s/%s: "
 				"Cannot allocate memory\n",
 				conn->connectpath,
 				smb_fname->base_name));
-			if (q_dir) TALLOC_FREE(q_dir);
-			if (q_prefix) TALLOC_FREE(q_prefix);
-			if (q_suffix) TALLOC_FREE(q_suffix);
+			TALLOC_FREE(q_dir);
+			TALLOC_FREE(q_prefix);
+			TALLOC_FREE(q_suffix);
 			return VIRUSFILTER_ACTION_DO_NOTHING;
 		}
 
-		if(virusfilter_h->quarantine_keep_name || virusfilter_h->quarantine_keep_tree)
+		if(virusfilter_h->quarantine_keep_name ||
+		   virusfilter_h->quarantine_keep_tree)
                 {
-			if (!parent_dirname(mem_ctx, smb_fname->base_name, &dir_name, &base_name)) {
+			if (!parent_dirname(mem_ctx, smb_fname->base_name,
+			    &dir_name, &base_name))
+			{
 				DEBUG(0,("Quarantine failed: %s/%s: "
 					"Cannot allocate memory\n",
 					conn->connectpath,
@@ -651,7 +688,8 @@ static virusfilter_action virusfilter_do_infected_file_action(
 
 			if(virusfilter_h->quarantine_keep_tree)
 			{
-				temp_path = talloc_asprintf(mem_ctx, "%s/%s", q_dir, dir_name);
+				temp_path = talloc_asprintf(mem_ctx, "%s/%s",
+					q_dir, dir_name);
 				if (!temp_path)
 				{
 					DEBUG(0,("Quarantine failed: %s/%s: "
@@ -668,15 +706,20 @@ static virusfilter_action virusfilter_do_infected_file_action(
 				if(quarantine_directory_exist(vfs_h, temp_path))
 				{
 					unbecome_root();
-					DEBUG(10, ("quarantine: Directory already exists\n"));
+					DEBUG(10, ("quarantine: Directory "
+						"already exists\n"));
 					TALLOC_FREE(q_dir);
 					q_dir = temp_path;
 				}
 				else {
 					unbecome_root();
-					DEBUG(10, ("quarantine: Creating directory %s\n", temp_path));
-					if (quarantine_create_dir(vfs_h, virusfilter_h, temp_path) == False) {
-						DEBUG(3, ("quarantine: Could not create directory "
+					DEBUG(10, ("quarantine: Creating "
+						"directory %s\n", temp_path));
+					if (quarantine_create_dir(vfs_h,
+					    virusfilter_h, temp_path) == False)
+					{
+						DEBUG(3, ("quarantine: Could "
+							"not create directory "
 							"ignoring for %s...\n",
 							smb_fname_str_dbg(smb_fname)));
 						TALLOC_FREE(temp_path);
@@ -690,13 +733,16 @@ static virusfilter_action virusfilter_do_infected_file_action(
 			}
 		}
 		if(virusfilter_h->quarantine_keep_name) {
-			q_filepath = talloc_asprintf(talloc_tos(), "%s/%s%s%s-XXXXXX", q_dir, q_prefix, base_name, q_suffix);
+			q_filepath = talloc_asprintf(talloc_tos(),
+				"%s/%s%s%s-XXXXXX", q_dir, q_prefix, base_name,
+				q_suffix);
 		}
 		else {
-			q_filepath = talloc_asprintf(talloc_tos(), "%s/%sXXXXXX", q_dir, q_prefix);
+			q_filepath = talloc_asprintf(talloc_tos(), "%s/%sXXXXXX",
+				q_dir, q_prefix);
 		}
 
-		if(dir_name) TALLOC_FREE(dir_name);
+		TALLOC_FREE(dir_name);
 		TALLOC_FREE(q_dir);
 		TALLOC_FREE(q_prefix);
 		TALLOC_FREE(q_suffix);
@@ -724,10 +770,12 @@ static virusfilter_action virusfilter_do_infected_file_action(
 		close(q_fd);
 
 #if SAMBA_VERSION_NUMBER >= 40500
-		q_smb_fname = synthetic_smb_fname(mem_ctx, q_filepath, smb_fname->stream_name, NULL, smb_fname->flags);
+		q_smb_fname = synthetic_smb_fname(mem_ctx, q_filepath,
+			smb_fname->stream_name, NULL, smb_fname->flags);
 		if (q_smb_fname == NULL) {
 #elif SAMBA_VERSION_NUMBER >= 40100
-		q_smb_fname = synthetic_smb_fname(mem_ctx, q_filepath, smb_fname->stream_name, NULL);
+		q_smb_fname = synthetic_smb_fname(mem_ctx, q_filepath,
+			smb_fname->stream_name, NULL);
 		if (q_smb_fname == NULL) {
 #else
 		NTSTATUS status;
@@ -743,10 +791,12 @@ static virusfilter_action virusfilter_do_infected_file_action(
 			return VIRUSFILTER_ACTION_DO_NOTHING;
 		}
 
-		if (virusfilter_vfs_next_move(vfs_h, smb_fname, q_smb_fname) == -1) {
+		if (virusfilter_vfs_next_move(vfs_h, smb_fname, q_smb_fname)
+		    == -1)
+		{
 			unbecome_root();
-			DEBUG(0,("Quarantine failed: %s/%s: Rename failed: %s\n",
-				conn->connectpath,
+			DEBUG(0,("Quarantine failed: %s/%s: Rename failed: "
+				"%s\n", conn->connectpath,
 				smb_fname->base_name,
 				strerror(errno)));
 			return VIRUSFILTER_ACTION_DO_NOTHING;
@@ -793,7 +843,8 @@ static virusfilter_action virusfilter_treat_infected_file(
 	char *command = NULL;
 	int command_result;
 
-	action = virusfilter_do_infected_file_action(vfs_h, virusfilter_h, smb_fname, &filepath_q);
+	action = virusfilter_do_infected_file_action(vfs_h, virusfilter_h,
+		smb_fname, &filepath_q);
 	for (i=0; virusfilter_actions[i].name; i++) {
 		if (virusfilter_actions[i].value == action) {
 			action_name = virusfilter_actions[i].name;
@@ -817,23 +868,34 @@ static virusfilter_action virusfilter_treat_infected_file(
 	if (virusfilter_set_module_env(env_h) == -1) {
 		goto done;
 	}
-	if (virusfilter_env_set(env_h, "VIRUSFILTER_INFECTED_SERVICE_FILE_PATH", smb_fname->base_name) == -1) {
+	if (virusfilter_env_set(env_h, "VIRUSFILTER_INFECTED_SERVICE_FILE_PATH",
+	    smb_fname->base_name) == -1)
+	{
 		goto done;
 	}
-	if (report && virusfilter_env_set(env_h, "VIRUSFILTER_INFECTED_FILE_REPORT", report) == -1) {
+	if (report && virusfilter_env_set(env_h,
+	    "VIRUSFILTER_INFECTED_FILE_REPORT", report) == -1)
+	{
 		goto done;
 	}
-	if (virusfilter_env_set(env_h, "VIRUSFILTER_INFECTED_FILE_ACTION", action_name) == -1) {
+	if (virusfilter_env_set(env_h, "VIRUSFILTER_INFECTED_FILE_ACTION",
+	    action_name) == -1)
+	{
 		goto done;
 	}
-	if (filepath_q && virusfilter_env_set(env_h, "VIRUSFILTER_QUARANTINED_FILE_PATH", filepath_q) == -1) {
+	if (filepath_q && virusfilter_env_set(env_h,
+	    "VIRUSFILTER_QUARANTINED_FILE_PATH", filepath_q) == -1)
+	{
 		goto done;
 	}
-	if (is_cache && virusfilter_env_set(env_h, "VIRUSFILTER_RESULT_IS_CACHE", "yes") == -1) {
+	if (is_cache && virusfilter_env_set(env_h, "VIRUSFILTER_RESULT_IS_CACHE",
+	    "yes") == -1)
+	{
 		goto done;
 	}
 
-	command = virusfilter_string_sub(mem_ctx, conn, virusfilter_h->infected_file_command);
+	command = virusfilter_string_sub(mem_ctx, conn,
+		virusfilter_h->infected_file_command);
 	if (!command) {
 		DEBUG(0,("virusfilter_string_sub failed\n"));
 		goto done;
@@ -844,7 +906,8 @@ static virusfilter_action virusfilter_treat_infected_file(
 		smb_fname->base_name,
 		command));
 
-	command_result = virusfilter_shell_run(command, 0, 0, env_h, vfs_h->conn, true);
+	command_result = virusfilter_shell_run(command, 0, 0, env_h,
+		vfs_h->conn, true);
 	if (command_result != 0) {
 		DEBUG(0,("Infected file command failed: %d\n", command_result));
 	}
@@ -883,17 +946,24 @@ static void virusfilter_treat_scan_error(
 	if (virusfilter_set_module_env(env_h) == -1) {
 		goto done;
 	}
-	if (virusfilter_env_set(env_h, "VIRUSFILTER_SCAN_ERROR_SERVICE_FILE_PATH", smb_fname->base_name) == -1) {
+	if (virusfilter_env_set(env_h, "VIRUSFILTER_SCAN_ERROR_SERVICE_FILE_PATH",
+	    smb_fname->base_name) == -1)
+	{
 		goto done;
 	}
-	if (report && virusfilter_env_set(env_h, "VIRUSFILTER_SCAN_ERROR_REPORT", report) == -1) {
+	if (report && virusfilter_env_set(env_h,
+	    "VIRUSFILTER_SCAN_ERROR_REPORT", report) == -1)
+	{
 		goto done;
 	}
-	if (is_cache && virusfilter_env_set(env_h, "VIRUSFILTER_RESULT_IS_CACHE", "1") == -1) {
+	if (is_cache && virusfilter_env_set(env_h,
+	    "VIRUSFILTER_RESULT_IS_CACHE", "1") == -1)
+	{
 		goto done;
 	}
 
-	command = virusfilter_string_sub(mem_ctx, conn, virusfilter_h->scan_error_command);
+	command = virusfilter_string_sub(mem_ctx, conn,
+		virusfilter_h->scan_error_command);
 	if (!command) {
 		DEBUG(0,("virusfilter_string_sub failed\n"));
 		goto done;
@@ -904,9 +974,11 @@ static void virusfilter_treat_scan_error(
 		smb_fname->base_name,
 		command));
 
-	command_result = virusfilter_shell_run(command, 0, 0, env_h, vfs_h->conn, true);
+	command_result = virusfilter_shell_run(command, 0, 0, env_h,
+		vfs_h->conn, true);
 	if (command_result != 0) {
-		DEBUG(0,("Scan error command failed: %d\n", command_result));
+		DEBUG(0,("Scan error command failed: %d\n",
+			command_result));
 	}
 
 done:
@@ -929,9 +1001,11 @@ static virusfilter_result virusfilter_scan(
 
 	if (virusfilter_h->cache_h) {
 		DEBUG(10, ("Searching cache entry: fname: %s\n", fname));
-		scan_cache_e = virusfilter_cache_get(virusfilter_h->cache_h, fname);
+		scan_cache_e = virusfilter_cache_get(virusfilter_h->cache_h,
+			fname);
 		if (scan_cache_e) {
-			DEBUG(10, ("Cache entry found: cached result: %d\n", scan_cache_e->result));
+			DEBUG(10, ("Cache entry found: cached result: %d\n",
+				scan_cache_e->result));
 			is_cache = true;
 			scan_result = scan_cache_e->result;
 			scan_report = scan_cache_e->report;
@@ -941,20 +1015,25 @@ static virusfilter_result virusfilter_scan(
 	}
 
 #ifdef virusfilter_module_scan_init
-	if (virusfilter_module_scan_init(virusfilter_h) != VIRUSFILTER_RESULT_OK) {
+	if (virusfilter_module_scan_init(virusfilter_h) !=
+	    VIRUSFILTER_RESULT_OK)
+	{
 		scan_result = VIRUSFILTER_RESULT_ERROR;
 		scan_report = "Initializing scanner failed";
 		goto virusfilter_scan_result_eval;
 	}
 #endif
 
-	scan_result = virusfilter_module_scan(vfs_h, virusfilter_h, smb_fname, &scan_report);
+	scan_result = virusfilter_module_scan(vfs_h, virusfilter_h, smb_fname,
+						&scan_report);
 
 #ifdef virusfilter_module_scan_end
 #ifdef VIRUSFILTER_DEFAULT_SCAN_REQUEST_LIMIT
 	if (virusfilter_h->scan_request_limit > 0) {
 		virusfilter_h->scan_request_count++;
-		if (virusfilter_h->scan_request_count >= virusfilter_h->scan_request_limit) {
+		if (virusfilter_h->scan_request_count >=
+		    virusfilter_h->scan_request_limit)
+		{
 			virusfilter_module_scan_end(virusfilter_h);
 			virusfilter_h->scan_request_count = 0;
 		}
@@ -977,7 +1056,8 @@ virusfilter_scan_result_eval:
 			vfs_h->conn->connectpath,
 			fname,
 			scan_report));
-		file_action = virusfilter_treat_infected_file(vfs_h, virusfilter_h, smb_fname, scan_report, is_cache);
+		file_action = virusfilter_treat_infected_file(vfs_h,
+			virusfilter_h, smb_fname, scan_report, is_cache);
 		if (file_action != VIRUSFILTER_ACTION_DO_NOTHING) {
 			add_scan_cache = false;
 		}
@@ -987,7 +1067,8 @@ virusfilter_scan_result_eval:
 			vfs_h->conn->connectpath,
 			fname,
 			scan_report));
-		virusfilter_treat_scan_error(vfs_h, virusfilter_h, smb_fname, scan_report, is_cache);
+		virusfilter_treat_scan_error(vfs_h, virusfilter_h, smb_fname,
+			scan_report, is_cache);
 		add_scan_cache = false;
 		break;
 	default:
@@ -996,16 +1077,21 @@ virusfilter_scan_result_eval:
 			vfs_h->conn->connectpath,
 			fname,
 			scan_report));
-		virusfilter_treat_scan_error(vfs_h, virusfilter_h, smb_fname, scan_report, is_cache);
+		virusfilter_treat_scan_error(vfs_h, virusfilter_h, smb_fname,
+			scan_report, is_cache);
 		add_scan_cache = false;
 		break;
 	}
 
 	if (virusfilter_h->cache_h) {
 		if (!is_cache && add_scan_cache) {
-			DEBUG(10, ("Adding new cache entry: %s, %d\n", fname, scan_result));
-			if (!virusfilter_cache_entry_add(virusfilter_h->cache_h, fname, scan_result, scan_report)) {
-				DEBUG(0,("Cannot create cache entry: virusfilter_cache_entry_new failed"));
+			DEBUG(10, ("Adding new cache entry: %s, %d\n",
+				fname, scan_result));
+			if (!virusfilter_cache_entry_add(virusfilter_h->cache_h,
+			    fname, scan_result, scan_report))
+			{
+				DEBUG(0,("Cannot create cache entry: "
+					"virusfilter_cache_entry_new failed"));
 				goto virusfilter_scan_return;
 			}
 		}
@@ -1059,10 +1145,11 @@ static int virusfilter_vfs_open(
 	}
 
 	if (SMB_VFS_NEXT_STAT(vfs_h, smb_fname) != 0) {
-		// Do not return immediately if !(flags & O_CREAT) && errno != ENOENT.
-		// Do not do this here or anywhere else. The module is stackable and
-		// there may be modules below, such as audit modules, which should be
-		// handled.
+		// Do not return immediately if !(flags & O_CREAT) &&
+		// errno != ENOENT.
+		// Do not do this here or anywhere else. The module is
+		// stackable and there may be modules below, such as audit
+		// modules, which should be handled.
 		goto virusfilter_vfs_open_next;
 	}
 	if (!S_ISREG(smb_fname->st.st_ex_mode)) {
@@ -1070,18 +1157,24 @@ static int virusfilter_vfs_open(
 			vfs_h->conn->connectpath, fname));
 		goto virusfilter_vfs_open_next;
 	}
-	if (virusfilter_h->max_file_size > 0 && smb_fname->st.st_ex_size > virusfilter_h->max_file_size) {
+	if (virusfilter_h->max_file_size > 0 && smb_fname->st.st_ex_size >
+	    virusfilter_h->max_file_size)
+	{
                 DEBUG(5, ("Not scanned: file size > max file size: %s/%s\n",
 			vfs_h->conn->connectpath, fname));
 		goto virusfilter_vfs_open_next;
 	}
-	if (virusfilter_h->min_file_size > 0 && smb_fname->st.st_ex_size < virusfilter_h->min_file_size) {
+	if (virusfilter_h->min_file_size > 0 && smb_fname->st.st_ex_size <
+	    virusfilter_h->min_file_size)
+	{
                 DEBUG(5, ("Not scanned: file size < min file size: %s/%s\n",
 			vfs_h->conn->connectpath, fname));
 		goto virusfilter_vfs_open_next;
 	}
 
-	if (virusfilter_h->exclude_files && is_in_path(fname, virusfilter_h->exclude_files, false)) {
+	if (virusfilter_h->exclude_files && is_in_path(fname,
+	    virusfilter_h->exclude_files, false))
+	{
                 DEBUG(5, ("Not scanned: exclude files: %s/%s\n",
 			vfs_h->conn->connectpath, fname));
 		goto virusfilter_vfs_open_next;
@@ -1089,14 +1182,21 @@ static int virusfilter_vfs_open(
 
 	if (test_prefix || test_suffix)
 	{
-		if(parent_dirname(mem_ctx, smb_fname->base_name, &dir_name, &base_name)) {
+		if(parent_dirname(mem_ctx, smb_fname->base_name, &dir_name,
+		   &base_name))
+		{
 			if (test_prefix) {
-				if (strncmp(base_name, virusfilter_h->rename_prefix, test_prefix) != 0) {
+				if (strncmp(base_name,
+				    virusfilter_h->rename_prefix,
+				    test_prefix) != 0)
+				{
 					test_prefix = 0;
 				}
 			}
 			if (test_suffix) {
-				if (strcmp(base_name + (strlen(base_name) - test_suffix), virusfilter_h->rename_suffix) != 0)
+				if (strcmp(base_name + (strlen(base_name) -
+				    test_suffix),
+				    virusfilter_h->rename_suffix) != 0)
 				{
 					test_suffix = 0;
 				}
@@ -1104,7 +1204,10 @@ static int virusfilter_vfs_open(
 
 			TALLOC_FREE(dir_name);
 
-			if ((rename_trap_count == 2 && test_prefix && test_suffix) || (rename_trap_count == 1 && (test_prefix || test_suffix))) {
+			if ((rename_trap_count == 2 && test_prefix &&
+			    test_suffix) || (rename_trap_count == 1 &&
+			    (test_prefix || test_suffix)))
+			{
 				scan_errno = virusfilter_h->infected_file_errno_on_open;
 				goto virusfilter_vfs_open_fail;
 			}
@@ -1158,16 +1261,17 @@ static int virusfilter_vfs_close(
 				virusfilter_handle,
 				return -1);
 
-	// Must close after scan? It appears not as the scanners are not internal
-	// and other modules such as greyhole seem to do SMB_VFS_NEXT_* functions
-	// before processing.
+	// Must close after scan? It appears not as the scanners are not
+	// internal and other modules such as greyhole seem to do
+	// SMB_VFS_NEXT_* functions before processing.
 	close_result = SMB_VFS_NEXT_CLOSE(vfs_h, fsp);
 	close_errno = errno;
 	// Return immediately if close_result == -1, and close_errno == EBADF.
 	// If close failed, file likely doesn't exist, do not try to scan.
 	if (close_result == -1 && close_errno == EBADF)
 	{
-		DEBUG(10, ("Removing cache entry (if existant): fname: %s\n", fname));
+		DEBUG(10, ("Removing cache entry (if existant): fname: "
+			"%s\n", fname));
 		virusfilter_cache_remove(virusfilter_h->cache_h, fname);
 		goto virusfilter_vfs_close_fail;
 	}
@@ -1183,8 +1287,10 @@ static int virusfilter_vfs_close(
                 if(virusfilter_h->scan_on_open && fsp->modified)
                 {
 			if (virusfilter_h->cache_h) {
-				DEBUG(10, ("Removing cache entry (if existant): fname: %s\n", fname));
-				virusfilter_cache_remove(virusfilter_h->cache_h, fname);
+				DEBUG(10, ("Removing cache entry (if "
+					"existant): fname: %s\n", fname));
+				virusfilter_cache_remove(virusfilter_h->cache_h,
+					fname);
 			}
                 }
                 DEBUG(5, ("Not scanned: scan on close is disabled: %s/%s\n",
@@ -1201,7 +1307,9 @@ static int virusfilter_vfs_close(
 		return close_result;
 	}
 
-	if (virusfilter_h->exclude_files && is_in_path(fname, virusfilter_h->exclude_files, false)) {
+	if (virusfilter_h->exclude_files && is_in_path(fname,
+	    virusfilter_h->exclude_files, false))
+	{
                 DEBUG(5, ("Not scanned: exclude files: %s/%s\n",
 			conn->connectpath, fname));
 		TALLOC_FREE(mem_ctx);
@@ -1260,7 +1368,8 @@ static int virusfilter_vfs_unlink(
 
 	if (virusfilter_h->cache_h) {
 		fname = smb_fname->base_name;
-		DEBUG(10, ("Removing cache entry (if existant): fname: %s\n", fname));
+		DEBUG(10, ("Removing cache entry (if existant): fname: %s\n",
+			fname));
 		virusfilter_cache_remove(virusfilter_h->cache_h, fname);
 	}
 
@@ -1287,12 +1396,15 @@ static int virusfilter_vfs_rename(
 
 	if (virusfilter_h->cache_h) {
 		fname = smb_fname_dst->base_name;
-		DEBUG(10, ("Removing cache entry (if existant): fname: %s\n", fname));
+		DEBUG(10, ("Removing cache entry (if existant): fname: "
+			"%s\n", fname));
 		virusfilter_cache_remove(virusfilter_h->cache_h, fname);
 
 		fname = smb_fname_src->base_name;
-		DEBUG(10, ("Renaming cache entry: fname: %s to: %s\n", fname, smb_fname_dst->base_name));
-		virusfilter_cache_entry_rename(virusfilter_h->cache_h, fname, smb_fname_dst->base_name);
+		DEBUG(10, ("Renaming cache entry: fname: %s to: %s\n", fname,
+			smb_fname_dst->base_name));
+		virusfilter_cache_entry_rename(virusfilter_h->cache_h, fname,
+			smb_fname_dst->base_name);
 	}
 
 	return ret;

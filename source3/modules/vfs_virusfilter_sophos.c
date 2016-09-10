@@ -21,14 +21,14 @@
 
 /* Default values for standard "extra" configuration variables */
 #ifdef SOPHOS_DEFAULT_SOCKET_PATH
-#  define VIRUSFILTER_DEFAULT_SOCKET_PATH		SOPHOS_DEFAULT_SOCKET_PATH
+#  define VIRUSFILTER_DEFAULT_SOCKET_PATH	SOPHOS_DEFAULT_SOCKET_PATH
 #else
-#  define VIRUSFILTER_DEFAULT_SOCKET_PATH		"/var/run/savdi/sssp.sock"
+#  define VIRUSFILTER_DEFAULT_SOCKET_PATH	"/var/run/savdi/sssp.sock"
 #endif
-#define VIRUSFILTER_DEFAULT_CONNECT_TIMEOUT		30000 /* msec */
-#define VIRUSFILTER_DEFAULT_TIMEOUT			60000 /* msec */
-#define VIRUSFILTER_DEFAULT_SCAN_REQUEST_LIMIT		0
-#define VIRUSFILTER_DEFAULT_SCAN_ARCHIVE		false
+#define VIRUSFILTER_DEFAULT_CONNECT_TIMEOUT	30000 /* msec */
+#define VIRUSFILTER_DEFAULT_TIMEOUT		60000 /* msec */
+#define VIRUSFILTER_DEFAULT_SCAN_REQUEST_LIMIT	0
+#define VIRUSFILTER_DEFAULT_SCAN_ARCHIVE	false
 /* Default values for module-specific configuration variables */
 /* None */
 
@@ -56,12 +56,15 @@ static int virusfilter_sophos_connect(
 	return 0;
 }
 
-static virusfilter_result virusfilter_sophos_scan_ping(virusfilter_handle *virusfilter_h)
+static virusfilter_result virusfilter_sophos_scan_ping(
+	virusfilter_handle *virusfilter_h)
 {
 	virusfilter_io_handle *io_h = virusfilter_h->io_h;
 
 	/* SSSP/1.0 has no "PING" command */
-	if (virusfilter_io_writel(io_h, "SSSP/1.0 OPTIONS\n", 17) != VIRUSFILTER_RESULT_OK) {
+	if (virusfilter_io_writel(io_h, "SSSP/1.0 OPTIONS\n", 17) !=
+	    VIRUSFILTER_RESULT_OK)
+	{
 		return VIRUSFILTER_RESULT_ERROR;
 	}
 
@@ -77,7 +80,8 @@ static virusfilter_result virusfilter_sophos_scan_ping(virusfilter_handle *virus
 	return VIRUSFILTER_RESULT_OK;
 }
 
-static virusfilter_result virusfilter_sophos_scan_init(virusfilter_handle *virusfilter_h)
+static virusfilter_result virusfilter_sophos_scan_init(
+	virusfilter_handle *virusfilter_h)
 {
 	virusfilter_io_handle *io_h = virusfilter_h->io_h;
 	virusfilter_result result;
@@ -85,7 +89,9 @@ static virusfilter_result virusfilter_sophos_scan_init(virusfilter_handle *virus
 	if (io_h->socket != -1) {
 		DEBUG(10,("SSSP: Checking if connection is alive\n"));
 
-		if (virusfilter_sophos_scan_ping(virusfilter_h) == VIRUSFILTER_RESULT_OK) {
+		if (virusfilter_sophos_scan_ping(virusfilter_h) ==
+		    VIRUSFILTER_RESULT_OK)
+		{
 			DEBUG(10,("SSSP: Re-using existent connection\n"));
 			return VIRUSFILTER_RESULT_OK;
 		}
@@ -108,7 +114,8 @@ static virusfilter_result virusfilter_sophos_scan_init(virusfilter_handle *virus
 	}
 
 	if (virusfilter_io_readl(io_h) != VIRUSFILTER_RESULT_OK) {
-		DEBUG(0,("SSSP: Reading greeting message failed: %s\n", strerror(errno)));
+		DEBUG(0,("SSSP: Reading greeting message failed: %s\n",
+			strerror(errno)));
 		goto virusfilter_sophos_scan_init_failed;
 	}
 	if (!strn_eq(io_h->r_buffer, "OK SSSP/1.0", 11)) {
@@ -187,7 +194,8 @@ static virusfilter_result virusfilter_sophos_scan(
 
 	DEBUG(7,("Scanning file: %s/%s\n", connectpath, fname));
 
-	fileurl_len = virusfilter_url_quote(connectpath, fileurl, VIRUSFILTER_IO_URL_MAX);
+	fileurl_len = virusfilter_url_quote(connectpath, fileurl,
+		VIRUSFILTER_IO_URL_MAX);
 	if (fileurl_len < 0) {
 		DEBUG(0,("virusfilter_url_quote failed: File path too long: %s/%s\n",
 			connectpath, fname));
@@ -231,7 +239,8 @@ static virusfilter_result virusfilter_sophos_scan(
 	result = VIRUSFILTER_RESULT_CLEAN;
 	for (;;) {
 		if (virusfilter_io_readl(io_h) != VIRUSFILTER_RESULT_OK) {
-			DEBUG(0,("SSSP: SCANFILE: Read error: %s\n", strerror(errno)));
+			DEBUG(0,("SSSP: SCANFILE: Read error: %s\n",
+				strerror(errno)));
 			goto virusfilter_sophos_scan_io_error;
 		}
 
@@ -256,13 +265,15 @@ static virusfilter_result virusfilter_sophos_scan(
 			if (reply_token &&
 			    !strn_eq(reply_token, "OK 0000 ", 8) && /* Succeed */
 			    !strn_eq(reply_token, "OK 0203 ", 8)) { /* Infected */
-				DEBUG(0,("SSSP: SCANFILE: Error: %s\n", reply_token));
+				DEBUG(0,("SSSP: SCANFILE: Error: %s\n",
+					reply_token));
 				result = VIRUSFILTER_RESULT_ERROR;
 				report = talloc_asprintf(talloc_tos(),
 					"Scanner error: %s\n", reply_token);
 			}
 		} else {
-			DEBUG(0,("SSSP: SCANFILE: Invalid reply: %s\n", reply_token));
+			DEBUG(0,("SSSP: SCANFILE: Invalid reply: %s\n",
+				reply_token));
 			result = VIRUSFILTER_RESULT_ERROR;
 			report = "Scanner communication error";
 		}
