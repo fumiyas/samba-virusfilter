@@ -83,9 +83,13 @@ typedef enum {
 #endif
 #define conn_domain_name(conn)		((conn)->session_info->info->domain_name)
 #define conn_client_name(conn)		((conn)->sconn->remote_hostname)
-#define conn_client_addr(conn)		tsocket_address_inet_addr_string((conn)->sconn->remote_address, talloc_tos())
+#define conn_client_addr(conn)		\
+	tsocket_address_inet_addr_string((conn)->sconn->remote_address, \
+	talloc_tos())
 
-#define conn_server_addr(conn)	tsocket_address_inet_addr_string((conn)->sconn->local_address, talloc_tos())
+#define conn_server_addr(conn)	\
+	tsocket_address_inet_addr_string((conn)->sconn->local_address, \
+	talloc_tos())
 
 #endif /* _VIRUSFILTER_COMMON_H */
 

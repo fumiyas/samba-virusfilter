@@ -108,12 +108,12 @@ typedef struct {
 	/* Infected file options */
 	virusfilter_action		infected_file_action;
 	const char *			infected_file_command;
-	int				infected_file_errno_on_open;
-	int				infected_file_errno_on_close;
+	int				infected_open_errno;
+	int				infected_close_errno;
 	/* Scan error options */
 	const char *			scan_error_command;
-	int				scan_error_errno_on_open;
-	int				scan_error_errno_on_close;
+	int				scan_error_open_errno;
+	int				scan_error_close_errno;
 	bool				block_access_on_error;
 	/* Quarantine infected files */
 	const char *			quarantine_dir;
@@ -175,11 +175,10 @@ static virusfilter_result virusfilter_module_scan(
 static int virusfilter_destruct_config(virusfilter_handle *virusfilter_h)
 {
 #ifdef virusfilter_module_destruct_config
-	/* FIXME: Check return code */
-	virusfilter_module_destruct_config(virusfilter_h);
-#endif
-
+	return virusfilter_module_destruct_config(virusfilter_h);
+#else
 	return 0;
+#endif
 }
 
 // This is adapted from vfs_recycle module.
@@ -435,19 +434,19 @@ static int virusfilter_vfs_connect(
 		"rename suffix",
 		VIRUSFILTER_DEFAULT_RENAME_SUFFIX);
 
-        virusfilter_h->infected_file_errno_on_open = lp_parm_int(
+        virusfilter_h->infected_open_errno = lp_parm_int(
 		snum, VIRUSFILTER_MODULE_NAME,
 		"infected file errno on open",
 		VIRUSFILTER_DEFAULT_INFECTED_FILE_ERRNO_ON_OPEN);
-        virusfilter_h->infected_file_errno_on_close = lp_parm_int(
+        virusfilter_h->infected_close_errno = lp_parm_int(
 		snum, VIRUSFILTER_MODULE_NAME,
 		"infected file errno on close",
 		VIRUSFILTER_DEFAULT_INFECTED_FILE_ERRNO_ON_CLOSE);
-        virusfilter_h->scan_error_errno_on_open = lp_parm_int(
+        virusfilter_h->scan_error_open_errno = lp_parm_int(
 		snum, VIRUSFILTER_MODULE_NAME,
 		"scan error errno on open",
 		VIRUSFILTER_DEFAULT_SCAN_ERROR_ERRNO_ON_OPEN);
-        virusfilter_h->scan_error_errno_on_close = lp_parm_int(
+        virusfilter_h->scan_error_close_errno = lp_parm_int(
 		snum, VIRUSFILTER_MODULE_NAME,
 		"scan error errno on close",
 		VIRUSFILTER_DEFAULT_SCAN_ERROR_ERRNO_ON_CLOSE);
@@ -1226,7 +1225,7 @@ static int virusfilter_vfs_open(
 			    test_suffix) || (rename_trap_count == 1 &&
 			    (test_prefix || test_suffix)))
 			{
-				scan_errno = virusfilter_h->infected_file_errno_on_open;
+				scan_errno = virusfilter_h->infected_open_errno;
 				goto virusfilter_vfs_open_fail;
 			}
 		}
@@ -1238,17 +1237,17 @@ static int virusfilter_vfs_open(
 	case VIRUSFILTER_RESULT_CLEAN:
 		break;
 	case VIRUSFILTER_RESULT_INFECTED:
-		scan_errno = virusfilter_h->infected_file_errno_on_open;
+		scan_errno = virusfilter_h->infected_open_errno;
 		goto virusfilter_vfs_open_fail;
 	case VIRUSFILTER_RESULT_ERROR:
 		if (virusfilter_h->block_access_on_error) {
 			DEBUG(5, ("Block access\n"));
-			scan_errno = virusfilter_h->scan_error_errno_on_open;
+			scan_errno = virusfilter_h->scan_error_open_errno;
 			goto virusfilter_vfs_open_fail;
 		}
 		break;
 	default:
-		scan_errno = virusfilter_h->scan_error_errno_on_open;
+		scan_errno = virusfilter_h->scan_error_open_errno;
 		goto virusfilter_vfs_open_fail;
 	}
 
@@ -1288,9 +1287,13 @@ static int virusfilter_vfs_close(
 	// If close failed, file likely doesn't exist, do not try to scan.
 	if (close_result == -1 && close_errno == EBADF)
 	{
-		DEBUG(10, ("Removing cache entry (if existant): fname: "
-			"%s\n", fname));
-		virusfilter_cache_remove(virusfilter_h->cache_h, fname);
+		if (fsp->modified)
+		{
+			DEBUG(10, ("Removing cache entry (if existant): "
+				"fname: %s\n", fname));
+			virusfilter_cache_remove(virusfilter_h->cache_h,
+				fname);
+		}
 		goto virusfilter_vfs_close_fail;
 	}
 
@@ -1340,17 +1343,17 @@ static int virusfilter_vfs_close(
 	case VIRUSFILTER_RESULT_CLEAN:
 		break;
 	case VIRUSFILTER_RESULT_INFECTED:
-		scan_errno = virusfilter_h->infected_file_errno_on_close;
+		scan_errno = virusfilter_h->infected_close_errno;
 		goto virusfilter_vfs_close_fail;
 	case VIRUSFILTER_RESULT_ERROR:
 		if (virusfilter_h->block_access_on_error) {
 			DEBUG(5, ("Block access\n"));
-			scan_errno = virusfilter_h->scan_error_errno_on_close;
+			scan_errno = virusfilter_h->scan_error_close_errno;
 			goto virusfilter_vfs_close_fail;
 		}
 		break;
 	default:
-		scan_errno = virusfilter_h->scan_error_errno_on_close;
+		scan_errno = virusfilter_h->scan_error_close_errno;
 		goto virusfilter_vfs_close_fail;
 	}
 
