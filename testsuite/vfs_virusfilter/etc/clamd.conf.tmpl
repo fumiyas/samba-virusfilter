@@ -1,0 +1,20 @@
+Foreground yes
+PidFile @TEST_TMP_DIR@/clamd.pid
+LocalSocket @TEST_TMP_DIR@/clamd.socket
+#TemporaryDirectory /var/tmp
+
+LogFile @TEST_LOG_DIR@/clamd.log
+LogFileMaxSize 10M
+LogTime yes
+LogVerbose yes
+Debug yes
+
+#VirusEvent /usr/local/bin/send_sms 123456789 "VIRUS ALERT: %v"
+
+ScanArchive yes
+StreamMaxLength 10M
+MaxScanSize 150M
+MaxFileSize 30M
+MaxRecursion 10
+MaxFiles 15000
+

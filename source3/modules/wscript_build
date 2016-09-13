@@ -9,6 +9,10 @@ bld.SAMBA3_SUBSYSTEM('POSIXACL_XATTR',
                  enabled=(bld.SAMBA3_IS_ENABLED_MODULE('vfs_ceph') or bld.SAMBA3_IS_ENABLED_MODULE('vfs_glusterfs')),
                  deps='acl attr')
 
+bld.SAMBA3_SUBSYSTEM('VFS_VIRUSFILTER_UTILS',
+                    source='vfs_virusfilter_utils.c',
+                    enabled=(bld.SAMBA3_IS_ENABLED_MODULE('vfs_virusfilter_clamav.c') or bld.SAMBA3_IS_ENABLED_MODULE('vfs_virusfilter_fsav.c') or bld.SAMBA3_IS_ENABLED_MODULE('vfs_virusfilter_sophos.c')))
+
 bld.SAMBA3_LIBRARY('non_posix_acls',
                    source='non_posix_acls.c',
                    deps='samba-util vfs',
@@ -481,6 +485,30 @@ bld.SAMBA3_MODULE('vfs_snapper',
                  init_function='',
                  internal_module=bld.SAMBA3_IS_STATIC_MODULE('vfs_snapper'),
                  enabled=bld.SAMBA3_IS_ENABLED_MODULE('vfs_snapper'))
+
+bld.SAMBA3_MODULE('vfs_virusfilter_clamav',
+                 subsystem='vfs',
+                 source=VFS_SFV_CLAMAV_SRC,
+                 deps='samba-util VFS_VIRUSFILTER_UTILS',
+                 init_function='',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('vfs_virusfilter_clamav'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('vfs_virusfilter_clamav'))
+
+bld.SAMBA3_MODULE('vfs_virusfilter_fsav',
+                 subsystem='vfs',
+                 source=VFS_SFV_FSECURE_SRC,
+                 deps='samba-util VFS_VIRUSFILTER_UTILS',
+                 init_function='',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('vfs_virusfilter_fsav'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('vfs_virusfilter_fsav'))
+
+bld.SAMBA3_MODULE('vfs_virusfilter_sophos',
+                 subsystem='vfs',
+                 source=VFS_SFV_SOPHOS_SRC,
+                 deps='samba-util VFS_VIRUSFILTER_UTILS',
+                 init_function='',
+                 internal_module=bld.SAMBA3_IS_STATIC_MODULE('vfs_virusfilter_sophos'),
+                 enabled=bld.SAMBA3_IS_ENABLED_MODULE('vfs_virusfilter_sophos'))
 
 bld.SAMBA3_MODULE('vfs_vxfs',
                  subsystem='vfs',

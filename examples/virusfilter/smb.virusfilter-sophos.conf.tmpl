@@ -1,0 +1,58 @@
+## Sample smb.conf configuration file for vfs_virusfilter_sophos(8)
+##
+## You can use this file in your smb.conf as the following:
+## [global]
+## include = @SAMBA_CONFIGDIR@/smb.virusfilter_sophos.conf
+
+vfs objects = virusfilter_sophos
+
+## Scan files while opening
+## default: yes
+virusfilter_sophos:scan on open = yes
+
+## Scan files while closing
+## default: no
+virusfilter_sophos:scan on close = no
+
+## Scan archived files (Tar, ZIP and so on)
+## default: no
+virusfilter_sophos:scan archive = no
+
+## Do not scan files larger than X bytes
+## default: 100000000 (100MB)
+virusfilter_sophos:max file size = 100000000
+
+## Do not scan files smaller than X bytes
+## default: 0
+virusfilter_sophos:min file size = 10
+
+## What to do with an infected file
+## nothing:	Do nothing (default)
+## quarantine:	Try to move to quantine directory
+## delete:	Delete infected file
+virusfilter_sophos:infected file action = nothing
+
+## Where to move infected files
+virusfilter_sophos:quarantine directory  = @SAMBA_LOCKDIR@/virusfilter/quarantine
+## Prefix for files in quarantine directory
+virusfilter_sophos:quarantine prefix = virusfilter.
+## Suffix for files in quarantine directory
+virusfilter_sophos:quarantine suffix = .infected
+## If keep tree is set, the directory structure relative
+## to the share is maintained in the quarantine directory
+virusfilter_sophos:quarantine keep tree = yes
+## If keep tree is set, the original file name is kept, with a random suffix.
+virusfilter_sophos:quarantine keep name = yes
+## Prefix for files in rename action
+virusfilter_sophos:rename prefix = virusfilter.
+## Suffix for files in rename action
+virusfilter_sophos:rename suffix = .infected
+
+## External command to run on an infected file is found
+## default: none
+;virusfilter_sophos:infected file command = @SAMBA_DATADIR@/bin/virusfilter-notify --mail-to virusmaster@example.com --cc "%U@example.com" --from samba@example.com --subject-prefix "Samba: Infected File: "
+
+## External command to run on scan error
+## default: none
+;virusfilter_sophos:scan error command = @SAMBA_DATADIR@/bin/virusfilter-notify --mail-to virusmaster@example.com --from samba@example.com --subject-prefix "Samba: Scan Error: "
+

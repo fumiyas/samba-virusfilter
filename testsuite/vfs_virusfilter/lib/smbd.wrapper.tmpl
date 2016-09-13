@@ -1,0 +1,18 @@
+#!@KSH_COMMAND@
+
+. package.ksh
+
+cd "$TEST_dir" || exit 1
+
+## Ensure that all commands in the pipeline are terminated
+wait
+
+exec @PERL_COMMAND@ -e 'use POSIX; POSIX::setsid(); exec(@ARGV);' \
+  "$T_samba_sbin_dir/smbd" \
+    --debuglevel=10 \
+    --configfile="$T_smb_conf_file" \
+    --log-basename="$T_samba_log_dir" \
+    ${1+"$@"}
+
+exit 1
+
