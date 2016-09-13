@@ -16,6 +16,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "lib/util/sys_rw_data.h"
 #include "vfs_virusfilter_common.h"
 #include "vfs_virusfilter_utils.h"
 
@@ -349,43 +350,18 @@ virusfilter_result virusfilter_io_disconnect(virusfilter_io_handle *io_h)
 virusfilter_result virusfilter_io_write(virusfilter_io_handle *io_h,
 	const char *data, size_t data_size)
 {
-	struct pollfd pollfd;
-	ssize_t wrote_size;
-
 	if (data_size == 0) {
 		return VIRUSFILTER_RESULT_OK;
 	}
 
-	pollfd.fd = io_h->socket;
-	pollfd.events = POLLOUT;
-
-	while (data_size > 0) {
-		switch (poll(&pollfd, 1, io_h->io_timeout)) {
-		case -1:
-			if (errno == EINTR) {
-				errno = 0;
-				continue;
-			}
-			return VIRUSFILTER_RESULT_ERROR;
-		case 0:
-			errno = ETIMEDOUT;
-			return VIRUSFILTER_RESULT_ERROR;
-		}
-
-		wrote_size = write(io_h->socket, data, data_size);
-		if (wrote_size == -1) {
-			if (errno == EINTR) {
-				errno = 0;
-				continue;
-			}
-			return VIRUSFILTER_RESULT_ERROR;
-		}
-
-		data += wrote_size;
-		data_size -= wrote_size;
+	switch (write_data_timeout(io_h->socket, data, data_size,
+		io_h->io_timeout, 1))
+	{
+	case -1:
+		return VIRUSFILTER_RESULT_ERROR;
+	default:
+		return VIRUSFILTER_RESULT_OK;
 	}
-
-	return VIRUSFILTER_RESULT_OK;
 }
 
 virusfilter_result virusfilter_io_writel(virusfilter_io_handle *io_h,
@@ -437,12 +413,9 @@ virusfilter_result virusfilter_io_writev(virusfilter_io_handle *io_h, ...)
 	va_list ap;
 	struct iovec iov[VIRUSFILTER_IO_IOV_MAX], *iov_p;
 	int iov_n;
-	struct pollfd pollfd;
-	size_t data_size;
-	ssize_t wrote_size;
 
 	va_start(ap, io_h);
-	for (iov_p = iov, iov_n = 0, data_size = 0;
+	for (iov_p = iov, iov_n = 0;
 	     iov_n < VIRUSFILTER_IO_IOV_MAX;
 	     iov_p++, iov_n++) {
 		iov_p->iov_base = va_arg(ap, void *);
@@ -450,49 +423,16 @@ virusfilter_result virusfilter_io_writev(virusfilter_io_handle *io_h, ...)
 			break;
 		}
 		iov_p->iov_len = va_arg(ap, int);
-		data_size += iov_p->iov_len;
 	}
 	va_end(ap);
 
-	pollfd.fd = io_h->socket;
-	pollfd.events = POLLOUT;
-
-	for (iov_p = iov;;) {
-		switch (poll(&pollfd, 1, io_h->io_timeout)) {
-		case -1:
-			if (errno == EINTR) {
-				errno = 0;
-				continue;
-			}
-			return VIRUSFILTER_RESULT_ERROR;
-		case 0:
-			errno = ETIMEDOUT;
-			return VIRUSFILTER_RESULT_ERROR;
-		}
-
-		wrote_size = writev(io_h->socket, iov_p, iov_n);
-		if (wrote_size == -1) {
-			if (errno == EINTR) {
-				errno = 0;
-				continue;
-			}
-			return VIRUSFILTER_RESULT_ERROR;
-		}
-
-		data_size -= wrote_size;
-		if (data_size <= 0) {
-			return VIRUSFILTER_RESULT_OK;
-		}
-
-		while (iov_n > 0 && wrote_size >= iov_p->iov_len) {
-			wrote_size -= iov_p->iov_len;
-			iov_p++;
-			iov_n--;
-		}
-		if (wrote_size > 0) {
-			iov_p->iov_base = (char *)iov_p->iov_base + wrote_size;
-			iov_p->iov_len -= wrote_size;
-		}
+	switch (write_data_iov_timeout(io_h->socket, iov, iov_n,
+		io_h->io_timeout, 1))
+	{
+	case -1:
+		return VIRUSFILTER_RESULT_ERROR;
+	default:
+		return VIRUSFILTER_RESULT_OK;
 	}
 
 #if 0
@@ -506,12 +446,9 @@ virusfilter_result virusfilter_io_writevl(virusfilter_io_handle *io_h, ...)
 	va_list ap;
 	struct iovec iov[VIRUSFILTER_IO_IOV_MAX + 1], *iov_p;
 	int iov_n;
-	struct pollfd pollfd;
-	size_t data_size;
-	ssize_t wrote_size;
 
 	va_start(ap, io_h);
-	for (iov_p = iov, iov_n = 0, data_size = 0;
+	for (iov_p = iov, iov_n = 0;
 	     iov_n < VIRUSFILTER_IO_IOV_MAX;
 	     iov_p++, iov_n++) {
 		iov_p->iov_base = va_arg(ap, void *);
@@ -519,54 +456,20 @@ virusfilter_result virusfilter_io_writevl(virusfilter_io_handle *io_h, ...)
 			break;
 		}
 		iov_p->iov_len = va_arg(ap, int);
-		data_size += iov_p->iov_len;
 	}
 	va_end(ap);
 
 	iov_p->iov_base = io_h->r_eol;
 	iov_p->iov_len = io_h->r_eol_size;
-	data_size += io_h->r_eol_size;
 	iov_n++;
 
-	pollfd.fd = io_h->socket;
-	pollfd.events = POLLOUT;
-
-	for (iov_p = iov;;) {
-		switch (poll(&pollfd, 1, io_h->io_timeout)) {
-		case -1:
-			if (errno == EINTR) {
-				errno = 0;
-				continue;
-			}
-			return VIRUSFILTER_RESULT_ERROR;
-		case 0:
-			errno = ETIMEDOUT;
-			return VIRUSFILTER_RESULT_ERROR;
-		}
-
-		wrote_size = writev(io_h->socket, iov_p, iov_n);
-		if (wrote_size == -1) {
-			if (errno == EINTR) {
-				errno = 0;
-				continue;
-			}
-			return VIRUSFILTER_RESULT_ERROR;
-		}
-
-		data_size -= wrote_size;
-		if (data_size <= 0) {
-			return VIRUSFILTER_RESULT_OK;
-		}
-
-		while (iov_n > 0 && wrote_size >= iov_p->iov_len) {
-			wrote_size -= iov_p->iov_len;
-			iov_p++;
-			iov_n--;
-		}
-		if (wrote_size > 0) {
-			iov_p->iov_base = (char *)iov_p->iov_base + wrote_size;
-			iov_p->iov_len -= wrote_size;
-		}
+	switch (write_data_iov_timeout(io_h->socket, iov, iov_n,
+		io_h->io_timeout, 1))
+	{
+	case -1:
+		return VIRUSFILTER_RESULT_ERROR;
+	default:
+		return VIRUSFILTER_RESULT_OK;
 	}
 
 #if 0
