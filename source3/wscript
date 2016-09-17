@@ -1674,7 +1674,8 @@ main() {
                                       vfs_preopen vfs_catia
                                       vfs_media_harmony vfs_unityed_media vfs_fruit vfs_shell_snap
                                       vfs_commit vfs_worm vfs_crossrename vfs_linux_xfs_sgid
-                                      vfs_time_audit vfs_offline
+                                      vfs_time_audit vfs_offline vfs_virusfilter_clamav
+                                      vfs_virusfilter_fsav vfs_virusfilter_sophos
                                   '''))
     default_shared_modules.extend(TO_LIST('auth_script idmap_tdb2 idmap_script'))
     # these have broken dependencies
@@ -1859,6 +1860,17 @@ main() {
         Logs.info("%s: %s" % (shared_env, ','.join(conf.env[shared_env])))
 
     conf.SAMBA_CONFIG_H('include/config.h')
+    old_defines = conf.env['defines']
+    conf.env['defines'] = {}
+    conf.define('VARDIR', conf.env['STATEDIR'])
+    sambaversion = samba_version.load_version(env=None)
+    conf.define('SAMBA_VERSION_NUMBER', int('%d%02d%02d' % (
+        sambaversion.MAJOR,
+        sambaversion.MINOR,
+        sambaversion.RELEASE,
+    )))
+    conf.write_config_header('include/vfs_virusfilter_config.h')
+    conf.env['defines'] = old_defines
 
 def ctags(ctx):
     "build 'tags' file using ctags"

@@ -17,8 +17,8 @@
 */
 
 #include "lib/util/sys_rw_data.h"
-#include "vfs_virusfilter_common.h"
-#include "vfs_virusfilter_utils.h"
+#include "modules/vfs_virusfilter_common.h"
+#include "modules/vfs_virusfilter_utils.h"
 
 #include <poll.h>
 
@@ -657,6 +657,7 @@ int virusfilter_cache_entry_add(
 	if (report)
 	{
 		cache_e->report = talloc_strdup(cache_e, report);
+		if (!cache_e->report) return 0;
 	}
 	if (cache_h->time_limit > 0) {
 		cache_e->time = time(NULL);
@@ -755,7 +756,7 @@ void virusfilter_cache_remove(virusfilter_cache_handle *cache_h,
 
 void virusfilter_cache_entry_free(virusfilter_cache_entry *cache_e)
 {
-	if(cache_e->report) {
+	if(cache_e) {
 		TALLOC_FREE(cache_e->report);
 		cache_e->report = NULL;
 	}

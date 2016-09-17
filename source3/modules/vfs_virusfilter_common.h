@@ -53,9 +53,9 @@ extern int virusfilter_debug_level;
 /* Samba's global variable */
 extern userdom_struct current_user_info;
 
-#include "vfs_virusfilter_config.h"
+#include "include/vfs_virusfilter_config.h"
 
-#define VIRUSFILTER_VERSION PACKAGE_VERSION
+#define VIRUSFILTER_VERSION "0.1.5"
 
 /* ====================================================================== */
 

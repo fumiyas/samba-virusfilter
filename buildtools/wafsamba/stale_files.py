@@ -88,7 +88,7 @@ def replace_refill_task_list(self):
                 link = os.readlink(p)
                 if link[0:bin_base_len] == bin_base:
                     p = link
-            if f in ['config.h']:
+            if f in ['config.h', 'vfs_virusfilter_config.h']:
                 continue
             (froot, fext) = os.path.splitext(f)
             if fext not in [ '.c', '.h', '.so', '.o' ]:

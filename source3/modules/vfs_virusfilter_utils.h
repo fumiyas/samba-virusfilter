@@ -19,7 +19,7 @@
 #ifndef _VIRUSFILTER_UTILS_H
 #define _VIRUSFILTER_UTILS_H
 
-#include "vfs_virusfilter_common.h"
+#include "modules/vfs_virusfilter_common.h"
 #include "../lib/util/memcache.h"
 
 #ifndef VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC
