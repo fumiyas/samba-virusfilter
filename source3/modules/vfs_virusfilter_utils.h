@@ -21,6 +21,7 @@
 
 #include "modules/vfs_virusfilter_common.h"
 #include "../lib/util/memcache.h"
+#include "../lib/util/util_env.h"
 
 #ifndef VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC
 #define VIRUSFILTER_SCAN_RESULTS_CACHE_TALLOC SINGLETON_CACHE_TALLOC
@@ -66,12 +67,6 @@ typedef struct virusfilter_cache_handle {
 	TALLOC_CTX *ctx;
 	time_t time_limit;
 } virusfilter_cache_handle;
-
-typedef struct {
-	char		**env_list;
-	size_t		env_size;
-	size_t		env_num;
-} virusfilter_env_struct;
 
 /* ====================================================================== */
 
@@ -124,20 +119,12 @@ void virusfilter_cache_remove(virusfilter_cache_handle *cache_h,
 	const char *fname);
 void virusfilter_cache_purge(virusfilter_cache_handle *cache_h);
 
-/* Environment variable handling for execle(2) */
-virusfilter_env_struct *virusfilter_env_new(TALLOC_CTX *ctx);
-char * const *virusfilter_env_list(virusfilter_env_struct *env_h);
-int virusfilter_env_set(virusfilter_env_struct *env_h, const char *name,
-	const char *value);
-
 /* Shell scripting */
-int virusfilter_shell_set_conn_env(virusfilter_env_struct *env_h,
+int virusfilter_shell_set_conn_env(env_struct *env_h,
 	connection_struct *conn);
 int virusfilter_shell_run(
 	const char *cmd,
-	uid_t uid,
-	gid_t gid,
-	virusfilter_env_struct *env_h,
+	env_struct *env_h,
 	connection_struct *conn,
 	bool sanitize);
 

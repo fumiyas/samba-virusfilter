@@ -534,20 +534,20 @@ static void virusfilter_vfs_disconnect(vfs_handle_struct *vfs_h)
 	SMB_VFS_NEXT_DISCONNECT(vfs_h);
 }
 
-static int virusfilter_set_module_env(virusfilter_env_struct *env_h)
+static int virusfilter_set_module_env(env_struct *env_h)
 {
-	if (virusfilter_env_set(env_h, "VIRUSFILTER_VERSION",
+	if (env_set(env_h, "VIRUSFILTER_VERSION",
 	    VIRUSFILTER_VERSION) == -1)
 	{
 		return -1;
 	}
-	if (virusfilter_env_set(env_h, "VIRUSFILTER_MODULE_NAME",
+	if (env_set(env_h, "VIRUSFILTER_MODULE_NAME",
 	    VIRUSFILTER_MODULE_NAME) == -1)
 	{
 		return -1;
 	}
 #ifdef VIRUSFILTER_MODULE_VERSION
-	if (virusfilter_env_set(env_h, "VIRUSFILTER_MODULE_VERSION",
+	if (env_set(env_h, "VIRUSFILTER_MODULE_VERSION",
 	    VIRUSFILTER_MODULE_VERSION) == -1)
 	{
 		return -1;
@@ -851,7 +851,7 @@ static virusfilter_action virusfilter_treat_infected_file(
 	virusfilter_action action;
 	const char *action_name = "UNKNOWN";
 	const char *filepath_q = NULL;
-	virusfilter_env_struct *env_h = NULL;
+	env_struct *env_h = NULL;
 	char *command = NULL;
 	int command_result;
 
@@ -872,36 +872,36 @@ static virusfilter_action virusfilter_treat_infected_file(
 		return action;
 	}
 
-	env_h = virusfilter_env_new(mem_ctx);
+	env_h = env_new(mem_ctx);
 	if (!env_h) {
-		DEBUG(0,("virusfilter_env_new failed\n"));
+		DEBUG(0,("env_new failed\n"));
 		goto done;
 	}
 	if (virusfilter_set_module_env(env_h) == -1) {
 		goto done;
 	}
-	if (virusfilter_env_set(env_h,
+	if (env_set(env_h,
 	    "VIRUSFILTER_INFECTED_SERVICE_FILE_PATH",
 	    smb_fname->base_name) == -1)
 	{
 		goto done;
 	}
-	if (report && virusfilter_env_set(env_h,
+	if (report && env_set(env_h,
 	    "VIRUSFILTER_INFECTED_FILE_REPORT", report) == -1)
 	{
 		goto done;
 	}
-	if (virusfilter_env_set(env_h, "VIRUSFILTER_INFECTED_FILE_ACTION",
+	if (env_set(env_h, "VIRUSFILTER_INFECTED_FILE_ACTION",
 	    action_name) == -1)
 	{
 		goto done;
 	}
-	if (filepath_q && virusfilter_env_set(env_h,
+	if (filepath_q && env_set(env_h,
 	    "VIRUSFILTER_QUARANTINED_FILE_PATH", filepath_q) == -1)
 	{
 		goto done;
 	}
-	if (is_cache && virusfilter_env_set(env_h,
+	if (is_cache && env_set(env_h,
             "VIRUSFILTER_RESULT_IS_CACHE",
 	    "yes") == -1)
 	{
@@ -920,7 +920,7 @@ static virusfilter_action virusfilter_treat_infected_file(
 		smb_fname->base_name,
 		command));
 
-	command_result = virusfilter_shell_run(command, 0, 0, env_h,
+	command_result = virusfilter_shell_run(command, env_h,
 		vfs_h->conn, true);
 	if (command_result != 0) {
 		DEBUG(0,("Infected file command failed: %d\n",
@@ -945,7 +945,7 @@ static void virusfilter_treat_scan_error(
 {
 	connection_struct *conn = vfs_h->conn;
 	TALLOC_CTX *mem_ctx = talloc_tos();
-	virusfilter_env_struct *env_h = NULL;
+	env_struct *env_h = NULL;
 	char *command = NULL;
 	int command_result;
 
@@ -953,26 +953,26 @@ static void virusfilter_treat_scan_error(
 		return;
 	}
 
-	env_h = virusfilter_env_new(mem_ctx);
+	env_h = env_new(mem_ctx);
 	if (!env_h) {
-		DEBUG(0,("virusfilter_env_new failed\n"));
+		DEBUG(0,("env_new failed\n"));
 		goto done;
 	}
 	if (virusfilter_set_module_env(env_h) == -1) {
 		goto done;
 	}
-	if (virusfilter_env_set(env_h,
+	if (env_set(env_h,
 	    "VIRUSFILTER_SCAN_ERROR_SERVICE_FILE_PATH",
 	    smb_fname->base_name) == -1)
 	{
 		goto done;
 	}
-	if (report && virusfilter_env_set(env_h,
+	if (report && env_set(env_h,
 	    "VIRUSFILTER_SCAN_ERROR_REPORT", report) == -1)
 	{
 		goto done;
 	}
-	if (is_cache && virusfilter_env_set(env_h,
+	if (is_cache && env_set(env_h,
 	    "VIRUSFILTER_RESULT_IS_CACHE", "1") == -1)
 	{
 		goto done;
@@ -990,7 +990,7 @@ static void virusfilter_treat_scan_error(
 		smb_fname->base_name,
 		command));
 
-	command_result = virusfilter_shell_run(command, 0, 0, env_h,
+	command_result = virusfilter_shell_run(command, env_h,
 		vfs_h->conn, true);
 	if (command_result != 0) {
 		DEBUG(0,("Scan error command failed: %d\n",

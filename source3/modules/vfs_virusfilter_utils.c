@@ -22,8 +22,6 @@
 
 #include <poll.h>
 
-#define VIRUSFILTER_ENV_SIZE_CHUNK 32
-
 /* ====================================================================== */
 
 #ifndef HAVE_MEMMEM
@@ -603,7 +601,6 @@ virusfilter_result virusfilter_io_writefl_readl(virusfilter_io_handle *io_h,
 	}
 	if (io_h->r_size == 0) { /* EOF */
 		DEBUG(0,("virusfilter_io_readl EOF\n"));
-		/* FIXME: VIRUSFILTER_RESULT_EOF? */
 		return VIRUSFILTER_RESULT_ERROR;
 	}
 
@@ -763,112 +760,11 @@ void virusfilter_cache_entry_free(virusfilter_cache_entry *cache_e)
 	TALLOC_FREE(cache_e);
 }
 
-/* Environment variable handling for execle(2)
- * ====================================================================== */
-
-virusfilter_env_struct *virusfilter_env_new(TALLOC_CTX *ctx)
-{
-	virusfilter_env_struct *env_h = talloc_zero(ctx,
-		virusfilter_env_struct);
-	if (!env_h) {
-		DEBUG(0, ("talloc_zero failed\n"));
-		goto virusfilter_env_init_failed;
-	}
-
-	env_h->env_num = 0;
-	env_h->env_size = VIRUSFILTER_ENV_SIZE_CHUNK;
-	env_h->env_list = talloc_array(env_h, char *, env_h->env_size);
-	if (!env_h->env_list) {
-		DEBUG(0, ("TALLOC_ARRAY failed\n"));
-		goto virusfilter_env_init_failed;
-	}
-
-	env_h->env_list[0] = NULL;
-
-	return env_h;
-
-virusfilter_env_init_failed:
-	TALLOC_FREE(env_h);
-	return NULL;
-}
-
-char * const *virusfilter_env_list(virusfilter_env_struct *env_h)
-{
-	return env_h->env_list;
-}
-
-int virusfilter_env_set(virusfilter_env_struct *env_h, const char *name,
-	const char *value)
-{
-	size_t name_len = strlen(name);
-	/* strlen("name=value") */
-	size_t env_len = name_len + 1 + strlen(value);
-	char **env_p;
-
-	/* Named env value already exists? */
-	for (env_p = env_h->env_list; *env_p != NULL; env_p++) {
-		if ((*env_p)[name_len] == '=' &&
-		    strn_eq(*env_p, name, name_len))
-		{
-			break;
-		}
-	}
-
-	if (!*env_p) {
-		/* Not exist. Adding a new env entry */
-		char *env_new;
-
-		if (env_h->env_size == env_h->env_num + 1) {
-			/* Enlarge env_h->env_list */
-			size_t env_size_new = env_h->env_size +
-				VIRUSFILTER_ENV_SIZE_CHUNK;
-			char **env_list_new = talloc_realloc(
-				env_h, env_h->env_list, char *, env_size_new);
-			if (!env_list_new) {
-				DEBUG(0,("TALLOC_REALLOC_ARRAY failed\n"));
-				return -1;
-			}
-			env_h->env_list = env_list_new;
-			env_h->env_size = env_size_new;
-		}
-
-		env_new = talloc_asprintf(env_h, "%s=%s", name, value);
-		if (!env_new) {
-			DEBUG(0,("talloc_asprintf failed\n"));
-			return -1;
-		}
-		*env_p = env_new;
-		env_h->env_num++;
-		env_h->env_list[env_h->env_num] = NULL;
-
-		return 0;
-	}
-
-	if (strlen(*env_p) < env_len) {
-		/* Exist, but buffer is too short */
-		char *env_new = talloc_asprintf(env_h, "%s=%s", name, value);
-		if (!env_new) {
-			DEBUG(0,("talloc_asprintf failed\n"));
-			return -1;
-		}
-		TALLOC_FREE(*env_p);
-		*env_p = env_new;
-
-		return 0;
-	}
-
-	/* Exist and buffer is enough to overwrite */
-	snprintf(*env_p, env_len + 1, "%s=%s", name, value);
-
-	return 0;
-}
-
 /* Shell scripting
  * ====================================================================== */
 
 /* virusfilter_env version Samba's *_sub_advanced() in substitute.c */
-int virusfilter_shell_set_conn_env(virusfilter_env_struct *env_h,
-	connection_struct *conn)
+int virusfilter_shell_set_conn_env(env_struct *env_h, connection_struct *conn)
 {
 	int snum = SNUM(conn);
 	const char *server_addr_p;
@@ -884,49 +780,47 @@ int virusfilter_shell_set_conn_env(virusfilter_env_struct *env_h,
 	if (strncmp("::ffff:", server_addr_p, 7) == 0) {
 		server_addr_p += 7;
 	}
-	virusfilter_env_set(env_h, "VIRUSFILTER_SERVER_IP", server_addr_p);
-	virusfilter_env_set(env_h, "VIRUSFILTER_SERVER_NAME", myhostname());
-	virusfilter_env_set(env_h, "VIRUSFILTER_SERVER_NETBIOS_NAME",
+	env_set(env_h, "VIRUSFILTER_SERVER_IP", server_addr_p);
+	env_set(env_h, "VIRUSFILTER_SERVER_NAME", myhostname());
+	env_set(env_h, "VIRUSFILTER_SERVER_NETBIOS_NAME",
 		local_machine_name);
 	slprintf(pidstr,sizeof(pidstr)-1, "%ld", (long)getpid());
-	virusfilter_env_set(env_h, "VIRUSFILTER_SERVER_PID", pidstr);
+	env_set(env_h, "VIRUSFILTER_SERVER_PID", pidstr);
 
-	virusfilter_env_set(env_h, "VIRUSFILTER_SERVICE_NAME",
+	env_set(env_h, "VIRUSFILTER_SERVICE_NAME",
 		lp_const_servicename(snum));
-	virusfilter_env_set(env_h, "VIRUSFILTER_SERVICE_PATH",
+	env_set(env_h, "VIRUSFILTER_SERVICE_PATH",
 		conn->connectpath);
 
 	client_addr_p = conn_client_addr(conn);
 	if (strncmp("::ffff:", client_addr_p, 7) == 0) {
 		client_addr_p += 7;
 	}
-	virusfilter_env_set(env_h, "VIRUSFILTER_CLIENT_IP", client_addr_p);
-	virusfilter_env_set(env_h, "VIRUSFILTER_CLIENT_NAME",
+	env_set(env_h, "VIRUSFILTER_CLIENT_IP", client_addr_p);
+	env_set(env_h, "VIRUSFILTER_CLIENT_NAME",
 		conn_client_name(conn));
-	virusfilter_env_set(env_h, "VIRUSFILTER_CLIENT_NETBIOS_NAME",
+	env_set(env_h, "VIRUSFILTER_CLIENT_NETBIOS_NAME",
 		get_remote_machine_name());
 
-	virusfilter_env_set(env_h, "VIRUSFILTER_USER_NAME",
+	env_set(env_h, "VIRUSFILTER_USER_NAME",
 		get_current_username());
-	virusfilter_env_set(env_h, "VIRUSFILTER_USER_DOMAIN",
+	env_set(env_h, "VIRUSFILTER_USER_DOMAIN",
 		current_user_info.domain);
 
 	return 0;
 }
 
-/* Modified version of Samba's smbrun() in smbrun.c */
+/* Wrapper to Samba's smbrun() in smbrun.c */
 int virusfilter_shell_run(
 	const char *cmd,
-	uid_t uid,
-	gid_t gid,
-	virusfilter_env_struct *env_h,
+	env_struct *env_h,
 	connection_struct *conn,
 	bool sanitize)
 {
 	pid_t pid;
 
 	if (!env_h) {
-		env_h = virusfilter_env_new(talloc_tos());
+		env_h = env_new(talloc_tos());
 		if (!env_h) {
 			return -1;
 		}
@@ -936,144 +830,8 @@ int virusfilter_shell_run(
 		return -1;
 	}
 
-#ifdef VIRUSFILTER_RUN_OUTFD_SUPPORT
-	/* point our stdout at the file we want output to go into */
-	if (outfd && ((*outfd = setup_out_fd()) == -1)) {
-		return -1;
-	}
-#endif
-
-	/* in this method we will exec /bin/sh with the correct
-	   arguments, after first setting stdout to point at the file */
-
-	/*
-	 * We need to temporarily stop CatchChild from eating
-	 * SIGCLD signals as it also eats the exit status code. JRA.
-	 */
-
-	CatchChildLeaveStatus();
-
-	if ((pid=fork()) < 0) {
-		DEBUG(0,("virusfilter_run: fork failed with error %s\n",
-			strerror(errno)));
-		CatchChild();
-#ifdef VIRUSFILTER_RUN_OUTFD_SUPPORT
-		if (outfd) {
-			close(*outfd);
-			*outfd = -1;
-		}
-#endif
-		return errno;
-	}
-
-	if (pid) {
-		/*
-		 * Parent.
-		 */
-		int status=0;
-		pid_t wpid;
-
-		/* the parent just waits for the child to exit */
-#if SAMBA_VERSION_NUMBER >= 40500
-		while((wpid = waitpid(pid,&status,0)) < 0) {
-#else
-		while((wpid = sys_waitpid(pid,&status,0)) < 0) {
-#endif
-			if(errno == EINTR) {
-				errno = 0;
-				continue;
-			}
-			break;
-		}
-
-		CatchChild();
-
-		if (wpid != pid) {
-			DEBUG(2,("waitpid(%d) : %s\n", (int)pid,
-				strerror(errno)));
-#ifdef VIRUSFILTER_RUN_OUTFD_SUPPORT
-			if (outfd) {
-				close(*outfd);
-				*outfd = -1;
-			}
-#endif
-			return -1;
-		}
-
-#ifdef VIRUSFILTER_RUN_OUTFD_SUPPORT
-		/* Reset the seek pointer. */
-		if (outfd) {
-			sys_lseek(*outfd, 0, SEEK_SET);
-		}
-#endif
-
-#if defined(WIFEXITED) && defined(WEXITSTATUS)
-		if (WIFEXITED(status)) {
-			return WEXITSTATUS(status);
-		}
-#endif
-
-		return status;
-	}
-
-	CatchChild();
-
-	/* we are in the child. we exec /bin/sh to do the work for us. we
-	   don't directly exec the command we want because it may be a
-	   pipeline or anything else the config file specifies */
-
-#ifdef VIRUSFILTER_RUN_OUTFD_SUPPORT
-	/* point our stdout at the file we want output to go into */
-	if (outfd) {
-		close(1);
-		if (dup2(*outfd,1) != 1) {
-			DEBUG(2,("Failed to create stdout file descriptor\n"));
-			close(*outfd);
-			exit(80);
-		}
-	}
-#endif
-
-	/* now completely lose our privileges. This is a fairly paranoid
-	   way of doing it, but it does work on all systems that I know of */
-
-	become_user_permanently(uid, gid);
-
-	if (!non_root_mode()) {
-		if (getuid() != uid || geteuid() != uid ||
-		    getgid() != gid || getegid() != gid) {
-			/* we failed to lose our privileges - do not execute
-			   the command */
-			exit(81); /* we can't print stuff at this stage,
-				     instead use exit codes for debugging */
-		}
-	}
-
-#ifndef __INSURE__
-	/* close all other file descriptors, leaving only 0, 1 and 2. 0 and
-	   2 point to /dev/null from the startup code */
-	{
-	int fd;
-	for (fd=3;fd<256;fd++) close(fd);
-	}
-#endif
-
-	{
-		char *newcmd = NULL;
-		if (sanitize) {
-			newcmd = escape_shell_string(cmd);
-			if (!newcmd)
-				exit(82);
-		}
-
-		execle("/bin/sh","sh","-c",
-		    newcmd ? (const char *)newcmd : cmd, NULL,
-		    virusfilter_env_list(env_h));
-
-		SAFE_FREE(newcmd);
-	}
-
-	/* Not reached */
-	exit(83);
-	return 1;
+	if (sanitize)
+		return smbrun(cmd, NULL, env_list(env_h));
+	else
+		return smbrun_no_sanitize(cmd, NULL, env_list(env_h));
 }

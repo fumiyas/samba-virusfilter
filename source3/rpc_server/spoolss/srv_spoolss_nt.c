@@ -401,7 +401,7 @@ static WERROR delete_printer_hook(TALLOC_CTX *ctx, struct security_token *token,
 	if ( is_print_op )
 		become_root();
 
-	if ( (ret = smbrun(command, NULL)) == 0 ) {
+	if ( (ret = smbrun(command, NULL, NULL)) == 0 ) {
 		/* Tell everyone we updated smb.conf. */
 		message_send_all(msg_ctx, MSG_SMB_CONF_UPDATED, NULL, 0, NULL);
 	}
@@ -6246,7 +6246,7 @@ static WERROR add_port_hook(TALLOC_CTX *ctx, struct security_token *token, const
 	if ( is_print_op )
 		become_root();
 
-	ret = smbrun(command, NULL);
+	ret = smbrun(command, NULL, NULL);
 
 	if ( is_print_op )
 		unbecome_root();
@@ -6313,7 +6313,7 @@ static bool add_printer_hook(TALLOC_CTX *ctx, struct security_token *token,
 	if ( is_print_op )
 		become_root();
 
-	if ( (ret = smbrun(command, &fd)) == 0 ) {
+	if ( (ret = smbrun(command, &fd, NULL)) == 0 ) {
 		/* Tell everyone we updated smb.conf. */
 		message_send_all(msg_ctx, MSG_SMB_CONF_UPDATED, NULL, 0, NULL);
 	}
@@ -8071,7 +8071,7 @@ static WERROR enumports_hook(TALLOC_CTX *ctx, int *count, char ***lines)
 		}
 
 		DEBUG(10,("Running [%s]\n", command));
-		ret = smbrun(command, &fd);
+		ret = smbrun(command, &fd, NULL);
 		DEBUG(10,("Returned [%d]\n", ret));
 		TALLOC_FREE(command);
 		if (ret != 0) {

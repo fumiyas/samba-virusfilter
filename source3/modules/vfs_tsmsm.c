@@ -495,7 +495,7 @@ static int tsmsm_set_offline(struct vfs_handle_struct *handle,
 		return -1;
 	}
 	DEBUG(10, ("tsmsm_set_offline: Running [%s]\n", command));
-	if((result = smbrun(command, NULL)) != 0) {
+	if((result = smbrun(command, NULL, NULL)) != 0) {
 		DEBUG(1,("tsmsm_set_offline: Running [%s] returned %d\n", command, result));
 	}
 	TALLOC_FREE(command);
