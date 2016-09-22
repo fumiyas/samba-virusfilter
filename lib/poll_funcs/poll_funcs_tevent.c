@@ -474,6 +474,8 @@ struct poll_funcs *poll_funcs_init_tevent(TALLOC_CTX *mem_ctx)
 static int poll_funcs_state_destructor(struct poll_funcs_state *state)
 {
 	size_t num_watches = talloc_array_length(state->watches);
+	size_t num_timeouts = talloc_array_length(state->timeouts);
+	size_t num_contexts = talloc_array_length(state->contexts);
 	size_t i;
 	/*
 	 * Make sure the watches are cleared before the contexts. The watches
@@ -481,6 +483,12 @@ static int poll_funcs_state_destructor(struct poll_funcs_state *state)
 	 */
 	for (i=0; i<num_watches; i++) {
 		TALLOC_FREE(state->watches[i]);
+	}
+	for (i=0; i<num_timeouts; i++) {
+		TALLOC_FREE(state->timeouts[i]);
+	}
+	for (i=0; i<num_contexts; i++) {
+		TALLOC_FREE(state->contexts[i]);
 	}
 	return 0;
 }
@@ -496,10 +504,21 @@ static bool poll_funcs_context_slot_find(struct poll_funcs_state *state,
 	size_t num_contexts = talloc_array_length(state->contexts);
 	size_t i;
 
+	/* Look for an existing match first. */
 	for (i=0; i<num_contexts; i++) {
 		struct poll_funcs_tevent_context *ctx = state->contexts[i];
 
-		if ((ctx == NULL) || (ctx->ev == ev)) {
+		if (ctx != NULL && ctx->ev == ev) {
+			*slot = i;
+			return true;
+		}
+	}
+
+	/* Now look for a free slot. */
+	for (i=0; i<num_contexts; i++) {
+		struct poll_funcs_tevent_context *ctx = state->contexts[i];
+
+		if (ctx == NULL) {
 			*slot = i;
 			return true;
 		}

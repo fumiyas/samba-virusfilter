@@ -414,13 +414,13 @@ static int unix_dgram_send_queue_init(
 		goto fail_close;
 	}
 
-	DLIST_ADD(ctx->send_queues, q);
-
 	ret = unix_dgram_sendq_schedule_free(q);
 	if (ret != 0) {
 		err = ENOMEM;
 		goto fail_close;
 	}
+
+	DLIST_ADD(ctx->send_queues, q);
 
 	*result = q;
 	return 0;
@@ -470,7 +470,6 @@ static int unix_dgram_sendq_schedule_free(struct unix_dgram_send_queue *q)
 		unix_dgram_sendq_scheduled_free_handler,
 		q);
 	if (q->timeout == NULL) {
-		unix_dgram_send_queue_free(q);
 		return ENOMEM;
 	}
 

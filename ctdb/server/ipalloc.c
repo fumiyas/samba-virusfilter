@@ -106,8 +106,7 @@ static int getips_count_callback(void *param, void *data)
  * merged list of all public addresses needs to be built so that IP
  * allocation can be done. */
 static struct public_ip_list *
-create_merged_ip_list(struct ipalloc_state *ipalloc_state,
-		      struct ctdb_public_ip_list *known_ips)
+create_merged_ip_list(struct ipalloc_state *ipalloc_state)
 {
 	int i, j;
 	struct public_ip_list *ip_list;
@@ -116,14 +115,14 @@ create_merged_ip_list(struct ipalloc_state *ipalloc_state,
 
 	ip_tree = trbt_create(ipalloc_state, 0);
 
-	if (known_ips == NULL) {
+	if (ipalloc_state->known_public_ips == NULL) {
 		DEBUG(DEBUG_ERR, ("Known public IPs not set\n"));
 		return NULL;
 	}
 
 	for (i=0; i < ipalloc_state->num; i++) {
 
-		public_ips = &known_ips[i];
+		public_ips = &ipalloc_state->known_public_ips[i];
 
 		for (j=0; j < public_ips->num; j++) {
 			struct public_ip_list *tmp_ip;
@@ -225,16 +224,12 @@ void ipalloc_set_node_flags(struct ipalloc_state *ipalloc_state,
 	}
 }
 
-bool ipalloc_set_public_ips(struct ipalloc_state *ipalloc_state,
+void ipalloc_set_public_ips(struct ipalloc_state *ipalloc_state,
 			    struct ctdb_public_ip_list *known_ips,
 			    struct ctdb_public_ip_list *available_ips)
 {
 	ipalloc_state->available_public_ips = available_ips;
-
-	ipalloc_state->all_ips = create_merged_ip_list(ipalloc_state,
-						       known_ips);
-
-	return (ipalloc_state->all_ips != NULL);
+	ipalloc_state->known_public_ips = known_ips;
 }
 
 /* This can only return false if there are no available IPs *and*
@@ -244,17 +239,31 @@ bool ipalloc_set_public_ips(struct ipalloc_state *ipalloc_state,
 bool ipalloc_can_host_ips(struct ipalloc_state *ipalloc_state)
 {
 	int i;
-	struct public_ip_list *ip_list;
+	bool have_ips = false;
 
-
-	for (ip_list = ipalloc_state->all_ips;
-	     ip_list != NULL;
-	     ip_list = ip_list->next) {
-		if (ip_list->pnn != -1) {
-			return true;
+	for (i=0; i < ipalloc_state->num; i++) {
+		struct ctdb_public_ip_list *ips =
+			ipalloc_state->known_public_ips;
+		if (ips[i].num != 0) {
+			int j;
+			have_ips = true;
+			/* Succeed if an address is hosted on node i */
+			for (j=0; j < ips[i].num; j++) {
+				if (ips[i].ip[j].pnn == i) {
+					return true;
+				}
+			}
 		}
 	}
 
+	if (! have_ips) {
+		return false;
+	}
+
+	/* At this point there are known addresses but none are
+	 * hosted.  Need to check if cluster can now host some
+	 * addresses.
+	 */
 	for (i=0; i < ipalloc_state->num; i++) {
 		if (ipalloc_state->available_public_ips[i].num != 0) {
 			return true;
@@ -268,6 +277,11 @@ bool ipalloc_can_host_ips(struct ipalloc_state *ipalloc_state)
 struct public_ip_list *ipalloc(struct ipalloc_state *ipalloc_state)
 {
 	bool ret = false;
+
+	ipalloc_state->all_ips = create_merged_ip_list(ipalloc_state);
+	if (ipalloc_state->all_ips == NULL) {
+		return NULL;
+	}
 
 	switch (ipalloc_state->algorithm) {
 	case IPALLOC_LCP2:
