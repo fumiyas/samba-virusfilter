@@ -6,6 +6,12 @@ Samba-VirusFilter - On-access anti-virus filter for Samba
   * Development home: <https://github.com/fumiyas/samba-virusfilter>
   * Author's home: <https://fumiyas.github.io/>
 
+DISCONTINUED
+---------------------------------------------------------------------
+
+Samba-VirusFilter has been merged to Samba upsteam source.
+Please use `vfs_virusfilter`(8) bundled in Samba 4.8.0 or later.
+
 What's this?
 ---------------------------------------------------------------------
 
